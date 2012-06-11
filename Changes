@@ -1,0 +1,6 @@
+Revision history for Perl extension Crypt::MatrixSSL3.
+
+3.3   Wed Apr 11 14:36:05 UTC 2012
+	- based on Crypt::MatrixSSL-1.8.6
+	- re-write to support MatrixSSL 3.3  (CDRAKE, POWERMAN)
+
