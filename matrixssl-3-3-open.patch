@@ -1,0 +1,40 @@
+--- matrixssl-3-3-open/core/WIN32/osdep.c.orig	2012-01-23 20:22:59.000000000 +0200
++++ matrixssl-3-3-open/core/WIN32/osdep.c	2012-06-08 21:32:30.594339850 +0300
+@@ -235,7 +235,7 @@
+ #endif /* HALT_ON_PS_ERROR */
+ 
+ 
+-#ifdef PS_USE_FILE_SYSTEM
++#ifdef MATRIX_USE_FILE_SYSTEM
+ /******************************************************************************/
+ /*
+     FILE ACCESS FUNCTION
+@@ -283,7 +283,7 @@
+ 	memset(*buf, 0x0, size + 1);
+ 	
+ 	while (*bufLen < size) { 
+-		if (ReadFile(hFile, *buf + *bufLen, 512, &tmp, NULL) == FALSE) {
++		if (ReadFile(hFile, *buf + *bufLen, (size-*bufLen > 512 ? 512 : size-*bufLen), &tmp, NULL) == FALSE) {
+ 			psFree(*buf);
+ 			psTraceStrCore("Unable to read %s\n", (char*)fileName);
+ 			CloseHandle(hFile);
+@@ -295,7 +295,7 @@
+ 	CloseHandle(hFile);
+ 	return PS_SUCCESS;
+ }
+-#endif /* PS_USE_FILE_SYSTEM */
++#endif /* MATRIX_USE_FILE_SYSTEM */
+ 
+ 
+ /******************************************************************************/
+--- matrixssl-3-3-open/matrixssl/matrixsslApi.c.orig	2012-06-11 08:37:31.000000000 -0700
++++ matrixssl-3-3-open/matrixssl/matrixsslApi.c	2012-06-11 08:37:16.000000000 -0700
+@@ -802,7 +802,7 @@
+ 		The header did have the extra block accounted for when parsed but
+ 		we subtracted that out at decrypt so rec.len could be used per normal
+ */
+-		if (ssl->flags & SSL_FLAGS_TLS_1_1) {
++		if (ssl->flags & SSL_FLAGS_TLS_1_1 && ssl->cipher->blockSize > 1) {
+ 			ctlen += ssl->cipher->blockSize;
+ 		}
+ #endif /* USE_TLS_1_1 */
