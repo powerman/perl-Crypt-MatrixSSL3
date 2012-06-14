@@ -8,7 +8,7 @@ use Scalar::Util qw( dualvar );
 use XSLoader;
 
 BEGIN {
-    our $VERSION = '3.3';
+    use version; our $VERSION = qv('3.3.0.1');
     XSLoader::load(__PACKAGE__,$VERSION);
 }
 

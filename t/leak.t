@@ -268,16 +268,26 @@ sub Cat {
     return <$f>;
 }
 sub MEM_used {
-    return(`ps -o'rss' -p $$` =~ /(\d+)/) if($^O=~/(^darwin$)/);	# Mac OS/X
-    if($^O=~/Win32/i) { my($m)=`tasklist /nh /fi "PID eq $$"` =~/.*\s([\d,]+)/; $m=~tr/,//d; return $m;}	# MSWin32
-    return (Cat('/proc/self/status') =~ /VmRSS:\s*(\d*)/)[0];		# Linux
-};
-sub FD_used {
-    if($^O=~/^(darwin|MSWin32)$/) {
-	#diag "If anyone knows how to find the process file-descriptor usage under Mac OS/X or $^O please let me know!";
-	return 0;
+    if ($^O =~ /linux/) {
+        return (Cat('/proc/self/status') =~ /VmRSS:\s*(\d*)/)[0];
     }
-    opendir my $fd, '/proc/self/fd' or croak "opendir: $!";
-    return @{[ readdir $fd ]} - 2;
-};
+    elsif ($^O =~ /Win32/) {
+        # FIXME this will fail on non-English Win7
+        my ($m) = `tasklist /nh /fi "PID eq $$"` =~/.*\s([\d,]+)/;
+        $m=~tr/,//d;
+        return $m;
+    }
+    else {
+        return (`ps -o'rss' -p $$` =~ /(\d+)/);
+    }
+}
+sub FD_used {
+    if ($^O =~ /linux/) {
+        opendir my $fd, '/proc/self/fd' or croak "opendir: $!";
+        return @{[ readdir $fd ]} - 2;
+    }
+    else {
+        return 0;
+    }
+}
 

@@ -3,8 +3,7 @@ abstract: "Perl extension for SSL and TLS using MatrixSSL.org v3.3\r"
 author:
   - 'C. N. Drake <christopher@pobox.com>'
 build_requires:
-  Archive::Tar: 0
-  Config: 0
+  ExtUtils::MakeMaker: 0
 configure_requires:
   ExtUtils::MakeMaker: 0
 dynamic_config: 0
@@ -19,9 +18,12 @@ no_index:
     - t
     - inc
 requires:
+  Archive::Tar: 0
   Carp: 0
+  Config: 0
   IO::Socket: 0
   Scalar::Util: 0
   Test::Exception: 0
   Test::More: 0
+  version: 0
 version: 3.3
