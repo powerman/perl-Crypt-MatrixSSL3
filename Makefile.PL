@@ -28,7 +28,8 @@ my $mxmodfiles="modfiles";
 
 # Apply cumulative patch, if any
 if (-r "$mxbase.patch") {
-    system("cd $mxbase && patch -p1 -N -i ../$mxbase.patch");
+    # replacing \n with \n will change \n to \r\n on Win, without this patch.exe will crash
+    system("cd $mxbase && perl -pe \"s/\\n/\\n/\" ../$mxbase.patch | patch -p1 -N");
 }
 
 
@@ -104,7 +105,9 @@ my $libs = ($^O =~ /Win32/) ? '' : '-lpthread';
 my $defines = q{};
 $defines.='-DLINUX '            if $^O =~ /linux/;
 $defines.='-DPOSIX '            if $^O !~ /Win32/;
-$defines.='-DPSTM_64BIT '       if $^O !~ /Win32/ && $Config{archname} =~ /64/;
+# On Win7x64 matrixssl build ok with -DPSTM_64BIT, but perl will crash.
+# On Mac OS x64 Lion gcc use 32-bit target by default, not sure why.
+$defines.='-DPSTM_64BIT '       if $^O !~ /Win32|darwin/ && $Config{myuname} =~ /x86_64|amd64|x64/;
 $defines.='-Os -fomit-frame-pointer -fPIC -I./ -I../ ';
 
 # From: ./matrixssl-3-3-open/matrixssl/matrixsslConfig.h
@@ -182,11 +185,10 @@ if ($^O =~ /Win32/) {
 WriteMakefile(
     NAME		=> 'Crypt::MatrixSSL3',
     VERSION_FROM	=> 'MatrixSSL3.pm', # finds $VERSION
-    BUILD_REQUIRES      => {
+    PREREQ_PM		=> {
+        'version'           => 0,
         'Config'            => 0,
         'Archive::Tar'      => 0,
-    },
-    PREREQ_PM		=> {
         'Test::More'        => 0,
         'Test::Exception'   => 0,
         'IO::Socket'        => 0,

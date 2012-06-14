@@ -22,8 +22,7 @@
    "prereqs" : {
       "build" : {
          "requires" : {
-            "Archive::Tar" : "0",
-            "Config" : "0"
+            "ExtUtils::MakeMaker" : "0"
          }
       },
       "configure" : {
@@ -33,11 +32,14 @@
       },
       "runtime" : {
          "requires" : {
+            "Archive::Tar" : "0",
             "Carp" : "0",
+            "Config" : "0",
             "IO::Socket" : "0",
             "Scalar::Util" : "0",
             "Test::Exception" : "0",
-            "Test::More" : "0"
+            "Test::More" : "0",
+            "version" : "0"
          }
       }
    },
