@@ -23,8 +23,6 @@ META.json			Module JSON meta-data (added by MakeMaker)
 META.yml			Module YAML meta-data (added by MakeMaker)
 mk-ca-bundle.pl
 mk-ca-certificates.pl
-MYMETA.json
-MYMETA.yml
 README
 sample_functions.pl
 sample_ssl_client.pl
@@ -44,7 +42,6 @@ t/cert/server.key.des3
 t/cert/server.p12
 t/cert/server_badca.p12
 t/cert/server_nopass.p12
-t/config.pm
 t/export-all.t
 t/export-some.t
 t/export.t
