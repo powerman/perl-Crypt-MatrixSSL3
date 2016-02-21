@@ -1,0 +1,90 @@
+=pod
+
+=head1 TERMINOLOGY
+
+=head1 TERMINOLOGY
+
+=head2 Default server
+
+Describes a set of properties (certificate, private key, OCSP staple, etc) to be used when the client connects but
+doesn't send a SNI TLS extension in its CLIENT_HELLO message
+
+=head2 Virtual host (SNI entry)
+
+Desribes also a set of properties (like above) but these will be used when the client sends a SNI extension and we
+have a successful match on the virtual host's hostname and the client specified hostname
+
+=head2 SNI server
+
+All the virtual hosts (SNI entries) declared for one server.
+
+=head1 IMPLEMENTATION
+
+Here is some Perl pseudo code on how these are used:
+
+    my $sni_index = -1;
+    my $ocsp_index = -1;
+    my $sct_index = -1;
+
+    # define a listening socket
+    $server_sock = ...
+
+    # initialize default server keys - these will be shared by all server sessions
+    my $sv_keys = Crypt::MatrixSSL3::Keys->new();
+    
+    # load key material (certificate, private key, etc)
+    $sv_keys->load_rsa(...)
+    
+    Crypt::MatrixSSL3::set_VHIndex_callback(sub {
+	my ($ssl_id, $index);
+	warn "Client connected through SSL session ID $ssl_id has selected virtual host $index";
+    });
+    ...
+    
+    # we assume when a client connects an accept_client sub will be called
+    sub accept_client {
+	# accept client socket
+	my $client_sock = accept($server_sock, ...);
+	
+	# create server session reusing the keys
+	my $cssl =  Crypt::MatrixSSL3::Server->new($sv_keys, undef);
+	
+	# set OCSP staple for default server
+	# this will be initialized only once and then reused when $ocsp_index != -1
+	$ocsp_index = $ssl->set_OCSP_staple($ocsp_index, $DERfile);
+	
+	# set SCT buffer for default server
+	# this will be initialized only once and then reused when $sct_index != -1
+	$sct_index = $ssl->set_SCT_buffer($sct_index, $SCT_params);
+	
+	# create a unique SSL session ID
+	# for example this can be the fileno of the client socket
+	my $ssl_id = fileno($client_sock);
+	
+	# initialize virtual hosts
+	# when first called init_SNI will take as first parameter $sni_index which is -1
+	# behind the scene the XS module does this (pretty much like what we're doing above)
+	#   - allocates a SNI_server structure that will hold one or more SNI_entries (virtual hosts)
+	#   - allocates a SNI_entry structure for each virtual host and:
+	#     - creates new server keys
+	#     - sets up OCSP staple buffer (if needed)
+	#     - sets up SCT buffer (if needed)
+	#   - sets up the matrixSSL SNI callback that will get called if the client sends a SNI TLS extension
+	#     in its CLIENT_HELLO message. When the CS SNI callback is called if any of the hostnames define
+	#     for each virtual host matches againt the client requested hostname, the &VHIndexCallback setup
+	#     above will be called with the $ssl_id of the session and the 0-based index of the virtual host
+	#     the client sent its request to
+	# returns the index of the newly created SNI_server structure for future use
+	# this will be initialized only once and then reused when $sni_index != -1
+	$sni_index = $ssl->init_SNI($sni_index, [
+	    # see MatrixSSL.pm - init_SNI function
+	], $ssl_id);
+	
+	# further initialization stuff after accepting the client
+	...
+    }
+    
+    # secure communication with the client
+    ...
+
+=cut

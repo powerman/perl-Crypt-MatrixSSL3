@@ -1,5 +1,5 @@
-Crypt-MatrixSSL3 version 3.3
-===========================
+Crypt-MatrixSSL3 version 3.7.3
+==============================
 
 Crypt::MatrixSSL3 lets you use the MatrixSSL crypto library (see
 http://matrixssl.org/) from Perl.  With this module, you will be

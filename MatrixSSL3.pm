@@ -8,7 +8,7 @@ use Scalar::Util qw( dualvar );
 use XSLoader;
 
 BEGIN {
-    use version; our $VERSION = qv('3.3.0.1');
+    use version; our $VERSION = qv('3.7.3');
     XSLoader::load(__PACKAGE__,$VERSION);
 }
 
@@ -34,20 +34,73 @@ use constant CONST_VERSION => (
 );
 use constant CONST_CIPHER => qw(
     SSL_NULL_WITH_NULL_NULL
-    SSL_RSA_WITH_3DES_EDE_CBC_SHA
     SSL_RSA_WITH_NULL_MD5
     SSL_RSA_WITH_NULL_SHA
     SSL_RSA_WITH_RC4_128_MD5
     SSL_RSA_WITH_RC4_128_SHA
+    SSL_RSA_WITH_3DES_EDE_CBC_SHA
     TLS_RSA_WITH_AES_128_CBC_SHA
     TLS_RSA_WITH_AES_256_CBC_SHA
     TLS_EMPTY_RENEGOTIATION_INFO_SCSV
-    SSL_OPTION_FULL_HANDSHAKE
+    TLS_RSA_WITH_IDEA_CBC_SHA
+    SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA
+    SSL_DH_anon_WITH_RC4_128_MD5
+    SSL_DH_anon_WITH_3DES_EDE_CBC_SHA
+    TLS_DHE_RSA_WITH_AES_128_CBC_SHA
+    TLS_DHE_RSA_WITH_AES_256_CBC_SHA
+    TLS_DHE_RSA_WITH_AES_128_CBC_SHA256
+    TLS_DHE_RSA_WITH_AES_256_CBC_SHA256
+    TLS_DH_anon_WITH_AES_128_CBC_SHA
+    TLS_DH_anon_WITH_AES_256_CBC_SHA
+    TLS_RSA_WITH_AES_128_CBC_SHA256
+    TLS_RSA_WITH_AES_256_CBC_SHA256
+    TLS_RSA_WITH_SEED_CBC_SHA
+    TLS_PSK_WITH_AES_128_CBC_SHA
+    TLS_PSK_WITH_AES_128_CBC_SHA256
+    TLS_PSK_WITH_AES_256_CBC_SHA384
+    TLS_PSK_WITH_AES_256_CBC_SHA
+    TLS_DHE_PSK_WITH_AES_128_CBC_SHA
+    TLS_DHE_PSK_WITH_AES_256_CBC_SHA
+    TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA
+    TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA
+    TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA
+    TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA
+    TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA
+    TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA
+    TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA
+    TLS_ECDH_RSA_WITH_AES_128_CBC_SHA
+    TLS_ECDH_RSA_WITH_AES_256_CBC_SHA
+    TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256
+    TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384
+    TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256
+    TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384
+    TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
+    TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384
+    TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256
+    TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384
+    TLS_RSA_WITH_AES_128_GCM_SHA256
+    TLS_RSA_WITH_AES_256_GCM_SHA384
+    TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+    TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+    TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256
+    TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384
+    TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+    TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+    TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256
+    TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384
 );
+
+use constant CONST_SESSION_OPTION => qw(
+    SSL_OPTION_FULL_HANDSHAKE
+    SSL_OPTION_DISABLE_REHANDSHAKES
+    SSL_OPTION_REENABLE_REHANDSHAKES
+);
+
 use constant CONST_ALERT_LEVEL => qw(
     SSL_ALERT_LEVEL_FATAL
     SSL_ALERT_LEVEL_WARNING
 );
+
 use constant CONST_ALERT_DESCR => qw(
     SSL_ALERT_ACCESS_DENIED
     SSL_ALERT_BAD_CERTIFICATE
@@ -73,6 +126,7 @@ use constant CONST_ALERT_DESCR => qw(
     SSL_ALERT_UNSUPPORTED_CERTIFICATE
     SSL_ALERT_UNSUPPORTED_EXTENSION
 );
+
 # Order is important in CONST_ERROR and CONST_RC! Some constants have same
 # value, but their names ordered to get better output in %RETURN_CODE.
 use constant CONST_ERROR => qw(
@@ -87,6 +141,7 @@ use constant CONST_ERROR => qw(
     PS_PROTOCOL_FAIL
     PS_UNSUPPORTED_FAIL
 );
+
 use constant CONST_RC => qw(
     PS_SUCCESS
     MATRIXSSL_SUCCESS
@@ -97,22 +152,36 @@ use constant CONST_RC => qw(
     MATRIXSSL_REQUEST_RECV
     MATRIXSSL_REQUEST_SEND
 );
+
 use constant CONST_LIMIT => qw(
     SSL_MAX_DISABLED_CIPHERS
     SSL_MAX_PLAINTEXT_LEN
 );
+
 use constant CONST_VALIDATE => qw(
     SSL_ALLOW_ANON_CONNECTION
 );
+
 use constant CONST_BOOL => qw(
     PS_TRUE
     PS_FALSE
+);
+
+use constant CONST_CAPABILITIES => qw(
+    SHARED_SESSION_CACHE_ENABLED
+    STATELESS_TICKETS_ENABLED
+    DH_PARAMS_ENABLED
+    ALPN_ENABLED
+    OCSP_STAPLES_ENABLED
+    CERTIFICATE_TRANSPARENCY_ENABLED
+    SNI_ENABLED
 );
 
 BEGIN {
     eval 'use constant '.$_.' => '.(0+constant($_)) for
         CONST_VERSION_INT,
         CONST_CIPHER,
+        CONST_SESSION_OPTION,
         CONST_ALERT_LEVEL,
         CONST_ALERT_DESCR,
         CONST_ERROR,
@@ -120,6 +189,7 @@ BEGIN {
         CONST_LIMIT,
         CONST_VALIDATE,
         CONST_BOOL,
+        CONST_CAPABILITIES,
         ;
 }
 # TODO  ExtUtils::Constant fail to generate correct const-*.inc when both
@@ -141,15 +211,17 @@ my %RETURN_CODE = map { 0+constant($_) => $_ } CONST_ERROR, CONST_RC;
 # Usage: use Crypt::MatrixSSL3 qw( :all :DEFAULT :RC :Cipher SSL_MAX_PLAINTEXT_LEN ... )
 #
 my %tags = (
-    Version     => [ CONST_VERSION  ],
-    Cipher      => [ CONST_CIPHER   ],
-    Alert       => [ CONST_ALERT_LEVEL, CONST_ALERT_DESCR ],
-    Error       => [ CONST_ERROR    ],
-    RC          => [ CONST_RC       ],
-    Limit       => [ CONST_LIMIT    ],
-    Validate    => [ CONST_VALIDATE ],
-    Bool        => [ CONST_BOOL     ],
-    Func        => [qw(
+    Version      => [ CONST_VERSION  ],
+    Cipher       => [ CONST_CIPHER   ],
+    SessOpts     => [ CONST_SESSION_OPTION ],
+    Alert        => [ CONST_ALERT_LEVEL, CONST_ALERT_DESCR ],
+    Error        => [ CONST_ERROR    ],
+    RC           => [ CONST_RC       ],
+    Limit        => [ CONST_LIMIT    ],
+    Validate     => [ CONST_VALIDATE ],
+    Bool         => [ CONST_BOOL     ],
+    Capabilities => [ CONST_CAPABILITIES ],
+    Func         => [qw(
         set_cipher_suite_enabled_status
         get_ssl_alert
         get_ssl_error
@@ -215,7 +287,7 @@ __END__
 
 =head1 NAME
 
-Crypt::MatrixSSL3 - Perl extension for SSL and TLS using MatrixSSL.org v3.3
+Crypt::MatrixSSL3 - Perl extension for SSL and TLS using MatrixSSL.org v3.7.3
 
 
 =head1 SYNOPSIS
@@ -251,6 +323,13 @@ of this package if you want to replace the included version from
 the MatrixSSL.org download site.)
 
 
+=head1 TERMINOLOGY
+
+When a client establishes an SSL connection without sending a SNI extension in its CLIENT_HELLO message we say that the client connects to the B<default server>.
+
+If a SNI extension is present then the client connects to a B<virtual host>.
+
+
 =head1 EXPORTS
 
 Constants and functions can be exported using different tags.
@@ -280,15 +359,98 @@ constants (tag ':RC') will be exported.
 
 Used in matrixSslSetCipherSuiteEnabledStatus().
 
-    SSL_NULL_WITH_NULL_NULL
-    SSL_RSA_WITH_3DES_EDE_CBC_SHA
-    SSL_RSA_WITH_NULL_MD5
-    SSL_RSA_WITH_NULL_SHA
-    SSL_RSA_WITH_RC4_128_MD5
-    SSL_RSA_WITH_RC4_128_SHA
+    #******************************************************************************
+    #
+    #	Recommended cipher suites:
+    #
+    #	Define the following to enable various cipher suites
+    #	At least one of these must be defined.  If multiple are defined,
+    #	the handshake will determine which is best for the connection.
+    #
+
     TLS_RSA_WITH_AES_128_CBC_SHA
     TLS_RSA_WITH_AES_256_CBC_SHA
-    TLS_EMPTY_RENEGOTIATION_INFO_SCSV
+    TLS_RSA_WITH_AES_128_CBC_SHA256
+    TLS_RSA_WITH_AES_256_CBC_SHA256
+    TLS_RSA_WITH_AES_128_GCM_SHA256
+
+    # Pre-Shared Key Ciphers
+    TLS_RSA_WITH_AES_256_GCM_SHA384
+    TLS_PSK_WITH_AES_256_CBC_SHA
+    TLS_PSK_WITH_AES_128_CBC_SHA
+    TLS_PSK_WITH_AES_256_CBC_SHA384
+    TLS_PSK_WITH_AES_128_CBC_SHA256
+
+    # Ephemeral ECC DH keys, ECC DSA certificates
+    TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA
+    TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA
+    TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256
+    TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384
+    TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+    TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+
+    # Ephemeral ECC DH keys, RSA certificates
+    TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA
+    TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA
+    TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384
+    TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
+    TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+    TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+
+    # Non-Ephemeral ECC DH keys, ECC DSA certificates
+    TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA
+    TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA
+    TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256
+    TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384
+    TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256
+    TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384
+
+    # Non-Ephemeral ECC DH keys, RSA certificates
+    TLS_ECDH_RSA_WITH_AES_256_CBC_SHA
+    TLS_ECDH_RSA_WITH_AES_128_CBC_SHA
+    TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384
+    TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256
+    TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384
+    TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256
+
+
+    #******************************************************************************
+    #
+    #	These cipher suites are secure, but not in general use. Enable only if 
+    #	specifically required by application.
+    #
+    TLS_DHE_PSK_WITH_AES_256_CBC_SHA
+    TLS_DHE_PSK_WITH_AES_128_CBC_SHA
+    TLS_DHE_RSA_WITH_AES_256_CBC_SHA
+    TLS_DHE_RSA_WITH_AES_128_CBC_SHA
+    TLS_DHE_RSA_WITH_AES_128_CBC_SHA256
+    TLS_DHE_RSA_WITH_AES_256_CBC_SHA256
+
+
+    #******************************************************************************
+    #
+    #	These cipher suites are generally considered weak, not recommended for use.
+    #
+    TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA
+    SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA
+    SSL_RSA_WITH_3DES_EDE_CBC_SHA
+    TLS_RSA_WITH_SEED_CBC_SHA
+    SSL_RSA_WITH_RC4_128_SHA
+    SSL_RSA_WITH_RC4_128_MD5
+
+
+    #******************************************************************************
+    #
+    #	These cipher suites do not combine authentication and encryption and
+    #	are not recommended for use-cases that require strong security or 
+    #	Man-in-the-Middle protection.
+    #
+    TLS_DH_anon_WITH_AES_256_CBC_SHA
+    TLS_DH_anon_WITH_AES_128_CBC_SHA
+    SSL_DH_anon_WITH_3DES_EDE_CBC_SHA
+    SSL_DH_anon_WITH_RC4_128_MD5
+    SSL_RSA_WITH_NULL_SHA
+    SSL_RSA_WITH_NULL_MD5
 
 Flag for matrixSslEncodeRehandshake():
 
@@ -398,12 +560,38 @@ and after last object will be destroyed.
  matrixSslOpen
  matrixSslClose
 
+If you write server intensive applications it is still better to control
+how often the matrixSSL library gets initialized/deinitialized. For this
+you can call (note that these functions are not exported):
+
+ Crypt::MatrixSSL3::open()
+
+to initialize the library at the start of you application and
+
+ Crypt::MatrixSSL3::close()
+
+to deinitialize the library when your application ends.
+
 These functions implement optimization which is useless in Perl:
 
  matrixSslGetWritebuf
  matrixSslEncodeWritebuf
 
 =over
+
+=item B<capabilities>()
+
+A bitwise OR combination of the following:
+
+    SHARED_SESSION_CACHE_ENABLED      ( = 1) - shared session cache between multiple processes is enabled
+    STATELESS_TICKETS_ENABLED         ( = 2) - stateless ticket session resuming support is enabled
+    DH_PARAMS_ENABLED                 ( = 4) - loading the DH param for DH cipher suites is enabled
+    ALPN_ENABLED                      ( = 8) - Application Layer Protocol Negotiation callback support is enabled
+    SNI_ENABLED                      ( = 16) - Server Name Identification (virtual hosts) support is enabled
+    OCSP_STAPLES_ENABLED             ( = 32) - handling of the "status_request" TLS extension by responding with an OCSP staple is enabled
+    CERTIFICATE_TRANSPARENCY_ENABLED ( = 64) - handling of the "signed_certificate_timestamp" TLS extension is enabled
+
+Before using any of these features it's a good idea to test if matrixSSL is supporting them.
 
 =item B<set_cipher_suite_enabled_status>( $cipherId, $status )
 
@@ -424,6 +612,57 @@ in string context).
 
 Return dualvar for this error code (same as $rc in numeric context and
 text error name in string context).
+
+=item B<refresh_OCSP_staple>( $server_index, $index, $DERfile )
+
+Used to refresh an already loaded OCSP staple either for a default server or for a virtual host.
+
+Parameters:
+
+=over
+
+=item $server_index
+
+If you want to update the OCSP staple for a virtual host this parameter must have the returned value of the first $sll->init_SNI(...) call.
+
+If you want to update the OCSP staple for a default server this parameter must be -1 or undef.
+
+=item $index
+
+When updating a virtual host ($server_index > -1) this value specifies the 0-based index of the virtual host for which the OCSP staple should be refreshed.
+
+When updating a default server this value specifies the index returned by the $ssl->set_OCSP_staple(...) first call.
+
+=item $DERfile
+
+File containing the new OCSP staple in DER format as it was received from the CA's OCSP responder.
+
+=back
+
+Returns PS_SUCCESS if the update was successful.
+
+=item B<refresh_SCT_buffer> ( $server_index, $index, $SCT_params )
+
+Used to refresh an already loaded CT extension data buffer either for a default server or for a virtual host.
+
+Parameters:
+
+=over
+
+=item $server_index and $index the same as refresh_OCSP_staple above, but $indexs take the return value of the first $ssl->set_SCT_buffer(...) call
+
+=item $SCT_params
+
+Perl scalaer containg a file name with prepared extension data.
+Perl array reference with file names of SCT binary structures that the function will use to create the extension data.
+
+=back
+
+Returns the number of files loaded in order to build extension data.
+
+=item B<set_VHindex_callback> ( \&VHIndexCallback )
+
+More information about &VHindexCallback in the CALLBACKS section.
 
 =back
 
@@ -466,6 +705,14 @@ When this object will be destroyed will call:
  matrixSslLoadPkcs12( $keys, $p12File, $importPass, length $importPass,
     $macPass, length $macPass, $flags )
 
+=item $keys->B<load_DH_params( $DH_params_file )
+
+  matrixSslLoadDhParams ( $keys, $DH_params_file )
+
+=item $keys->B<load_session_ticket_keys>( $keys, $name, $symkey, $hashkey ) C<server side>
+
+  matrixSslLoadSessionTicketKeys ($keys, $name, $symkey, length $symkey, $haskkey, length $hashkey )
+
 =back
 
 =head2 Crypt::MatrixSSL3::SessID
@@ -480,9 +727,9 @@ When this object will be destroyed will free memory, so you should
 keep this object while there are exist Client/Server session
 which uses this $sessid.
 
-=item $sessid->B<init>()
+=item $sessid->B<clear>()
 
- matrixSslInitSessionId($sessid);
+ matrixSslClearSessionId($sessid);
 
 =back
 
@@ -490,10 +737,10 @@ which uses this $sessid.
 
 =over
 
-=item B<new>( $keys, $sessionId, $cipherSuite, \&certValidator, $extensions, \&extensionCback )
+=item B<new>( $keys, $sessionId, [cipher1, cipher2, ...], \&certValidator, $expectedName, $extensions, \&extensionCback )
 
- matrixSslNewClientSession( $ssl, $keys, $sessionId, $cipherSuite,
-    \&certValidator, $extensions, \&extensionCback )
+ matrixSslNewClientSession( $ssl, $keys, $sessionId, [cipher1, cipher2, ...],
+    \&certValidator, $expectedName, $extensions, \&extensionCback )
 
 Return new object $ssl.
 Throw exception if matrixSslNewClientSession() doesn't return
@@ -574,10 +821,10 @@ $ptBuf:
 
  matrixSslEncodeClosureAlert( $ssl )
 
-=item $ssl->B<encode_rehandshake>( $keys, \&certValidator, $sessionOption, $cipherSpec )
+=item $ssl->B<encode_rehandshake>( $keys, \&certValidator, $sessionOption, [cipher1, cipher2, ...] )
 
  matrixSslEncodeRehandshake( $ssl, $keys, \&certValidator,
-    $sessionOption, $cipherSpec )
+    $sessionOption, [cipher1, cipher2, ...] )
 
 More information about callback &certValidator in next section.
 
@@ -588,6 +835,105 @@ More information about callback &certValidator in next section.
 =item $ssl->B<get_anon_status>( $anon )
 
  matrixSslGetAnonStatus( $ssl, $anon )
+
+=item $ssl->B<init_SNI>( $sni_index, $ssl_id, $sni_params ) C<server side>
+
+Used to initialize the virtual host configuration for a server (socket). This function can be called in two ways:
+
+ 1) $sni_index = $ssl->init_SNI( -1, $ssl_id, $sni_params ) - one time, after the first client was accepted and the server SSL session created
+
+When $sni_index is -1 or undef the XS module will allocate and initialize a SNI server structure using the
+parameters present in $sni_params. After that, it will register the matrixSSL SNI callback to an internal XS
+function using the newly created SNI server structure as parameter.
+This MUST be called only once per server socket and the resulte $sni_index value must be cached for subsequent calls.
+
+ 2) $ssl->init_SNI( $sni_index, $ssl_id ) - many times, after clients are accepted and server SSL sessions created
+
+This will skip the SNI server initialization part and just register the matrixSSL SNI callback to an internal XS
+function using the SNI server structure specified by $sni_index as parameter.
+
+Parameters:
+
+=over
+
+=item $sni_index int >= 0 or -1|undef
+
+For the first call this parameter MUST be -1. Subsequent calls MUST use the returned value of the first call.
+
+=item $sni_params [[...],...] or undef
+
+This is a reference to an array that contains one or more array references:
+
+    $sni_params = [                                      # virtual hosts support - when a client sends a TLS SNI extension, the settings below will apply
+					                 #                         based on the requested hostname
+	# virtual host 0 (also referred in the code as SNI entry 0)
+	[
+	    'hostname',                                  # regular expression for matching the hostname
+	    '/path/to/certificate;/path/to/CA-chain',    # KEY - certificate (the CA-chain is optional)
+	    '/path/to/private_key',                      # KEY - private key
+	    '/path/to/DH_params',                        # KEY - file containing the DH parameter used with DH ciphers
+	    '1234567890123456',                          # KEY - TLS session tickets - 16 bytes unique identifier
+	    '12345678901234567890123456789012',          # KEY - TLS session tickets - 128/256 bit encryption key
+	    '12345678901234567890123456789012',          # KEY - TLS session tickets - 256 bit hash key
+	    '/path/to/OCSP_staple.der',                  # SESSION - file containing a OCSP staple that gets sent when a client
+	                                                 #           send a TLS status request extension
+	    [                                            # SESSION - Certificate Transparency SCT files used to build the 'signed_certificate_timestamp' TLS extension data buffer
+		'/path/to/SCT1.sct',
+		'/path/to/SCT2.sct',
+		...
+	    ]
+	    # instead of the Certificate Transparency SCT files you can specify a scalar with a single file that contains multiple SCT files
+	    # note that this file is not just a concatenation of the SCT files, but a ready-to-use 'signed_certificate_timestamp' TLS extension data buffer
+	    # see ct-submit.pl for more info
+	    #'/path/to/CT_extension_data_buffer
+	],
+	# virtual host 1
+	...
+    ]
+
+=item $ssl_id
+
+A 32 bit integer that uniquely identifies this sesion. This parameter will be sent back when matrixSSL calls the SNI callback defined in the XS module when a client sends a SNI extension.
+If the XS module is able ro match the requested client hostname it will call the Perl callback set with set_VHIndex_callback.
+
+=back
+
+Returns the index of the internal SNI server structure used for registering the matrixSSL SNI callback. This MUST be saved after the first call.
+
+=back
+
+=item $ssl->B<set_OCSP_staple>( $ocsp_index, $DERfile ) C<server side>
+
+Used to set the OCSP staple to be returned if the client sends the "status_request" TLS extension. Note that this function call
+only affects the B<default server>. Virtual hosts are managed by using the $ssl->init_SNI(...)
+
+See $ssl->init_SNI(...) for usage.
+
+The $DERfile parameter specifies the file containing the OCSP staple in DER format.
+
+=item $ssl->B<load_OCSP_staple>( $DERfile ) C<server side>
+
+Loads an OCSP staple to be returned if the client sends the "status_request" TLS extension.
+
+Note that this function is very inefficient because the loaded data is bound to the specified session and it will be freed when the session is destroyed.
+It has the advantage that the session will contain the lastest OCSP data if the OCSP DER file is refreshed in the meantime.
+
+Don't be lazy and use $ssl->set_OCSP_staple and refresh_OCSP_staple instead.
+
+=item $ssl->B<set_SCT_buffer>( $sct_index, $SCT_params ) C<server side>
+
+Used to set the extension data to be returned if the client sends the "signed_certificate_timestamp" TLS extension. Note that this function call
+only affects the B<default server>. Virtual hosts are managed by using the $ssl->init_SNI(...)
+
+See $ssl->init_SNI(...) for usage.
+
+The $SCT_params has the same structure as the one used in the $ssl->init_SNI(...) function.
+
+=item $ssl->B<set_ALPN_callback>( \&ALPNcb ) C<server side>
+
+Sets a callback that will receive as parameter data sent by the client in the ALPN TLS extension.
+
+More information about callback &ALPNcb in next section.
 
 =back
 
@@ -662,6 +1008,25 @@ This callback must return single scalar with integer value (as described in
 MatrixSSL documentation). If callback die(), then warning will be printed,
 and execution will continue assuming callback returned -1.
 
+=item &ALPNcb
+
+Will be called with an array reference containing strings with the protocols
+the client supports.
+
+The callback must return the 0-based index of a supported protocol or
+-1 if none of the client supplied protocols is supported.
+
+=item &VHindexCallback
+
+Will be called whenever we have a successful match against the hostname specified by the client in its SNI extension.
+This will inform the Perl code which virtual host the current SSL session belongs to.
+
+Will be called with 2 parameters:
+  $ssl_id - this is the $ssl_id used in the $ssl->init_SNI(...) function call
+  $index - a 0-based int specifying which virtual host matchd the client requested hostname
+
+Doesn't return anything.
+
 =back
 
 
@@ -684,7 +1049,7 @@ http://www.gnu.org/copyleft/gpl.html
 
 Crypt::MatrixSSL3 uses MatrixSSL, and so inherits the same License.
 
- Copyright (C) 2005,2012 by C. N. Drake.
+ Copyright (C) 2005,2012,2016 by C. N. Drake.
  Copyright (C) 2012 by Alex Efros.
 
 This library is free software; you can redistribute it and/or modify

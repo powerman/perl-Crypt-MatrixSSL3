@@ -24,7 +24,7 @@ static int
 constant_11 (pTHX_ const char *name, IV *iv_return) {
   /* When generated this function returned values for the list of names given
      here.  However, subsequent manual editing may have added or removed some.
-     PS_ARG_FAIL PS_MEM_FAIL TLS_MAJ_VER TLS_MIN_VER */
+     PS_ARG_FAIL PS_MEM_FAIL SNI_ENABLED TLS_MAJ_VER TLS_MIN_VER */
   /* Offset 5 gives the best switch position.  */
   switch (name[5]) {
   case 'A':
@@ -71,6 +71,17 @@ constant_11 (pTHX_ const char *name, IV *iv_return) {
 #endif
     }
     break;
+  case 'N':
+    if (memEQ(name, "SNI_ENABLED", 11)) {
+    /*                    ^            */
+#ifdef SNI_ENABLED
+      *iv_return = SNI_ENABLED;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    break;
   }
   return PERL_constant_NOTFOUND;
 }
@@ -79,12 +90,12 @@ static int
 constant_12 (pTHX_ const char *name, IV *iv_return) {
   /* When generated this function returned values for the list of names given
      here.  However, subsequent manual editing may have added or removed some.
-     SSL2_MAJ_VER SSL3_MAJ_VER SSL3_MIN_VER */
-  /* Offset 3 gives the best switch position.  */
-  switch (name[3]) {
-  case '2':
+     ALPN_ENABLED SSL2_MAJ_VER SSL3_MAJ_VER SSL3_MIN_VER */
+  /* Offset 6 gives the best switch position.  */
+  switch (name[6]) {
+  case 'A':
     if (memEQ(name, "SSL2_MAJ_VER", 12)) {
-    /*                  ^               */
+    /*                     ^            */
 #ifdef SSL2_MAJ_VER
       *iv_return = SSL2_MAJ_VER;
       return PERL_constant_ISIV;
@@ -92,10 +103,8 @@ constant_12 (pTHX_ const char *name, IV *iv_return) {
       return PERL_constant_NOTDEF;
 #endif
     }
-    break;
-  case '3':
     if (memEQ(name, "SSL3_MAJ_VER", 12)) {
-    /*                  ^               */
+    /*                     ^            */
 #ifdef SSL3_MAJ_VER
       *iv_return = SSL3_MAJ_VER;
       return PERL_constant_ISIV;
@@ -103,10 +112,23 @@ constant_12 (pTHX_ const char *name, IV *iv_return) {
       return PERL_constant_NOTDEF;
 #endif
     }
+    break;
+  case 'I':
     if (memEQ(name, "SSL3_MIN_VER", 12)) {
-    /*                  ^               */
+    /*                     ^            */
 #ifdef SSL3_MIN_VER
       *iv_return = SSL3_MIN_VER;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    break;
+  case 'N':
+    if (memEQ(name, "ALPN_ENABLED", 12)) {
+    /*                     ^            */
+#ifdef ALPN_ENABLED
+      *iv_return = ALPN_ENABLED;
       return PERL_constant_ISIV;
 #else
       return PERL_constant_NOTDEF;
@@ -151,6 +173,50 @@ constant_15 (pTHX_ const char *name, IV *iv_return) {
     /*                     ^               */
 #ifdef MATRIXSSL_ERROR
       *iv_return = MATRIXSSL_ERROR;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    break;
+  }
+  return PERL_constant_NOTFOUND;
+}
+
+static int
+constant_17 (pTHX_ const char *name, IV *iv_return) {
+  /* When generated this function returned values for the list of names given
+     here.  However, subsequent manual editing may have added or removed some.
+     DH_PARAMS_ENABLED MATRIXSSL_SUCCESS PS_CERT_AUTH_FAIL */
+  /* Offset 13 gives the best switch position.  */
+  switch (name[13]) {
+  case 'B':
+    if (memEQ(name, "DH_PARAMS_ENABLED", 17)) {
+    /*                            ^          */
+#ifdef DH_PARAMS_ENABLED
+      *iv_return = DH_PARAMS_ENABLED;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    break;
+  case 'C':
+    if (memEQ(name, "MATRIXSSL_SUCCESS", 17)) {
+    /*                            ^          */
+#ifdef MATRIXSSL_SUCCESS
+      *iv_return = MATRIXSSL_SUCCESS;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    break;
+  case 'F':
+    if (memEQ(name, "PS_CERT_AUTH_FAIL", 17)) {
+    /*                            ^          */
+#ifdef PS_CERT_AUTH_FAIL
+      *iv_return = PS_CERT_AUTH_FAIL;
       return PERL_constant_ISIV;
 #else
       return PERL_constant_NOTDEF;
@@ -467,34 +533,36 @@ constant_25 (pTHX_ const char *name, IV *iv_return) {
   /* When generated this function returned values for the list of names given
      here.  However, subsequent manual editing may have added or removed some.
      SSL_ALERT_BAD_CERTIFICATE SSL_ALERT_RECORD_OVERFLOW
-     SSL_ALLOW_ANON_CONNECTION SSL_OPTION_FULL_HANDSHAKE */
-  /* Offset 11 gives the best switch position.  */
-  switch (name[11]) {
-  case 'A':
-    if (memEQ(name, "SSL_ALERT_BAD_CERTIFICATE", 25)) {
-    /*                          ^                    */
-#ifdef SSL_ALERT_BAD_CERTIFICATE
-      *iv_return = SSL_ALERT_BAD_CERTIFICATE;
+     SSL_ALLOW_ANON_CONNECTION SSL_OPTION_FULL_HANDSHAKE
+     STATELESS_TICKETS_ENABLED TLS_RSA_WITH_IDEA_CBC_SHA
+     TLS_RSA_WITH_SEED_CBC_SHA */
+  /* Offset 13 gives the best switch position.  */
+  switch (name[13]) {
+  case 'I':
+    if (memEQ(name, "TLS_RSA_WITH_IDEA_CBC_SHA", 25)) {
+    /*                            ^                  */
+#ifdef TLS_RSA_WITH_IDEA_CBC_SHA
+      *iv_return = TLS_RSA_WITH_IDEA_CBC_SHA;
       return PERL_constant_ISIV;
 #else
       return PERL_constant_NOTDEF;
 #endif
     }
     break;
-  case 'E':
-    if (memEQ(name, "SSL_ALERT_RECORD_OVERFLOW", 25)) {
-    /*                          ^                    */
-#ifdef SSL_ALERT_RECORD_OVERFLOW
-      *iv_return = SSL_ALERT_RECORD_OVERFLOW;
+  case 'K':
+    if (memEQ(name, "STATELESS_TICKETS_ENABLED", 25)) {
+    /*                            ^                  */
+#ifdef STATELESS_TICKETS_ENABLED
+      *iv_return = STATELESS_TICKETS_ENABLED;
       return PERL_constant_ISIV;
 #else
       return PERL_constant_NOTDEF;
 #endif
     }
     break;
-  case 'F':
+  case 'L':
     if (memEQ(name, "SSL_OPTION_FULL_HANDSHAKE", 25)) {
-    /*                          ^                    */
+    /*                            ^                  */
 #ifdef SSL_OPTION_FULL_HANDSHAKE
       *iv_return = SSL_OPTION_FULL_HANDSHAKE;
       return PERL_constant_ISIV;
@@ -505,9 +573,42 @@ constant_25 (pTHX_ const char *name, IV *iv_return) {
     break;
   case 'N':
     if (memEQ(name, "SSL_ALLOW_ANON_CONNECTION", 25)) {
-    /*                          ^                    */
+    /*                            ^                  */
 #ifdef SSL_ALLOW_ANON_CONNECTION
       *iv_return = SSL_ALLOW_ANON_CONNECTION;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    break;
+  case 'O':
+    if (memEQ(name, "SSL_ALERT_RECORD_OVERFLOW", 25)) {
+    /*                            ^                  */
+#ifdef SSL_ALERT_RECORD_OVERFLOW
+      *iv_return = SSL_ALERT_RECORD_OVERFLOW;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    break;
+  case 'S':
+    if (memEQ(name, "TLS_RSA_WITH_SEED_CBC_SHA", 25)) {
+    /*                            ^                  */
+#ifdef TLS_RSA_WITH_SEED_CBC_SHA
+      *iv_return = TLS_RSA_WITH_SEED_CBC_SHA;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    break;
+  case '_':
+    if (memEQ(name, "SSL_ALERT_BAD_CERTIFICATE", 25)) {
+    /*                            ^                  */
+#ifdef SSL_ALERT_BAD_CERTIFICATE
+      *iv_return = SSL_ALERT_BAD_CERTIFICATE;
       return PERL_constant_ISIV;
 #else
       return PERL_constant_NOTDEF;
@@ -567,35 +668,48 @@ static int
 constant_28 (pTHX_ const char *name, IV *iv_return) {
   /* When generated this function returned values for the list of names given
      here.  However, subsequent manual editing may have added or removed some.
-     MATRIXSSL_HANDSHAKE_COMPLETE SSL_ALERT_UNEXPECTED_MESSAGE
+     MATRIXSSL_HANDSHAKE_COMPLETE SHARED_SESSION_CACHE_ENABLED
+     SSL_ALERT_UNEXPECTED_MESSAGE SSL_DH_anon_WITH_RC4_128_MD5
+     TLS_PSK_WITH_AES_128_CBC_SHA TLS_PSK_WITH_AES_256_CBC_SHA
      TLS_RSA_WITH_AES_128_CBC_SHA TLS_RSA_WITH_AES_256_CBC_SHA */
-  /* Offset 17 gives the best switch position.  */
-  switch (name[17]) {
-  case '1':
-    if (memEQ(name, "TLS_RSA_WITH_AES_128_CBC_SHA", 28)) {
-    /*                                ^                 */
-#ifdef TLS_RSA_WITH_AES_128_CBC_SHA
-      *iv_return = TLS_RSA_WITH_AES_128_CBC_SHA;
+  /* Offset 4 gives the best switch position.  */
+  switch (name[4]) {
+  case 'A':
+    if (memEQ(name, "SSL_ALERT_UNEXPECTED_MESSAGE", 28)) {
+    /*                   ^                              */
+#ifdef SSL_ALERT_UNEXPECTED_MESSAGE
+      *iv_return = SSL_ALERT_UNEXPECTED_MESSAGE;
       return PERL_constant_ISIV;
 #else
       return PERL_constant_NOTDEF;
 #endif
     }
     break;
-  case '2':
-    if (memEQ(name, "TLS_RSA_WITH_AES_256_CBC_SHA", 28)) {
-    /*                                ^                 */
-#ifdef TLS_RSA_WITH_AES_256_CBC_SHA
-      *iv_return = TLS_RSA_WITH_AES_256_CBC_SHA;
+  case 'D':
+    if (memEQ(name, "SSL_DH_anon_WITH_RC4_128_MD5", 28)) {
+    /*                   ^                              */
+#ifdef SSL_DH_anon_WITH_RC4_128_MD5
+      *iv_return = SSL_DH_anon_WITH_RC4_128_MD5;
       return PERL_constant_ISIV;
 #else
       return PERL_constant_NOTDEF;
 #endif
     }
     break;
-  case 'K':
+  case 'E':
+    if (memEQ(name, "SHARED_SESSION_CACHE_ENABLED", 28)) {
+    /*                   ^                              */
+#ifdef SHARED_SESSION_CACHE_ENABLED
+      *iv_return = SHARED_SESSION_CACHE_ENABLED;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    break;
+  case 'I':
     if (memEQ(name, "MATRIXSSL_HANDSHAKE_COMPLETE", 28)) {
-    /*                                ^                 */
+    /*                   ^                              */
 #ifdef MATRIXSSL_HANDSHAKE_COMPLETE
       *iv_return = MATRIXSSL_HANDSHAKE_COMPLETE;
       return PERL_constant_ISIV;
@@ -604,11 +718,40 @@ constant_28 (pTHX_ const char *name, IV *iv_return) {
 #endif
     }
     break;
-  case 'T':
-    if (memEQ(name, "SSL_ALERT_UNEXPECTED_MESSAGE", 28)) {
-    /*                                ^                 */
-#ifdef SSL_ALERT_UNEXPECTED_MESSAGE
-      *iv_return = SSL_ALERT_UNEXPECTED_MESSAGE;
+  case 'P':
+    if (memEQ(name, "TLS_PSK_WITH_AES_128_CBC_SHA", 28)) {
+    /*                   ^                              */
+#ifdef TLS_PSK_WITH_AES_128_CBC_SHA
+      *iv_return = TLS_PSK_WITH_AES_128_CBC_SHA;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    if (memEQ(name, "TLS_PSK_WITH_AES_256_CBC_SHA", 28)) {
+    /*                   ^                              */
+#ifdef TLS_PSK_WITH_AES_256_CBC_SHA
+      *iv_return = TLS_PSK_WITH_AES_256_CBC_SHA;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    break;
+  case 'R':
+    if (memEQ(name, "TLS_RSA_WITH_AES_128_CBC_SHA", 28)) {
+    /*                   ^                              */
+#ifdef TLS_RSA_WITH_AES_128_CBC_SHA
+      *iv_return = TLS_RSA_WITH_AES_128_CBC_SHA;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    if (memEQ(name, "TLS_RSA_WITH_AES_256_CBC_SHA", 28)) {
+    /*                   ^                              */
+#ifdef TLS_RSA_WITH_AES_256_CBC_SHA
+      *iv_return = TLS_RSA_WITH_AES_256_CBC_SHA;
       return PERL_constant_ISIV;
 #else
       return PERL_constant_NOTDEF;
@@ -676,6 +819,589 @@ constant_29 (pTHX_ const char *name, IV *iv_return) {
 }
 
 static int
+constant_31 (pTHX_ const char *name, IV *iv_return) {
+  /* When generated this function returned values for the list of names given
+     here.  However, subsequent manual editing may have added or removed some.
+     SSL_ALERT_DECOMPRESSION_FAILURE SSL_ALERT_UNSUPPORTED_EXTENSION
+     SSL_OPTION_DISABLE_REHANDSHAKES TLS_PSK_WITH_AES_128_CBC_SHA256
+     TLS_PSK_WITH_AES_256_CBC_SHA384 TLS_RSA_WITH_AES_128_CBC_SHA256
+     TLS_RSA_WITH_AES_128_GCM_SHA256 TLS_RSA_WITH_AES_256_CBC_SHA256
+     TLS_RSA_WITH_AES_256_GCM_SHA384 */
+  /* Offset 19 gives the best switch position.  */
+  switch (name[19]) {
+  case '6':
+    if (memEQ(name, "TLS_PSK_WITH_AES_256_CBC_SHA384", 31)) {
+    /*                                  ^                  */
+#ifdef TLS_PSK_WITH_AES_256_CBC_SHA384
+      *iv_return = TLS_PSK_WITH_AES_256_CBC_SHA384;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    if (memEQ(name, "TLS_RSA_WITH_AES_256_CBC_SHA256", 31)) {
+    /*                                  ^                  */
+#ifdef TLS_RSA_WITH_AES_256_CBC_SHA256
+      *iv_return = TLS_RSA_WITH_AES_256_CBC_SHA256;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    if (memEQ(name, "TLS_RSA_WITH_AES_256_GCM_SHA384", 31)) {
+    /*                                  ^                  */
+#ifdef TLS_RSA_WITH_AES_256_GCM_SHA384
+      *iv_return = TLS_RSA_WITH_AES_256_GCM_SHA384;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    break;
+  case '8':
+    if (memEQ(name, "TLS_PSK_WITH_AES_128_CBC_SHA256", 31)) {
+    /*                                  ^                  */
+#ifdef TLS_PSK_WITH_AES_128_CBC_SHA256
+      *iv_return = TLS_PSK_WITH_AES_128_CBC_SHA256;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    if (memEQ(name, "TLS_RSA_WITH_AES_128_CBC_SHA256", 31)) {
+    /*                                  ^                  */
+#ifdef TLS_RSA_WITH_AES_128_CBC_SHA256
+      *iv_return = TLS_RSA_WITH_AES_128_CBC_SHA256;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    if (memEQ(name, "TLS_RSA_WITH_AES_128_GCM_SHA256", 31)) {
+    /*                                  ^                  */
+#ifdef TLS_RSA_WITH_AES_128_GCM_SHA256
+      *iv_return = TLS_RSA_WITH_AES_128_GCM_SHA256;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    break;
+  case 'E':
+    if (memEQ(name, "SSL_ALERT_UNSUPPORTED_EXTENSION", 31)) {
+    /*                                  ^                  */
+#ifdef SSL_ALERT_UNSUPPORTED_EXTENSION
+      *iv_return = SSL_ALERT_UNSUPPORTED_EXTENSION;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    break;
+  case 'R':
+    if (memEQ(name, "SSL_OPTION_DISABLE_REHANDSHAKES", 31)) {
+    /*                                  ^                  */
+#ifdef SSL_OPTION_DISABLE_REHANDSHAKES
+      *iv_return = SSL_OPTION_DISABLE_REHANDSHAKES;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    break;
+  case 'S':
+    if (memEQ(name, "SSL_ALERT_DECOMPRESSION_FAILURE", 31)) {
+    /*                                  ^                  */
+#ifdef SSL_ALERT_DECOMPRESSION_FAILURE
+      *iv_return = SSL_ALERT_DECOMPRESSION_FAILURE;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    break;
+  }
+  return PERL_constant_NOTFOUND;
+}
+
+static int
+constant_32 (pTHX_ const char *name, IV *iv_return) {
+  /* When generated this function returned values for the list of names given
+     here.  However, subsequent manual editing may have added or removed some.
+     CERTIFICATE_TRANSPARENCY_ENABLED SSL_OPTION_REENABLE_REHANDSHAKES
+     TLS_DHE_PSK_WITH_AES_128_CBC_SHA TLS_DHE_PSK_WITH_AES_256_CBC_SHA
+     TLS_DHE_RSA_WITH_AES_128_CBC_SHA TLS_DHE_RSA_WITH_AES_256_CBC_SHA
+     TLS_DH_anon_WITH_AES_128_CBC_SHA TLS_DH_anon_WITH_AES_256_CBC_SHA */
+  /* Offset 8 gives the best switch position.  */
+  switch (name[8]) {
+  case 'A':
+    if (memEQ(name, "CERTIFICATE_TRANSPARENCY_ENABLED", 32)) {
+    /*                       ^                              */
+#ifdef CERTIFICATE_TRANSPARENCY_ENABLED
+      *iv_return = CERTIFICATE_TRANSPARENCY_ENABLED;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    break;
+  case 'O':
+    if (memEQ(name, "SSL_OPTION_REENABLE_REHANDSHAKES", 32)) {
+    /*                       ^                              */
+#ifdef SSL_OPTION_REENABLE_REHANDSHAKES
+      *iv_return = SSL_OPTION_REENABLE_REHANDSHAKES;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    break;
+  case 'P':
+    if (memEQ(name, "TLS_DHE_PSK_WITH_AES_128_CBC_SHA", 32)) {
+    /*                       ^                              */
+#ifdef TLS_DHE_PSK_WITH_AES_128_CBC_SHA
+      *iv_return = TLS_DHE_PSK_WITH_AES_128_CBC_SHA;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    if (memEQ(name, "TLS_DHE_PSK_WITH_AES_256_CBC_SHA", 32)) {
+    /*                       ^                              */
+#ifdef TLS_DHE_PSK_WITH_AES_256_CBC_SHA
+      *iv_return = TLS_DHE_PSK_WITH_AES_256_CBC_SHA;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    break;
+  case 'R':
+    if (memEQ(name, "TLS_DHE_RSA_WITH_AES_128_CBC_SHA", 32)) {
+    /*                       ^                              */
+#ifdef TLS_DHE_RSA_WITH_AES_128_CBC_SHA
+      *iv_return = TLS_DHE_RSA_WITH_AES_128_CBC_SHA;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    if (memEQ(name, "TLS_DHE_RSA_WITH_AES_256_CBC_SHA", 32)) {
+    /*                       ^                              */
+#ifdef TLS_DHE_RSA_WITH_AES_256_CBC_SHA
+      *iv_return = TLS_DHE_RSA_WITH_AES_256_CBC_SHA;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    break;
+  case 'n':
+    if (memEQ(name, "TLS_DH_anon_WITH_AES_128_CBC_SHA", 32)) {
+    /*                       ^                              */
+#ifdef TLS_DH_anon_WITH_AES_128_CBC_SHA
+      *iv_return = TLS_DH_anon_WITH_AES_128_CBC_SHA;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    if (memEQ(name, "TLS_DH_anon_WITH_AES_256_CBC_SHA", 32)) {
+    /*                       ^                              */
+#ifdef TLS_DH_anon_WITH_AES_256_CBC_SHA
+      *iv_return = TLS_DH_anon_WITH_AES_256_CBC_SHA;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    break;
+  }
+  return PERL_constant_NOTFOUND;
+}
+
+static int
+constant_33 (pTHX_ const char *name, IV *iv_return) {
+  /* When generated this function returned values for the list of names given
+     here.  However, subsequent manual editing may have added or removed some.
+     SSL_ALERT_UNSUPPORTED_CERTIFICATE SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA
+     SSL_DH_anon_WITH_3DES_EDE_CBC_SHA TLS_ECDH_RSA_WITH_AES_128_CBC_SHA
+     TLS_ECDH_RSA_WITH_AES_256_CBC_SHA TLS_EMPTY_RENEGOTIATION_INFO_SCSV */
+  /* Offset 7 gives the best switch position.  */
+  switch (name[7]) {
+  case 'H':
+    if (memEQ(name, "TLS_ECDH_RSA_WITH_AES_128_CBC_SHA", 33)) {
+    /*                      ^                                */
+#ifdef TLS_ECDH_RSA_WITH_AES_128_CBC_SHA
+      *iv_return = TLS_ECDH_RSA_WITH_AES_128_CBC_SHA;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    if (memEQ(name, "TLS_ECDH_RSA_WITH_AES_256_CBC_SHA", 33)) {
+    /*                      ^                                */
+#ifdef TLS_ECDH_RSA_WITH_AES_256_CBC_SHA
+      *iv_return = TLS_ECDH_RSA_WITH_AES_256_CBC_SHA;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    break;
+  case 'R':
+    if (memEQ(name, "SSL_ALERT_UNSUPPORTED_CERTIFICATE", 33)) {
+    /*                      ^                                */
+#ifdef SSL_ALERT_UNSUPPORTED_CERTIFICATE
+      *iv_return = SSL_ALERT_UNSUPPORTED_CERTIFICATE;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    break;
+  case 'T':
+    if (memEQ(name, "TLS_EMPTY_RENEGOTIATION_INFO_SCSV", 33)) {
+    /*                      ^                                */
+#ifdef TLS_EMPTY_RENEGOTIATION_INFO_SCSV
+      *iv_return = TLS_EMPTY_RENEGOTIATION_INFO_SCSV;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    break;
+  case '_':
+    if (memEQ(name, "SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA", 33)) {
+    /*                      ^                                */
+#ifdef SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA
+      *iv_return = SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    break;
+  case 'a':
+    if (memEQ(name, "SSL_DH_anon_WITH_3DES_EDE_CBC_SHA", 33)) {
+    /*                      ^                                */
+#ifdef SSL_DH_anon_WITH_3DES_EDE_CBC_SHA
+      *iv_return = SSL_DH_anon_WITH_3DES_EDE_CBC_SHA;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    break;
+  }
+  return PERL_constant_NOTFOUND;
+}
+
+static int
+constant_35 (pTHX_ const char *name, IV *iv_return) {
+  /* When generated this function returned values for the list of names given
+     here.  However, subsequent manual editing may have added or removed some.
+     TLS_DHE_RSA_WITH_AES_128_CBC_SHA256 TLS_DHE_RSA_WITH_AES_256_CBC_SHA256
+     TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA
+     TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA */
+  /* Offset 26 gives the best switch position.  */
+  switch (name[26]) {
+  case '6':
+    if (memEQ(name, "TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA", 35)) {
+    /*                                         ^               */
+#ifdef TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA
+      *iv_return = TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    break;
+  case '8':
+    if (memEQ(name, "TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA", 35)) {
+    /*                                         ^               */
+#ifdef TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA
+      *iv_return = TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    break;
+  case 'B':
+    if (memEQ(name, "TLS_DHE_RSA_WITH_AES_128_CBC_SHA256", 35)) {
+    /*                                         ^               */
+#ifdef TLS_DHE_RSA_WITH_AES_128_CBC_SHA256
+      *iv_return = TLS_DHE_RSA_WITH_AES_128_CBC_SHA256;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    if (memEQ(name, "TLS_DHE_RSA_WITH_AES_256_CBC_SHA256", 35)) {
+    /*                                         ^               */
+#ifdef TLS_DHE_RSA_WITH_AES_256_CBC_SHA256
+      *iv_return = TLS_DHE_RSA_WITH_AES_256_CBC_SHA256;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    break;
+  case 'E':
+    if (memEQ(name, "TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA", 35)) {
+    /*                                         ^               */
+#ifdef TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA
+      *iv_return = TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    break;
+  }
+  return PERL_constant_NOTFOUND;
+}
+
+static int
+constant_36 (pTHX_ const char *name, IV *iv_return) {
+  /* When generated this function returned values for the list of names given
+     here.  However, subsequent manual editing may have added or removed some.
+     TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA
+     TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256 TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256
+     TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384 TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384
+     */
+  /* Offset 27 gives the best switch position.  */
+  switch (name[27]) {
+  case '6':
+    if (memEQ(name, "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA", 36)) {
+    /*                                          ^               */
+#ifdef TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA
+      *iv_return = TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    break;
+  case '8':
+    if (memEQ(name, "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA", 36)) {
+    /*                                          ^               */
+#ifdef TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA
+      *iv_return = TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    break;
+  case 'B':
+    if (memEQ(name, "TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256", 36)) {
+    /*                                          ^               */
+#ifdef TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256
+      *iv_return = TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    if (memEQ(name, "TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384", 36)) {
+    /*                                          ^               */
+#ifdef TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384
+      *iv_return = TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    break;
+  case 'C':
+    if (memEQ(name, "TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256", 36)) {
+    /*                                          ^               */
+#ifdef TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256
+      *iv_return = TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    if (memEQ(name, "TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384", 36)) {
+    /*                                          ^               */
+#ifdef TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384
+      *iv_return = TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    break;
+  }
+  return PERL_constant_NOTFOUND;
+}
+
+static int
+constant_37 (pTHX_ const char *name, IV *iv_return) {
+  /* When generated this function returned values for the list of names given
+     here.  However, subsequent manual editing may have added or removed some.
+     TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
+     TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+     TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384
+     TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 */
+  /* Offset 23 gives the best switch position.  */
+  switch (name[23]) {
+  case '1':
+    if (memEQ(name, "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256", 37)) {
+    /*                                      ^                    */
+#ifdef TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
+      *iv_return = TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    if (memEQ(name, "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256", 37)) {
+    /*                                      ^                    */
+#ifdef TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+      *iv_return = TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    break;
+  case '2':
+    if (memEQ(name, "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384", 37)) {
+    /*                                      ^                    */
+#ifdef TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384
+      *iv_return = TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    if (memEQ(name, "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384", 37)) {
+    /*                                      ^                    */
+#ifdef TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+      *iv_return = TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    break;
+  }
+  return PERL_constant_NOTFOUND;
+}
+
+static int
+constant_38 (pTHX_ const char *name, IV *iv_return) {
+  /* When generated this function returned values for the list of names given
+     here.  However, subsequent manual editing may have added or removed some.
+     TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256
+     TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256
+     TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384
+     TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384 */
+  /* Offset 24 gives the best switch position.  */
+  switch (name[24]) {
+  case '1':
+    if (memEQ(name, "TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256", 38)) {
+    /*                                       ^                    */
+#ifdef TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256
+      *iv_return = TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    if (memEQ(name, "TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256", 38)) {
+    /*                                       ^                    */
+#ifdef TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256
+      *iv_return = TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    break;
+  case '2':
+    if (memEQ(name, "TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384", 38)) {
+    /*                                       ^                    */
+#ifdef TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384
+      *iv_return = TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    if (memEQ(name, "TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384", 38)) {
+    /*                                       ^                    */
+#ifdef TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384
+      *iv_return = TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    break;
+  }
+  return PERL_constant_NOTFOUND;
+}
+
+static int
+constant_39 (pTHX_ const char *name, IV *iv_return) {
+  /* When generated this function returned values for the list of names given
+     here.  However, subsequent manual editing may have added or removed some.
+     TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256
+     TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+     TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384
+     TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 */
+  /* Offset 25 gives the best switch position.  */
+  switch (name[25]) {
+  case '1':
+    if (memEQ(name, "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256", 39)) {
+    /*                                        ^                    */
+#ifdef TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256
+      *iv_return = TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    if (memEQ(name, "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256", 39)) {
+    /*                                        ^                    */
+#ifdef TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+      *iv_return = TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    break;
+  case '2':
+    if (memEQ(name, "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384", 39)) {
+    /*                                        ^                    */
+#ifdef TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384
+      *iv_return = TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    if (memEQ(name, "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384", 39)) {
+    /*                                        ^                    */
+#ifdef TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+      *iv_return = TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384;
+      return PERL_constant_ISIV;
+#else
+      return PERL_constant_NOTDEF;
+#endif
+    }
+    break;
+  }
+  return PERL_constant_NOTFOUND;
+}
+
+static int
 constant (pTHX_ const char *name, STRLEN len, IV *iv_return) {
   /* Initially switch on the length of the name.  */
   /* When generated this function returned values for the list of names given
@@ -688,18 +1414,20 @@ constant (pTHX_ const char *name, STRLEN len, IV *iv_return) {
      Regenerate these constant functions by feeding this entire source file to
      perl -x
 
-#!/usr/bin/perl5.12.4 -w
+#!/usr/bin/perl -w
 use ExtUtils::Constant qw (constant_types C_constant XS_constant);
 
 my $types = {map {($_, 1)} qw(IV)};
-my @names = (qw(MATRIXSSL_APP_DATA MATRIXSSL_ERROR MATRIXSSL_HANDSHAKE_COMPLETE
+my @names = (qw(ALPN_ENABLED CERTIFICATE_TRANSPARENCY_ENABLED DH_PARAMS_ENABLED
+	       MATRIXSSL_APP_DATA MATRIXSSL_ERROR MATRIXSSL_HANDSHAKE_COMPLETE
 	       MATRIXSSL_RECEIVED_ALERT MATRIXSSL_REQUEST_CLOSE
 	       MATRIXSSL_REQUEST_RECV MATRIXSSL_REQUEST_SEND MATRIXSSL_SUCCESS
 	       MATRIXSSL_VERSION_MAJOR MATRIXSSL_VERSION_MINOR
-	       MATRIXSSL_VERSION_PATCH PS_ARG_FAIL PS_CERT_AUTH_FAIL PS_FAILURE
-	       PS_FALSE PS_LIMIT_FAIL PS_MEM_FAIL PS_PARSE_FAIL
-	       PS_PLATFORM_FAIL PS_PROTOCOL_FAIL PS_SUCCESS PS_TRUE
-	       PS_UNSUPPORTED_FAIL SSL2_MAJ_VER SSL3_MAJ_VER SSL3_MIN_VER
+	       MATRIXSSL_VERSION_PATCH OCSP_STAPLES_ENABLED PS_ARG_FAIL
+	       PS_CERT_AUTH_FAIL PS_FAILURE PS_FALSE PS_LIMIT_FAIL PS_MEM_FAIL
+	       PS_PARSE_FAIL PS_PLATFORM_FAIL PS_PROTOCOL_FAIL PS_SUCCESS
+	       PS_TRUE PS_UNSUPPORTED_FAIL SHARED_SESSION_CACHE_ENABLED
+	       SNI_ENABLED SSL2_MAJ_VER SSL3_MAJ_VER SSL3_MIN_VER
 	       SSL_ALERT_ACCESS_DENIED SSL_ALERT_BAD_CERTIFICATE
 	       SSL_ALERT_BAD_RECORD_MAC SSL_ALERT_CERTIFICATE_EXPIRED
 	       SSL_ALERT_CERTIFICATE_REVOKED SSL_ALERT_CERTIFICATE_UNKNOWN
@@ -713,13 +1441,54 @@ my @names = (qw(MATRIXSSL_APP_DATA MATRIXSSL_ERROR MATRIXSSL_HANDSHAKE_COMPLETE
 	       SSL_ALERT_UNEXPECTED_MESSAGE SSL_ALERT_UNKNOWN_CA
 	       SSL_ALERT_UNSUPPORTED_CERTIFICATE
 	       SSL_ALERT_UNSUPPORTED_EXTENSION SSL_ALLOW_ANON_CONNECTION
+	       SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA
+	       SSL_DH_anon_WITH_3DES_EDE_CBC_SHA SSL_DH_anon_WITH_RC4_128_MD5
 	       SSL_MAX_DISABLED_CIPHERS SSL_MAX_PLAINTEXT_LEN
-	       SSL_NULL_WITH_NULL_NULL SSL_OPTION_FULL_HANDSHAKE
+	       SSL_NULL_WITH_NULL_NULL SSL_OPTION_DISABLE_REHANDSHAKES
+	       SSL_OPTION_FULL_HANDSHAKE SSL_OPTION_REENABLE_REHANDSHAKES
 	       SSL_RSA_WITH_3DES_EDE_CBC_SHA SSL_RSA_WITH_NULL_MD5
 	       SSL_RSA_WITH_NULL_SHA SSL_RSA_WITH_RC4_128_MD5
-	       SSL_RSA_WITH_RC4_128_SHA TLS_1_1_MIN_VER TLS_1_2_MIN_VER
+	       SSL_RSA_WITH_RC4_128_SHA STATELESS_TICKETS_ENABLED
+	       TLS_1_1_MIN_VER TLS_1_2_MIN_VER TLS_DHE_PSK_WITH_AES_128_CBC_SHA
+	       TLS_DHE_PSK_WITH_AES_256_CBC_SHA
+	       TLS_DHE_RSA_WITH_AES_128_CBC_SHA
+	       TLS_DHE_RSA_WITH_AES_128_CBC_SHA256
+	       TLS_DHE_RSA_WITH_AES_256_CBC_SHA
+	       TLS_DHE_RSA_WITH_AES_256_CBC_SHA256
+	       TLS_DH_anon_WITH_AES_128_CBC_SHA
+	       TLS_DH_anon_WITH_AES_256_CBC_SHA
+	       TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA
+	       TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256
+	       TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+	       TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA
+	       TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384
+	       TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+	       TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA
+	       TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA
+	       TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
+	       TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+	       TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA
+	       TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384
+	       TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+	       TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA
+	       TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256
+	       TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256
+	       TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA
+	       TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384
+	       TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384
+	       TLS_ECDH_RSA_WITH_AES_128_CBC_SHA
+	       TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256
+	       TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256
+	       TLS_ECDH_RSA_WITH_AES_256_CBC_SHA
+	       TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384
+	       TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384
 	       TLS_EMPTY_RENEGOTIATION_INFO_SCSV TLS_MAJ_VER TLS_MIN_VER
-	       TLS_RSA_WITH_AES_128_CBC_SHA TLS_RSA_WITH_AES_256_CBC_SHA));
+	       TLS_PSK_WITH_AES_128_CBC_SHA TLS_PSK_WITH_AES_128_CBC_SHA256
+	       TLS_PSK_WITH_AES_256_CBC_SHA TLS_PSK_WITH_AES_256_CBC_SHA384
+	       TLS_RSA_WITH_AES_128_CBC_SHA TLS_RSA_WITH_AES_128_CBC_SHA256
+	       TLS_RSA_WITH_AES_128_GCM_SHA256 TLS_RSA_WITH_AES_256_CBC_SHA
+	       TLS_RSA_WITH_AES_256_CBC_SHA256 TLS_RSA_WITH_AES_256_GCM_SHA384
+	       TLS_RSA_WITH_IDEA_CBC_SHA TLS_RSA_WITH_SEED_CBC_SHA));
 
 print constant_types(), "\n"; # macro defs
 foreach (C_constant ("Crypt::MatrixSSL3", 'constant', 'IV', $types, undef, 3, @names) ) {
@@ -858,33 +1627,7 @@ __END__
     }
     break;
   case 17:
-    /* Names all of length 17.  */
-    /* MATRIXSSL_SUCCESS PS_CERT_AUTH_FAIL */
-    /* Offset 6 gives the best switch position.  */
-    switch (name[6]) {
-    case 'S':
-      if (memEQ(name, "MATRIXSSL_SUCCESS", 17)) {
-      /*                     ^                 */
-#ifdef MATRIXSSL_SUCCESS
-        *iv_return = MATRIXSSL_SUCCESS;
-        return PERL_constant_ISIV;
-#else
-        return PERL_constant_NOTDEF;
-#endif
-      }
-      break;
-    case 'T':
-      if (memEQ(name, "PS_CERT_AUTH_FAIL", 17)) {
-      /*                     ^                 */
-#ifdef PS_CERT_AUTH_FAIL
-        *iv_return = PS_CERT_AUTH_FAIL;
-        return PERL_constant_ISIV;
-#else
-        return PERL_constant_NOTDEF;
-#endif
-      }
-      break;
-    }
+    return constant_17 (aTHX_ name, iv_return);
     break;
   case 18:
     if (memEQ(name, "MATRIXSSL_APP_DATA", 18)) {
@@ -907,13 +1650,32 @@ __END__
     }
     break;
   case 20:
-    if (memEQ(name, "SSL_ALERT_UNKNOWN_CA", 20)) {
-#ifdef SSL_ALERT_UNKNOWN_CA
-      *iv_return = SSL_ALERT_UNKNOWN_CA;
-      return PERL_constant_ISIV;
+    /* Names all of length 20.  */
+    /* OCSP_STAPLES_ENABLED SSL_ALERT_UNKNOWN_CA */
+    /* Offset 14 gives the best switch position.  */
+    switch (name[14]) {
+    case 'N':
+      if (memEQ(name, "OCSP_STAPLES_ENABLED", 20)) {
+      /*                             ^            */
+#ifdef OCSP_STAPLES_ENABLED
+        *iv_return = OCSP_STAPLES_ENABLED;
+        return PERL_constant_ISIV;
 #else
-      return PERL_constant_NOTDEF;
+        return PERL_constant_NOTDEF;
 #endif
+      }
+      break;
+    case 'O':
+      if (memEQ(name, "SSL_ALERT_UNKNOWN_CA", 20)) {
+      /*                             ^            */
+#ifdef SSL_ALERT_UNKNOWN_CA
+        *iv_return = SSL_ALERT_UNKNOWN_CA;
+        return PERL_constant_ISIV;
+#else
+        return PERL_constant_NOTDEF;
+#endif
+      }
+      break;
     }
     break;
   case 21:
@@ -970,26 +1732,35 @@ __END__
     return constant_29 (aTHX_ name, iv_return);
     break;
   case 31:
-    /* Names all of length 31.  */
-    /* SSL_ALERT_DECOMPRESSION_FAILURE SSL_ALERT_UNSUPPORTED_EXTENSION */
-    /* Offset 18 gives the best switch position.  */
-    switch (name[18]) {
-    case 'S':
-      if (memEQ(name, "SSL_ALERT_DECOMPRESSION_FAILURE", 31)) {
-      /*                                 ^                   */
-#ifdef SSL_ALERT_DECOMPRESSION_FAILURE
-        *iv_return = SSL_ALERT_DECOMPRESSION_FAILURE;
+    return constant_31 (aTHX_ name, iv_return);
+    break;
+  case 32:
+    return constant_32 (aTHX_ name, iv_return);
+    break;
+  case 33:
+    return constant_33 (aTHX_ name, iv_return);
+    break;
+  case 34:
+    /* Names all of length 34.  */
+    /* TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA */
+    /* Offset 23 gives the best switch position.  */
+    switch (name[23]) {
+    case '1':
+      if (memEQ(name, "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA", 34)) {
+      /*                                      ^                 */
+#ifdef TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA
+        *iv_return = TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA;
         return PERL_constant_ISIV;
 #else
         return PERL_constant_NOTDEF;
 #endif
       }
       break;
-    case 'T':
-      if (memEQ(name, "SSL_ALERT_UNSUPPORTED_EXTENSION", 31)) {
-      /*                                 ^                   */
-#ifdef SSL_ALERT_UNSUPPORTED_EXTENSION
-        *iv_return = SSL_ALERT_UNSUPPORTED_EXTENSION;
+    case '2':
+      if (memEQ(name, "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA", 34)) {
+      /*                                      ^                 */
+#ifdef TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA
+        *iv_return = TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA;
         return PERL_constant_ISIV;
 #else
         return PERL_constant_NOTDEF;
@@ -998,34 +1769,20 @@ __END__
       break;
     }
     break;
-  case 33:
-    /* Names all of length 33.  */
-    /* SSL_ALERT_UNSUPPORTED_CERTIFICATE TLS_EMPTY_RENEGOTIATION_INFO_SCSV */
-    /* Offset 0 gives the best switch position.  */
-    switch (*name++) {
-    case 'S':
-      if (memEQ(name, "SL_ALERT_UNSUPPORTED_CERTIFICATE", 32)) {
-      /*                S                                       */
-#ifdef SSL_ALERT_UNSUPPORTED_CERTIFICATE
-        *iv_return = SSL_ALERT_UNSUPPORTED_CERTIFICATE;
-        return PERL_constant_ISIV;
-#else
-        return PERL_constant_NOTDEF;
-#endif
-      }
-      break;
-    case 'T':
-      if (memEQ(name, "LS_EMPTY_RENEGOTIATION_INFO_SCSV", 32)) {
-      /*                T                                       */
-#ifdef TLS_EMPTY_RENEGOTIATION_INFO_SCSV
-        *iv_return = TLS_EMPTY_RENEGOTIATION_INFO_SCSV;
-        return PERL_constant_ISIV;
-#else
-        return PERL_constant_NOTDEF;
-#endif
-      }
-      break;
-    }
+  case 35:
+    return constant_35 (aTHX_ name, iv_return);
+    break;
+  case 36:
+    return constant_36 (aTHX_ name, iv_return);
+    break;
+  case 37:
+    return constant_37 (aTHX_ name, iv_return);
+    break;
+  case 38:
+    return constant_38 (aTHX_ name, iv_return);
+    break;
+  case 39:
+    return constant_39 (aTHX_ name, iv_return);
     break;
   }
   return PERL_constant_NOTFOUND;

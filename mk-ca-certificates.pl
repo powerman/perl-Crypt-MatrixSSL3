@@ -11,22 +11,21 @@ my $bundle = join q{}, <$f>;
 close $f;
 unlink 'ca-bundle.crt';
 
-matrixSslOpen();
+Crypt::MatrixSSL3::open();
 
 open $f, '>', 'ca-certificates.crt' or die "open: $!";
 while ($bundle =~ /^(\S[^\n]*)\n=+\n(-----BEGIN CERTIFICATE-----\n.*?\n-----END CERTIFICATE-----\n)/msg) {
     my ($name, $cert) = ($1, $2);
-    open my $tmp, '>', '/tmp/temp.crt' or die "open: $!";
+    open my $tmp, '>', 'temp.crt' or die "open: $!";
     print {$tmp} $cert;
     close $tmp;
-    matrixSslNewKeys(my $keys);
-    my $rc = matrixSslLoadRsaKeys($keys, undef, undef, undef, '/tmp/temp.crt');
-    matrixSslDeleteKeys($keys);
-    unlink '/tmp/temp.crt';
-    print "$Crypt::MatrixSSL3::mxSSL_RETURN_CODES{$rc}\t$name\n";
-    print {$f} $cert if $rc == $PS_SUCCESS;
+    my $keys = Crypt::MatrixSSL3::Keys->new();
+    my $rc = $keys->load_rsa(undef, undef, undef, 'temp.crt');
+    undef $keys;
+    unlink 'temp.crt';
+    print "" . ($rc == PS_SUCCESS ? "Adding" : "Ignoring") . " $name\n";
+    print {$f} $cert if $rc == PS_SUCCESS;
 }
 close $f or die "close: $!";
 
-matrixSslClose();
-
+Crypt::MatrixSSL3::close();

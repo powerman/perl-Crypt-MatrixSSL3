@@ -9,6 +9,8 @@ use IO::Socket;
 
 use Crypt::MatrixSSL3 qw(:all);
 
+Crypt::MatrixSSL3::open();
+
 use constant RFC3546_SERVER_NAME => 0;          # "server_name" extension type
 use constant RFC3546_SERVER_NAME_HOST_NAME => 0;# "host_name" host name type
 
@@ -50,11 +52,11 @@ sub doit {
     my ($extData, $extType) = ext_server_name($target);
     is PS_SUCCESS, $extension->load($extData, $extType),
         '$extension->load';
-    lives_ok { $ssl = Crypt::MatrixSSL3::Client->new($keys, undef, 0, sub {
+    lives_ok { $ssl = Crypt::MatrixSSL3::Client->new($keys, undef, undef, sub {
             is 0+@_, 2, 'certValidate got 2 params';
             is $_[0]->[0]{subject}{commonName}, $target, "certificate for $target";
             return $_[1];
-        },
+        }, undef,
         $extension, sub {
             is 0+@_, 2, 'extensionCback got 2 params';
             is $_[0], RFC3546_SERVER_NAME,  '... "server_name" extension type';
@@ -154,3 +156,5 @@ sub alert {
     diag sprintf "MatrixSSL alert: level %d: %s, desc %d: %s\n", $level, $level, $descr, $descr;
     return -1;
 }
+
+Crypt::MatrixSSL3::close();

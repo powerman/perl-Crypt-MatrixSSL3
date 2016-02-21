@@ -1,3 +1,7 @@
+howto_Certificate_Transparency.pod
+howto_OCSP_staple.pod
+howto_virtual_hosts.pod
+ct-submit.pl
 ca-certificates.crt
 Changes
 const-c.inc
@@ -6,11 +10,14 @@ Crypt-MatrixSSL3.ppd
 Makefile.PL
 MANIFEST			This list of files
 MANIFEST.SKIP
-matrixssl-3-3-open.files
-matrixssl-3-3-open.patch
-matrixssl-3-3-open.tgz
-matrixssl-3-3-open.tgz.sha1
+matrixssl-3-7-2b_API.pdf
+matrixssl-3-7-2b-open.patch
+matrixssl-3-7-2b-open.patch.notes
+matrixssl-3-7-2b-open.files
+matrixssl-3-7-2b-open.tgz
+matrixssl-3-7-2b-open.tgz.sha1
 MatrixSSL3.pm
+MatrixSSL3.h
 MatrixSSL3.xs
 META.json			Module JSON meta-data (added by MakeMaker)
 META.yml			Module YAML meta-data (added by MakeMaker)
@@ -27,18 +34,16 @@ t/03.impchk.t
 t/04.keychk.t
 t/05.keyload.t
 t/06.client_server.t
-t/cert/testca.crt
-t/cert/testca.crt.der
-t/cert/testca.key
-t/cert/testca.serial
-t/cert/testserver.crt
-t/cert/testserver.crt.der
-t/cert/testserver.key
-t/cert/testserver.key.der
-t/cert/testserver.key.des3
-t/cert/testserver.p12
-t/cert/testserver_badca.p12
-t/cert/testserver_nopass.p12
+t/cert/testCA.crt
+t/cert/testCA.crt.der
+t/cert/server.crt
+t/cert/server.crt.der
+t/cert/server.key
+t/cert/server.key.der
+t/cert/server.key.des3
+t/cert/server.p12
+t/cert/server_badca.p12
+t/cert/server_nopass.p12
 t/config.pm
 t/export-all.t
 t/export-some.t

@@ -5,12 +5,14 @@ use Test::Exception;
 
 use Crypt::MatrixSSL3;
 
-my $certFile            = 't/cert/testserver.crt';
-my $privFile            = 't/cert/testserver.key';
-my $privPass            = undef;
-my $trustedCAcertFiles  = 't/cert/testca.crt';
-my $Server_Keys         = 0;
+Crypt::MatrixSSL3::open();
 
+my $certFile            = 't/cert/server.crt';
+my $privFile            = 't/cert/server.key';
+my $privPass            = undef;
+my $trustedCAcertFiles  = 't/cert/testCA.crt';
+
+my $Server_Keys         = 0;
 
 lives_ok { $Server_Keys = Crypt::MatrixSSL3::Keys->new() }
     'Keys->new';
@@ -21,3 +23,4 @@ is $rc, PS_SUCCESS, '$Server_Keys->load_rsa';
 undef $Server_Keys;
 ok 1, 'matrixSslClose';
 
+Crypt::MatrixSSL3::close();

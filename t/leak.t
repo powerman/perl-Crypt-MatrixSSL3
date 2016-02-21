@@ -1,18 +1,19 @@
 use warnings;
 use strict;
 use Carp;
-use Test::More tests => 28;
+use Test::More tests => 26;
 use Test::Exception;
 
 use Scalar::Util qw( weaken );
 
 use Crypt::MatrixSSL3 qw( :DEFAULT :Validate :Alert get_ssl_alert get_ssl_error );
 
-my $trustedCAbundle     = 'ca-certificates.crt';
-my $trustedCAcertFiles  = 't/cert/testca.crt';
+Crypt::MatrixSSL3::open();
 
-my $certFile            = 't/cert/testserver.crt';
-my $privFile            = 't/cert/testserver.key';
+my $trustedCAbundle     = 'ca-certificates.crt';
+my $trustedCAcertFiles  = 't/cert/testCA.crt';
+my $certFile            = 't/cert/server.crt';
+my $privFile            = 't/cert/server.key';
 my $privPass            = undef;
 
 my $trustedCAcert; if(open(IN,'<',"$trustedCAcertFiles.der")) {local $/; $trustedCAcert=<IN>; close(IN); }
@@ -38,7 +39,7 @@ ok $ref;
 $keys = Crypt::MatrixSSL3::Keys->new();
 ok !$ref, 'Keys->new: old $keys freed';
 undef $keys;
-ok(1, 'matrixSslClose'); # make sure matrixSslClose() doesn't crash
+#ok(1, 'matrixSslClose'); # make sure matrixSslClose() doesn't crash
 
 { my $x = 'x'; weaken($ref = \$x); $sessionId = \$x; }
 ok $ref;
@@ -48,8 +49,8 @@ ok !$ref, 'SessID->new: old $sessionId freed';
 { my $x = 'x'; weaken($ref = \$x); $ssl = \$x; }
 ok $ref;
 $keys = Crypt::MatrixSSL3::Keys->new();
-assert $keys->load_rsa(undef, undef, undef, $trustedCAbundle);
-$ssl = Crypt::MatrixSSL3::Client->new($keys, $sessionId, 0, undef, undef, undef);
+assert $keys->load_rsa(undef, undef, undef, $trustedCAcertFiles);
+$ssl = Crypt::MatrixSSL3::Client->new($keys, $sessionId, undef, undef, undef, undef, undef);
 ok !$ref, 'Client->new: old $ssl freed';
 undef $ssl;
 
@@ -70,7 +71,13 @@ leaktest('newsessionid_deletesessionid', test=>100000);
 $Server_Keys = Crypt::MatrixSSL3::Keys->new();
 $Client_Keys = Crypt::MatrixSSL3::Keys->new();
 assert $Server_Keys->load_rsa($certFile, $privFile, $privPass, undef);
-assert $Client_Keys->load_rsa(undef, undef, undef, $trustedCAbundle);
+assert $Client_Keys->load_rsa(undef, undef, undef, $trustedCAcertFiles);
+
+# allocate large variable outside the test subs or else the reported
+# memory consumption will be wrong because of the garbage collector
+my $newsession_cb = do { my $a = [1 .. 1000]; sub { return $a } };
+my $client_server_s = "Hello MatrixSSL!\n";
+my $client_server_s16k = $client_server_s . ("\0" x 16000);
 
 leaktest('newsession', test=>10000);
 leaktest('handshake');
@@ -80,8 +87,7 @@ leaktest('client_server', test=>500); # now with same sessionId
 
 undef $Server_Keys;
 undef $Client_Keys;
-ok(1, 'matrixSslClose'); # make sure matrixSslClose() doesn't crash
-
+#ok(1, 'matrixSslClose'); # make sure matrixSslClose() doesn't crash
 
 sub newkeys_deletekeys {
     $keys = Crypt::MatrixSSL3::Keys->new();
@@ -90,7 +96,7 @@ sub newkeys_deletekeys {
 
 sub loadrsakeys_client {
     my $keys = Crypt::MatrixSSL3::Keys->new();
-    assert $keys->load_rsa(undef, undef, undef, $trustedCAbundle);
+    assert $keys->load_rsa(undef, undef, undef, $trustedCAcertFiles);
 }
 
 sub loadrsakeys_server {
@@ -105,20 +111,24 @@ sub loadrsakeysmem_server {
 
 sub newsessionid_deletesessionid {
     my $sessionId = Crypt::MatrixSSL3::SessID->new();
+    undef $sessionId;
 }
 
 sub newsession {
     my ($Server_SSL, $Client_SSL, $Client_sessionId);
-    my $cb = do { my $a = [1 .. 1000]; sub { return $a } };
     $Server_SSL = Crypt::MatrixSSL3::Server->new($Server_Keys, undef);
     $Client_sessionId = Crypt::MatrixSSL3::SessID->new();
-    $Client_SSL = Crypt::MatrixSSL3::Client->new($Client_Keys, $Client_sessionId, 0, $cb, undef, undef);
+    $Client_SSL = Crypt::MatrixSSL3::Client->new($Client_Keys, $Client_sessionId, undef, $newsession_cb, undef, undef, undef);
+
+    undef $Server_SSL;
+    undef $Client_sessionId;
+    undef $Client_SSL;
 }
 
 sub handshake {
     my ($Server_SSL, $Client_SSL);
     $Server_SSL = Crypt::MatrixSSL3::Server->new($Server_Keys, undef);
-    $Client_SSL = Crypt::MatrixSSL3::Client->new($Client_Keys, undef, 0, \&_cb_validate, undef, undef);
+    $Client_SSL = Crypt::MatrixSSL3::Client->new($Client_Keys, undef, undef, \&_cb_validate, undef, undef, undef);
 
     my ($client2server, $server2client) = (q{}, q{});
     my ($client_rc, $server_rc);
@@ -148,7 +158,7 @@ sub handshake {
 sub client_server {
     my ($Server_SSL, $Client_SSL);
     $Server_SSL = Crypt::MatrixSSL3::Server->new($Server_Keys, undef);
-    $Client_SSL = Crypt::MatrixSSL3::Client->new($Client_Keys, $SessionID, 0, sub{0}, undef, undef);
+    $Client_SSL = Crypt::MatrixSSL3::Client->new($Client_Keys, $SessionID, undef, undef, undef, undef, undef);
 
     my ($client2server, $server2client) = (q{}, q{});
     my ($client_rc, $server_rc);
@@ -167,31 +177,37 @@ sub client_server {
     length($server2client) == 0
         or die 'server2client non-empty after handshake';
 
-    my $s   = "Hello MatrixSSL!\n";
-    my $s16k= $s.("\0" x 16000);
     my $buf;
 
-    $Client_SSL->encode_to_outdata($s) > 0
+    $Client_SSL->encode_to_outdata($client_server_s) > 0
         or die 'encode_to_outdata';
-    $Client_SSL->encode_to_outdata($s) > 0
+    $Client_SSL->encode_to_outdata($client_server_s) > 0
         or die 'encode_to_outdata';
     assert _decode($Client_SSL, $server2client, $client2server);
     assert _decode($Server_SSL, $client2server, $server2client, $buf);
-    $buf eq $s.$s
+    $buf eq $client_server_s . $client_server_s
         or die 'packets 1+2 decoded incorrectly';
 
-    $Client_SSL->encode_to_outdata($s16k) > 0
+    $Client_SSL->encode_to_outdata($client_server_s16k) > 0
         or die 'encode_to_outdata';
-    $Client_SSL->encode_to_outdata($s16k) > 0
+    $Client_SSL->encode_to_outdata($client_server_s16k) > 0
         or die 'encode_to_outdata';
     assert _decode($Client_SSL, $server2client, $client2server);
     assert _decode($Server_SSL, $client2server, $server2client, $buf);
-    $buf eq $s.$s.$s16k
+    $buf eq $client_server_s . $client_server_s . $client_server_s16k
         or die 'packet 3 decoded incorrectly';
     assert _decode($Client_SSL, $server2client, $client2server);
     assert _decode($Server_SSL, $client2server, $server2client, $buf);
-    $buf eq $s.$s.$s16k.$s16k
+    $buf eq $client_server_s . $client_server_s . $client_server_s16k . $client_server_s16k
         or die 'packet 4 decoded incorrectly';
+
+    undef $client2server;
+    undef $server2client;
+    undef $client_rc;
+    undef $server_rc;
+    undef $buf;
+    undef $Client_SSL;
+    undef $Server_SSL;
 }
 
 sub _cb_validate {
@@ -245,14 +261,14 @@ sub alert {
 
 sub leaktest {
     my $test = shift;
-    my %arg  = (init=>10, test=>1000, max_mem_diff=>100, diag=>0, @_);
+    my %arg  = (init=>10, test=>100, max_mem_diff=>128, diag=>0, @_);
     my $tmp = 'x' x 1000000; undef $tmp;
-    my $code = do { no strict 'refs'; \&$test };
-    $code->() for 1 .. $arg{init};
+    my $code = sub { no strict 'refs'; \&$test(); };
+    for (1 .. $arg{init}) { $code->(); };
     my $mem = MEM_used();
     my $fd  = FD_used();
-    $code->() for 1 .. $arg{test};
-    diag sprintf "---- MEM $test\nWAS: %d\nNOW: %d\n", $mem, MEM_used() if $arg{diag};
+    for (1 .. $arg{test}) { $code->(); };
+    diag sprintf("---- MEM $test\nWAS: %d\nNOW: %d\n", $mem, MEM_used()) if $arg{diag};
     ok( MEM_used() - $mem < $arg{max_mem_diff},  "MEM: $test" );
     is( FD_used() - $fd, 0,                      " FD: $test" );
 }
@@ -291,3 +307,4 @@ sub FD_used {
     }
 }
 
+Crypt::MatrixSSL3::close();

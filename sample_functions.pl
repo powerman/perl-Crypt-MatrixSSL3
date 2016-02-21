@@ -12,12 +12,12 @@ sub nb_io {
     my $n;
     if (length $out) {
         $n = syswrite($sock, $out);
-        die "syswrite: $!" if !defined $n && !$!{EAGAIN};
+        die "syswrite: $!" if !defined $n && !$!{EAGAIN} && !$!{EWOULDBLOCK};
         substr($out, 0, $n, q{});
     }
     do {
         $n = sysread($sock, my $buf=q{}, 1024);
-        die "sysread: $!" if !defined $n && !$!{EAGAIN};
+        die "sysread: $!" if !defined $n && !$!{EAGAIN} && !$!{EWOULDBLOCK};
         $in .= $buf;
     } while $n;
     my $eof = defined $n && !$n;

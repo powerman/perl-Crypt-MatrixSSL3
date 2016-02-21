@@ -3,7 +3,7 @@ use warnings;
 use strict;
 use blib;
 use IO::Socket;
-use Crypt::MatrixSSL3;
+use Crypt::MatrixSSL3 qw(:all);
 require 'sample_functions.pl';
 
 # Process arguments:
@@ -31,10 +31,16 @@ $appOut = "GET / HTTP/1.0\r\nHost: ${HOST}\r\n\r\n";
 
 # Initialize MatrixSSL (as client):
 
+Crypt::MatrixSSL3::open();
+
+my $r = PS_SUCCESS;
+
 $keys = Crypt::MatrixSSL3::Keys->new();
-$keys->load_rsa(undef, undef, undef, 'ca-certificates.crt;t/cert/testca.crt')
-    == PS_SUCCESS or die 'load_rsa';
-$ssl = Crypt::MatrixSSL3::Client->new($keys, undef, 0, sub{0}, undef, undef);
+#die "load_rsa: $r" unless ($r = $keys->load_rsa(undef, undef, undef, 'ca-certificates.crt') == PS_SUCCESS);
+die "load_rsa: $r" unless ($r = $keys->load_rsa(undef, undef, undef, 't/cert/testCA.crt') == PS_SUCCESS);
+warn "1";
+$ssl = Crypt::MatrixSSL3::Client->new($keys, undef, undef, sub {0}, undef, undef, undef);
+warn "2";
 
 # Socket I/O:
 

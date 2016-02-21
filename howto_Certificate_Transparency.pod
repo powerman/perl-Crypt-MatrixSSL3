@@ -1,0 +1,86 @@
+=pod
+
+=head1 PREREQUISITES
+
+For generating Certificate Transparency files you will need the following:
+
+=head2 Perl and modules
+
+=over
+
+=item A modern version of Perl
+
+=item The following modules
+
+    Getopt::Long;
+    Pod::Usage;
+    MIME::Base64;
+    LWP::UserAgent;
+    JSON;
+
+=item OpenSSL and Net::SSLeay (used when performin HTTPS requests)
+
+=back
+
+=head2 Certificates
+
+=over
+
+=item *
+
+Server certificate (server.crt)
+
+=item *
+
+Issuer certificate (issuer.crt)
+
+=item *
+
+Certificate Authority chain (server-CA.crt) - this includes any number of intermediate certificate and optionally ends with the root certificate
+
+=back
+
+=head1 USING THE ct-submit.pl TOOL
+
+=head2 Generate one file containing SCTs from all CT log servers
+
+    perl ct-submit-pl --pem server.crt --pem issuer.crt --pem server-CA.pem --extbuf /path/to/CT.sct
+
+The resulted file can be used in your script like:
+
+    # set CT response for a SSL session
+    $sct_index = $ssl->set_SCT_buffer( $sct_index, '/path/to/CT.sct' );
+
+    # refresh the CT response
+    Crypt::MatrixSSL3::refresh_SCT_buffer( undef, $sct_index, '/path/to/CT.sct' );
+
+=head2 Generate multiple SCT files containg binary representation of the responses received from the log servers
+
+    perl ct-submit-pl --pem server.crt --pem issuer.crt --pem server-CA.pem --individual /path/to/sct/
+
+This will create in the /path/to/stc/ folder the following files (considering that the requests to the log servers were successful):
+
+    aviator.sct		# https://ct.googleapis.com/aviator
+    certly.sct		# https://log.certly.io
+    pilot.sct		# https://ct.googleapis.com/pilot
+    rocketeer.sct	# https://ct.googleapis.com/rocketeer
+    digicert.sct	# https://ct1.digicert-ct.com/log - disabled by default - accepts certificates only from select CAs
+    izenpe.sct		# https://ct.izenpe.com  - disabled by default - accepts certificates only from select CAs
+
+One or more files can be used in your script like:
+
+    # set CT response for a SSL session
+    # note that even if you're using a single file (which will be wrong according to the RFC because at least 2 SCTs from different server logs
+    # must be sent), you still need to provide an array reference with one element
+    $sct_index = $ssl->set_SCT_buffer( $sct_index, [
+	'/path/to/sct/aviator.sct',
+	'/path/to/sct/certly.sct'
+    ]);
+
+    # refresh CT response
+    Crypt::MatrixSSL3::refresh_SCT_buffer ( undef, $sct_index, [
+	'/path/to/sct/aviator.sct',
+	'/path/to/sct/certly.sct'
+    ]);
+
+=cut
