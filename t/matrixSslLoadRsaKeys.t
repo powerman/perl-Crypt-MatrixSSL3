@@ -5,10 +5,11 @@ use Test::Exception;
 
 use Crypt::MatrixSSL3 qw( :DEFAULT :Error );
 
-my $trustedCAcertFiles  = 't/cert/testca.crt';
+Crypt::MatrixSSL3::open();
 
-my $certFile            = 't/cert/testserver.crt';
-my $privFile            = 't/cert/testserver.key';
+my $trustedCAcertFiles  = 't/cert/testCA.crt';
+my $certFile            = 't/cert/server.crt';
+my $privFile            = 't/cert/server.key';
 my $privPass            = undef;
 
 my $trustedCA; if(open(IN,'<',"$trustedCAcertFiles.der")) {local $/; $trustedCA=<IN>; close(IN); }
@@ -18,12 +19,11 @@ my $priv; if(open(IN,'<',"$privFile.der")) {local $/; $priv=<IN>; close(IN); }
 my $privFile_des3       = $privFile.'.des3';
 my $privPass_des3       = 'test';
 
-
 is PS_SUCCESS, _load_rsa($certFile, $privFile, $privPass, undef),
     'server: NO PASSWORD';
-is PS_SUCCESS, _load_rsa($certFile, $privFile, '', undef),
+is PS_FAILURE, _load_rsa($certFile, $privFile, '', undef),
     'server: EMPTY PASSWORD';
-is PS_SUCCESS, _load_rsa($certFile, $privFile, 'a_n_y', undef),
+is PS_FAILURE, _load_rsa($certFile, $privFile, 'a_n_y', undef),
     'server: ANY PASSWORD';
 is PS_SUCCESS, _load_rsa(undef, undef, undef, $trustedCAcertFiles),
     'client';
@@ -53,7 +53,7 @@ is PS_PARSE_FAIL, _load_rsa_mem('bad cert', undef, undef),
     'bad cert';
 is PS_PLATFORM_FAIL, _load_rsa(undef, undef, undef, 'no such file'),
     'no such certFile';
-is PS_CERT_AUTH_FAIL, _load_rsa('t/cert/testserver.crt', undef, undef, undef),
+is PS_CERT_AUTH_FAIL, _load_rsa($certFile, undef, undef, undef),
     'certFile without priv key';
 
 # TODO MatrixSSL-3.3 crash (glibc double-free) on this test:
@@ -75,3 +75,4 @@ sub _load_rsa_mem {
     return $keys->load_rsa_mem($_[0], $_[1], $_[2]);
 }
 
+Crypt::MatrixSSL3::close();

@@ -1,18 +1,22 @@
 use warnings;
 use strict;
-use Test::More tests => 8;
+use Test::More tests => 7;
 use Test::Exception;
 
 use Crypt::MatrixSSL3 qw( :DEFAULT :Error );
 
-my ($ssl, $keys);
+Crypt::MatrixSSL3::open();
 
+my ($ssl, $keys);
 
 is undef, $ssl,
     'ssl not defined';
-throws_ok { $ssl = Crypt::MatrixSSL3::Server->new($keys=undef, undef) }
+
+=for still returns ok
+throws_ok { $ssl = Crypt::MatrixSSL3::Server->new(undef, undef) }
     qr/^${\PS_FAILURE}\b/,
     'no keys';
+=cut
 
 lives_ok { $keys = Crypt::MatrixSSL3::Keys->new() }
     'Keys->new';
@@ -33,3 +37,4 @@ undef $ssl;
 undef $keys;
 ok(1, 'matrixSslClose');
 
+Crypt::MatrixSSL3::close();

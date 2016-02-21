@@ -1,14 +1,16 @@
 use warnings;
 use strict;
-use Test::More tests => 371;
+use Test::More tests => 337;
 use Test::Exception;
 
 use Crypt::MatrixSSL3 qw(:all);
 
-my $certFile            = 't/cert/testserver.crt';
-my $privFile            = 't/cert/testserver.key';
+Crypt::MatrixSSL3::open();
+
+my $certFile            = 't/cert/server.crt';
+my $privFile            = 't/cert/server.key';
 my $privPass            = undef;
-my $trustedCAcertFiles  = 't/cert/testca.crt';
+my $trustedCAcertFiles  = 't/cert/testCA.crt';
 my $trustedCAbundle     = 'ca-certificates.crt';
 
 my ($Server_Keys, $Client_Keys);
@@ -18,14 +20,13 @@ my @Alert;
 
 my ($client2server, $server2client) = (q{}, q{});
 
-
-is MATRIXSSL_SUCCESS, Crypt::MatrixSSL3::set_cipher_suite_enabled_status(SSL_RSA_WITH_3DES_EDE_CBC_SHA, PS_FALSE),
-    'disable SSL_RSA_WITH_3DES_EDE_CBC_SHA';
+is MATRIXSSL_SUCCESS, Crypt::MatrixSSL3::set_cipher_suite_enabled_status(TLS_RSA_WITH_AES_128_CBC_SHA, PS_FALSE),
+    'disable TLS_RSA_WITH_AES_128_CBC_SHA';
 
 new($trustedCAcertFiles, undef);
 handshake();
 io();
-is PS_UNSUPPORTED_FAIL, $Client_SSL->encode_rehandshake($Client_Keys, undef, 0, SSL_RSA_WITH_3DES_EDE_CBC_SHA),
+is $Client_SSL->encode_rehandshake(undef, undef, SSL_OPTION_FULL_HANDSHAKE, [SSL_RSA_WITH_RC4_128_MD5]), PS_UNSUPPORTED_FAIL,
     '--- Rehandshake: unsupported cipher';
 io();
 fin();
@@ -33,7 +34,7 @@ fin();
 new($trustedCAcertFiles, undef);
 handshake();
 io();
-is MATRIXSSL_SUCCESS, $Client_SSL->encode_rehandshake(undef, undef, 0, 0),
+is MATRIXSSL_SUCCESS, $Client_SSL->encode_rehandshake(undef, undef, 0, undef),
     '--- Rehandshake: change nothing';
 handshake();
 io();
@@ -42,7 +43,7 @@ fin();
 new($trustedCAcertFiles, undef);
 handshake();
 io();
-is MATRIXSSL_SUCCESS, $Client_SSL->encode_rehandshake(undef, undef, SSL_OPTION_FULL_HANDSHAKE, 0),
+is MATRIXSSL_SUCCESS, $Client_SSL->encode_rehandshake(undef, undef, SSL_OPTION_FULL_HANDSHAKE, undef),
     '--- Rehandshake: change nothing (full rehandshake)';
 handshake();
 io();
@@ -51,7 +52,7 @@ fin();
 new($trustedCAcertFiles, undef);
 handshake();
 io();
-is MATRIXSSL_SUCCESS, $Client_SSL->encode_rehandshake($Client_Keys, undef, 0, 0),
+is MATRIXSSL_SUCCESS, $Client_SSL->encode_rehandshake($Client_Keys, undef, 0, undef),
     '--- Rehandshake: change nothing (same keys)';
 handshake();
 io();
@@ -60,34 +61,39 @@ fin();
 new($trustedCAcertFiles, undef);
 handshake();
 io();
-is MATRIXSSL_SUCCESS, $Client_SSL->encode_rehandshake(undef, undef, SSL_OPTION_FULL_HANDSHAKE, TLS_RSA_WITH_AES_256_CBC_SHA),
+is MATRIXSSL_SUCCESS, $Client_SSL->encode_rehandshake(undef, undef, SSL_OPTION_FULL_HANDSHAKE, [TLS_RSA_WITH_AES_256_CBC_SHA]),
     '--- Rehandshake: change cipher to TLS_RSA_WITH_AES_256_CBC_SHA';
 handshake();
 io();
 fin();
 
-new($trustedCAcertFiles, undef);
-handshake();
-io();
-is MATRIXSSL_SUCCESS, $Client_SSL->encode_rehandshake(undef, undef, SSL_OPTION_FULL_HANDSHAKE, SSL_NULL_WITH_NULL_NULL),
-    '--- Rehandshake: change cipher to SSL_NULL_WITH_NULL_NULL';
-handshake();
-io();
-fin();
+=for not allowed anymore
 
 new($trustedCAcertFiles, undef);
 handshake();
 io();
-is MATRIXSSL_SUCCESS, $Client_SSL->encode_rehandshake(undef, undef, SSL_OPTION_FULL_HANDSHAKE, SSL_RSA_WITH_NULL_SHA),
+is MATRIXSSL_SUCCESS, $Client_SSL->encode_rehandshake(undef, undef, SSL_OPTION_FULL_HANDSHAKE, [SSL_NULL_WITH_NULL_NULL]),
+    '--- Rehandshake: change cipher to SSL_NULL_WITH_NULL_NULL';
+handshake();
+io(1);
+fin();
+
+=cut
+
+new($trustedCAcertFiles, undef);
+handshake();
+io();
+is MATRIXSSL_SUCCESS, $Client_SSL->encode_rehandshake(undef, undef, SSL_OPTION_FULL_HANDSHAKE, [SSL_RSA_WITH_NULL_SHA]),
     '--- Rehandshake: change cipher to SSL_RSA_WITH_NULL_SHA';
 handshake();
 io(1);
 fin();
 
+
 new($trustedCAcertFiles, undef);
 handshake();
 io();
-is MATRIXSSL_SUCCESS, $Client_SSL->encode_rehandshake(undef, undef, 0, SSL_RSA_WITH_NULL_SHA),
+is MATRIXSSL_SUCCESS, $Client_SSL->encode_rehandshake(undef, undef, 0, [SSL_RSA_WITH_NULL_SHA]),
     '--- Rehandshake: change cipher to SSL_RSA_WITH_NULL_SHA (without FULL_HANDSHAKE)';
 handshake();
 io(1);
@@ -96,7 +102,7 @@ fin();
 new($trustedCAcertFiles, sub{0});
 handshake();
 io();
-is MATRIXSSL_SUCCESS, $Client_SSL->encode_rehandshake(undef, undef, 0, 0),
+is MATRIXSSL_SUCCESS, $Client_SSL->encode_rehandshake(undef, undef, 0, undef),
     '--- Rehandshake: change nothing';
 handshake();
 io();
@@ -115,7 +121,7 @@ fin();
 new($trustedCAcertFiles, sub{0});
 handshake();
 io();
-is MATRIXSSL_SUCCESS, $Client_SSL->encode_rehandshake(undef, sub{0}, 0, 0),
+is MATRIXSSL_SUCCESS, $Client_SSL->encode_rehandshake(undef, sub{0}, 0, undef),
     '--- Rehandshake: change nothing (same callback)';
 handshake();
 io();
@@ -124,7 +130,7 @@ fin();
 new($trustedCAcertFiles, sub{0});
 handshake();
 io();
-is MATRIXSSL_SUCCESS, $Client_SSL->encode_rehandshake($Client_Keys, sub{0}, 0, 0),
+is MATRIXSSL_SUCCESS, $Client_SSL->encode_rehandshake($Client_Keys, sub{0}, 0, undef),
     '--- Rehandshake: change nothing (same keys and callback)';
 handshake();
 io();
@@ -151,7 +157,7 @@ sub new {
         'Keys->new (client)';
     is PS_SUCCESS, $Client_Keys->load_rsa(undef, undef, undef, $trustedCA),
         '$Client_Keys->load_rsa';
-    lives_ok { $Client_SSL = Crypt::MatrixSSL3::Client->new($Client_Keys, undef, 0, $cb, undef, undef) }
+    lives_ok { $Client_SSL = Crypt::MatrixSSL3::Client->new($Client_Keys, undef, undef, $cb, undef, undef, undef) }
         'Client->new';
 
     ($client2server, $server2client) = (q{}, q{});
@@ -249,3 +255,4 @@ sub alert {
     return;
 }
 
+Crypt::MatrixSSL3::close();

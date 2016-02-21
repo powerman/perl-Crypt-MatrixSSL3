@@ -1,20 +1,21 @@
 use warnings;
 use strict;
-use Test::More tests => 29;
+use Test::More tests => 28;
 use Test::Exception;
 
 use Crypt::MatrixSSL3 qw(:all);
 
-my $certFile            = 't/cert/testserver.crt';
-my $privFile            = 't/cert/testserver.key';
+Crypt::MatrixSSL3::open();
+
+my $certFile            = 't/cert/server.crt';
+my $privFile            = 't/cert/server.key';
 my $privPass            = undef;
-my $trustedCAcertFiles  = 't/cert/testca.crt';
+my $trustedCAcertFiles  = 't/cert/testCA.crt';
 
 my ($Server_Keys, $Client_Keys);
 my ($Server_SSL, $Client_SSL);
 
 my @Alert;
-
 
 ########
 # Init #
@@ -31,7 +32,7 @@ lives_ok { $Client_Keys = Crypt::MatrixSSL3::Keys->new() }
     'Keys->new (client)';
 is PS_SUCCESS, $Client_Keys->load_rsa(undef, undef, undef, $trustedCAcertFiles),
     '$Client_Keys->load_rsa';
-lives_ok { $Client_SSL = Crypt::MatrixSSL3::Client->new($Client_Keys, undef, 0, undef, undef, undef) }
+lives_ok { $Client_SSL = Crypt::MatrixSSL3::Client->new($Client_Keys, undef, undef, undef, undef, undef, undef) }
     'Client->new';
 
 #############
@@ -109,7 +110,7 @@ undef $Server_SSL;
 undef $Client_SSL;
 undef $Server_Keys;
 undef $Client_Keys;
-ok 1, 'matrixSslClose';
+#ok 1, 'matrixSslClose';
 
 
 ###########
@@ -154,3 +155,4 @@ sub alert {
     return;
 }
 
+Crypt::MatrixSSL3::close();

@@ -5,18 +5,18 @@ use Test::Exception;
 
 use Crypt::MatrixSSL3 qw(:all);
 
-my $p12File             = 't/cert/testserver.p12';
-my $importPass          = 'thepass';
+Crypt::MatrixSSL3::open();
+
+my $p12File             = 't/cert/server.p12';
+my $importPass          = 'test';
 my $trustedCAbundle     = 'ca-certificates.crt';
-my $trustedCAcertFiles  = 't/cert/testca.crt';
+my $trustedCAcertFiles  = 't/cert/testCA.crt';
 
 my ($Server_Keys, $Client_Keys);
 my ($Server_SSL, $Client_SSL);
 
-
 doit(PS_TRUE, $trustedCAbundle);
 doit(PS_FALSE, $trustedCAcertFiles);
-
 
 sub doit {
     my ($wait_anon, $trustedCA) = @_;
@@ -37,7 +37,7 @@ lives_ok { $Client_Keys = Crypt::MatrixSSL3::Keys->new() }
 is PS_SUCCESS, $Client_Keys->load_rsa(undef, undef, undef, $trustedCA),
     '$Client_Keys->load_rsa';
 lives_ok { $Client_SSL = Crypt::MatrixSSL3::Client->new(
-    $Client_Keys, undef, 0, sub{$_[1] && SSL_ALLOW_ANON_CONNECTION}, undef, undef) }
+    $Client_Keys, undef, undef, sub{$wait_anon && SSL_ALLOW_ANON_CONNECTION}, undef, undef, undef) }
     'Client->new';
 
 #############
@@ -57,7 +57,7 @@ ok !length $client2server, 'client outbuf empty after handshake';
 ok !length $server2client, 'server outbuf empty after handshake';
 
 my $anon;
-$Client_SSL->get_anon_status($anon = -1);
+$anon = $Client_SSL->get_anon_status($anon = -1);
 is $anon, $wait_anon,
     'anon = '.($wait_anon == PS_TRUE ? 'PS_TRUE' : 'PS_FALSE');
 
@@ -115,3 +115,4 @@ sub alert {
     return;
 }
 
+Crypt::MatrixSSL3::close();

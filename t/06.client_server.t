@@ -1,18 +1,19 @@
 use warnings;
 use strict;
-use Test::More tests => 73;
+use Test::More tests => 72;
 use Test::Exception;
 
 use Crypt::MatrixSSL3 qw(:all);
 
-my $certFile            = 't/cert/testserver.crt';
-my $privFile            = 't/cert/testserver.key';
+Crypt::MatrixSSL3::open();
+
+my $certFile            = 't/cert/server.crt';
+my $privFile            = 't/cert/server.key';
 my $privPass            = undef;
-my $trustedCAcertFiles  = 't/cert/testca.crt';
+my $trustedCAcertFiles  = 't/cert/testCA.crt';
 
 my ($Server_Keys, $Client_Keys);
 my ($Server_SSL, $Client_SSL);
-
 
 ########
 # Init #
@@ -29,7 +30,7 @@ lives_ok { $Client_Keys = Crypt::MatrixSSL3::Keys->new() }
     'Keys->new (client)';
 is PS_SUCCESS, $Client_Keys->load_rsa(undef, undef, undef, $trustedCAcertFiles),
     '$Client_Keys->load_rsa';
-lives_ok { $Client_SSL = Crypt::MatrixSSL3::Client->new($Client_Keys, undef, 0, undef, undef, undef) }
+lives_ok { $Client_SSL = Crypt::MatrixSSL3::Client->new($Client_Keys, undef, undef, sub{0}, undef, undef, undef) }
     'Client->new';
 
 #############
@@ -104,9 +105,9 @@ ok !length $server2client,
 
 # More than SSL_MAX_PLAINTEXT_LEN
 
-$s = 'x' x (SSL_MAX_PLAINTEXT_LEN+1);
-is PS_LIMIT_FAIL, $Client_SSL->encode_to_outdata($s),
-    'encode_to_outdata SSL_MAX_PLAINTEXT_LEN+1 failed';
+#$s = 'x' x (SSL_MAX_PLAINTEXT_LEN+1);
+#is $Client_SSL->encode_to_outdata($s), PS_LIMIT_FAIL,
+#    'encode_to_outdata SSL_MAX_PLAINTEXT_LEN+1 failed';
 
 #######
 # Fin #
@@ -161,3 +162,4 @@ sub alert {
     return;
 }
 
+Crypt::MatrixSSL3::close();

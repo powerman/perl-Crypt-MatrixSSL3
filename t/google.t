@@ -8,6 +8,8 @@ use IO::Socket;
 
 use Crypt::MatrixSSL3 qw(:all);
 
+Crypt::MatrixSSL3::open();
+
 my $trustedCAbundle     = 'ca-certificates.crt';
 my $target              = 'www.google.com:443';
 
@@ -28,7 +30,7 @@ lives_ok { $keys = Crypt::MatrixSSL3::Keys->new() }
     'Keys->new';
 is PS_SUCCESS, $keys->load_rsa(undef, undef, undef, $trustedCAbundle),
     '$keys->load_rsa';
-lives_ok { $ssl = Crypt::MatrixSSL3::Client->new($keys, undef, 0, undef, undef, undef) }
+lives_ok { $ssl = Crypt::MatrixSSL3::Client->new($keys, undef, undef, sub { 0 }, undef, undef, undef) }
     'Client->new';
 
 my $sock = IO::Socket::INET->new(PeerAddr=>$target) or die "IO::Socket: $!";
@@ -128,3 +130,4 @@ sub alert {
     return;
 }
 
+Crypt::MatrixSSL3::close();

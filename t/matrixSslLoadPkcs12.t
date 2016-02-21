@@ -5,15 +5,16 @@ use Test::Exception;
 
 use Crypt::MatrixSSL3 qw( :DEFAULT :Error );
 
-my $p12File             = 't/cert/testserver.p12';
-my $p12File_nopass      = 't/cert/testserver_nopass.p12';
-my $p12File_badca       = 't/cert/testserver_badca.p12';
-my $importPass          = 'thepass';
+Crypt::MatrixSSL3::open();
 
+my $p12File             = 't/cert/server.p12';
+my $p12File_nopass      = 't/cert/server_nopass.p12';
+my $p12File_badca       = 't/cert/server_badca.p12';
+my $importPass          = 'test';
 
-is PS_PARSE_FAIL, _load_pkcs12('no such', undef, undef, 0),
+is PS_PLATFORM_FAIL, _load_pkcs12('no such', undef, undef, 0),
     'bad file';
-is PS_CERT_AUTH_FAIL, _load_pkcs12($p12File_badca, undef, undef, 0),
+is PS_CERT_AUTH_FAIL, _load_pkcs12($p12File_badca, $importPass, undef, 0),
     'bad cert chain';
 
 is PS_SUCCESS, _load_pkcs12($p12File_nopass, undef, undef, 0),
@@ -46,3 +47,4 @@ sub _load_pkcs12 {
     return $keys->load_pkcs12($_[0], $_[1], $_[2], $_[3]);
 }
 
+Crypt::MatrixSSL3::close();

@@ -1,10 +1,10 @@
 {
-   "abstract" : "Perl extension for SSL and TLS using MatrixSSL.org v3.3\r",
+   "abstract" : "Perl extension for SSL and TLS using MatrixSSL.org v3.7.3",
    "author" : [
       "C. N. Drake <christopher@pobox.com>"
    ],
    "dynamic_config" : 1,
-   "generated_by" : "ExtUtils::MakeMaker version 6.62, CPAN::Meta::Converter version 2.120921",
+   "generated_by" : "ExtUtils::MakeMaker version 7.04, CPAN::Meta::Converter version 2.143240",
    "license" : [
       "unknown"
    ],
@@ -44,5 +44,5 @@
       }
    },
    "release_status" : "stable",
-   "version" : "v3.3.0.1"
+   "version" : "v3.7.3"
 }

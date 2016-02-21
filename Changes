@@ -1,6 +1,20 @@
 Revision history for Perl extension Crypt::MatrixSSL3.
 
-3.3   Wed Apr 11 14:36:05 UTC 2012
+3.7.3  Sun Feb 07 19:04:00 UTC 2015
+	- better default cipher selection
+	- added support for shared session cache (matrixSSL sources)
+	- added support for stateless session tickets (XS)
+	- added support for TLS_FALLBACK_SCSV (matrixSSL sources)
+	- added browser prefferd ciphers (matrixSSL sources)
+	- added support for OCSP staples (matrixSSL sources, XS)
+	- added SNI integration (XS)
+	- added support of DH param loading (XS)
+	- added support for ALPN callback (XS)
+
+3.7.2  Thu Sep 03 11:07:24 UTC 2015
+	- update to matrixSSL 3.7.2b
+
+3.3.0  Wed Apr 11 14:36:05 UTC 2012
 	- based on Crypt::MatrixSSL-1.8.6
 	- re-write to support MatrixSSL 3.3  (CDRAKE, POWERMAN)
 
