@@ -2,7 +2,6 @@ use warnings;
 use strict;
 use Test::More;
 use Test::Exception;
-use t::config;
 
 use Socket;
 use IO::Socket;
@@ -19,11 +18,8 @@ my $host1               = 'alice.sni.velox.ch';
 my $host2               = 'bob.sni.velox.ch';
 
 
-if (CFG_ONLINE ne 'y') {
-    plan skip_all => 'online tests disabled';
-} else {
-    plan tests => 45;
-}
+plan tests => 45;
+
 
 is inet_ntoa(scalar gethostbyname $host1), inet_ntoa(scalar gethostbyname $host2),
     "https://$host1/ and https://$host2/ share same IP";
