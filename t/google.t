@@ -2,7 +2,6 @@ use warnings;
 use strict;
 use Test::More;
 use Test::Exception;
-use t::config;
 
 use IO::Socket;
 
@@ -14,11 +13,7 @@ my $trustedCAbundle     = 'ca-certificates.crt';
 my $target              = 'www.google.com:443';
 
 
-if (CFG_ONLINE ne 'y') {
-    plan skip_all => 'online tests disabled';
-} else {
-    plan tests => 14;
-}
+plan tests => 14;
 
 
 ########

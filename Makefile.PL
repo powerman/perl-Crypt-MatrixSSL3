@@ -453,15 +453,6 @@ if (eval {require ExtUtils::Constant; 1}) {
 }
 
 
-{
-    my $online = prompt 'Run tests which require internet connection', 'n';
-    $online = lc $online eq 'y' ? 'y' : 'n';
-    open my $f, '>', 't/config.pm' or die "open: $!";
-    printf {$f} "use constant CFG_ONLINE => '%s';\n", $online;
-    printf {$f} '1;';
-    close $f or die "close: $!";
-}
-
 =for currently contained in the patch we apply
 
 # fix for matrixSSL DLL compilation/linking warnings
