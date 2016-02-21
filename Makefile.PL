@@ -338,6 +338,7 @@ if(!-d $mxbase) {
 if (-r "$mxbase.patch") {
     # Test for patch
     my $r = system("patch f.c.orig f.c 2> null");
+    unlink 'null';
     if ($r == 256) {
         my $pp = prompt "It looks like the patch tool is not installed on your system!\n" . 
                         "Do you want to continue (the resulted build might be unstable)?", 'n';
