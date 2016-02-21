@@ -1,6 +1,6 @@
 Revision history for Perl extension Crypt::MatrixSSL3.
 
-3.7.3  Sun Feb 07 19:04:00 UTC 2015
+3.7.3  Sun Feb 07 19:04:00 UTC 2016
 	- better default cipher selection
 	- added support for shared session cache (matrixSSL sources)
 	- added support for stateless session tickets (XS)
