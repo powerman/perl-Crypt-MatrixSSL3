@@ -1,0 +1,16 @@
+/Crypt-MatrixSSL3-*
+/.build
+/_build*
+/Build
+MYMETA.*
+!META.json
+!META.yml
+/.prove
+/matrixssl-*/
+/Makefile
+/pm_to_blib
+/blib
+/*.c
+/*.o
+/*.bs
+*.swp
