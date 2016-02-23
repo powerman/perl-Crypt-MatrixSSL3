@@ -868,7 +868,7 @@ More information about callback &certValidator in next section.
 
  matrixSslSetCipherSuiteEnabledStatus( $ssl, $cipherId, $status )
 
-=item $ssl->B<get_anon_status>( $anon )
+=item $anon = $ssl->B<get_anon_status>()
 
  matrixSslGetAnonStatus( $ssl, $anon )
 

@@ -1536,12 +1536,12 @@ sess_encode_to_outdata(ssl, outBuf)
 
 
 int
-sess_get_anon_status(ssl, anon)
+sess_get_anon_status(ssl)
 	Crypt_MatrixSSL3_Sess *		ssl;
-	int				anon;
+	int32				anon = 0;
     CODE:
-	matrixSslGetAnonStatus((ssl_t *)ssl, (int32 *) &anon);
-	RETVAL = anon;
+	matrixSslGetAnonStatus((ssl_t *)ssl, &anon);
+	RETVAL = (int) anon;
     OUTPUT:
 	RETVAL
 
