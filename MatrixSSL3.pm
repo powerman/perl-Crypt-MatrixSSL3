@@ -596,9 +596,20 @@ and after last object will be destroyed.
  matrixSslOpen
  matrixSslClose
 
+These functions implement optimization which is useless in Perl:
+
+ matrixSslGetWritebuf
+ matrixSslEncodeWritebuf
+
+=over
+
+=item B<open>()
+
+=item B<close>()
+
 If you write server intensive applications it is still better to control
 how often the MatrixSSL library gets initialized/deinitialized. For this
-you can call (note that these functions are not exported):
+you can call
 
  Crypt::MatrixSSL3::open()
 
@@ -607,13 +618,6 @@ to initialize the library at the start of you application and
  Crypt::MatrixSSL3::close()
 
 to deinitialize the library when your application ends.
-
-These functions implement optimization which is useless in Perl:
-
- matrixSslGetWritebuf
- matrixSslEncodeWritebuf
-
-=over
 
 =item B<capabilities>()
 
@@ -935,8 +939,6 @@ If the XS module is able to match the requested client hostname it will call the
 =back
 
 Returns the index of the internal SNI server structure used for registering the MatrixSSL SNI callback. This MUST be saved after the first call.
-
-=back
 
 =item $ssl->B<set_OCSP_staple>( $ocsp_index, $DERfile ) C<server side>
 

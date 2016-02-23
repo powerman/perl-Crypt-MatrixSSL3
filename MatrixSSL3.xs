@@ -564,13 +564,6 @@ set_cipher_suite_enabled_status(cipherId, status);
     OUTPUT:
 	RETVAL
 
-int
-getObjCount();
-	CODE:
-	RETVAL = objects;
-	OUTPUT:
-	RETVAL
-
 void open();
 	CODE:
 	add_obj();
