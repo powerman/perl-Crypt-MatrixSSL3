@@ -617,15 +617,15 @@ These functions implement optimization which is useless in Perl:
 
 =item B<capabilities>()
 
-A bitwise OR combination of the following:
+Returns a bitwise OR combination of the following constants:
 
-    SHARED_SESSION_CACHE_ENABLED      ( = 1) - shared session cache between multiple processes is enabled
-    STATELESS_TICKETS_ENABLED         ( = 2) - stateless ticket session resuming support is enabled
-    DH_PARAMS_ENABLED                 ( = 4) - loading the DH param for DH cipher suites is enabled
-    ALPN_ENABLED                      ( = 8) - Application Layer Protocol Negotiation callback support is enabled
-    SNI_ENABLED                      ( = 16) - Server Name Identification (virtual hosts) support is enabled
-    OCSP_STAPLES_ENABLED             ( = 32) - handling of the "status_request" TLS extension by responding with an OCSP staple is enabled
-    CERTIFICATE_TRANSPARENCY_ENABLED ( = 64) - handling of the "signed_certificate_timestamp" TLS extension is enabled
+    SHARED_SESSION_CACHE_ENABLED     - shared session cache between multiple processes is enabled
+    STATELESS_TICKETS_ENABLED        - stateless ticket session resuming support is enabled
+    DH_PARAMS_ENABLED                - loading the DH param for DH cipher suites is enabled
+    ALPN_ENABLED                     - Application Layer Protocol Negotiation callback support is enabled
+    SNI_ENABLED                      - Server Name Identification (virtual hosts) support is enabled
+    OCSP_STAPLES_ENABLED             - handling of the "status_request" TLS extension by responding with an OCSP staple is enabled
+    CERTIFICATE_TRANSPARENCY_ENABLED - handling of the "signed_certificate_timestamp" TLS extension is enabled
 
 Before using any of these features it's a good idea to test if MatrixSSL is supporting them.
 
@@ -745,7 +745,7 @@ When this object will be destroyed will call:
 
   matrixSslLoadDhParams ( $keys, $DH_params_file )
 
-=item $keys->B<load_session_ticket_keys>( $keys, $name, $symkey, $hashkey ) C<server side>
+=item $keys->B<load_session_ticket_keys>( $name, $symkey, $hashkey ) C<server side>
 
   matrixSslLoadSessionTicketKeys ($keys, $name, $symkey, length $symkey, $haskkey, length $hashkey )
 
@@ -773,9 +773,9 @@ which uses this $sessid.
 
 =over
 
-=item B<new>( $keys, $sessionId, [cipher1, cipher2, ...], \&certValidator, $expectedName, $extensions, \&extensionCback )
+=item B<new>( $keys, $sessionId, \@cipherSuites, \&certValidator, $expectedName, $extensions, \&extensionCback )
 
- matrixSslNewClientSession( $ssl, $keys, $sessionId, [cipher1, cipher2, ...],
+ matrixSslNewClientSession( $ssl, $keys, $sessionId, \@cipherSuites,
     \&certValidator, $expectedName, $extensions, \&extensionCback )
 
 Return new object $ssl.
@@ -857,10 +857,10 @@ $ptBuf:
 
  matrixSslEncodeClosureAlert( $ssl )
 
-=item $ssl->B<encode_rehandshake>( $keys, \&certValidator, $sessionOption, [cipher1, cipher2, ...] )
+=item $ssl->B<encode_rehandshake>( $keys, \&certValidator, $sessionOption, \@cipherSuites )
 
  matrixSslEncodeRehandshake( $ssl, $keys, \&certValidator,
-    $sessionOption, [cipher1, cipher2, ...] )
+    $sessionOption, \@cipherSuites )
 
 More information about callback &certValidator in next section.
 
