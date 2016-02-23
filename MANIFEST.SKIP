@@ -14,3 +14,4 @@ Crypt-MatrixSSL3.*.tar.gz
 \.swp$
 ^.git/
 ^.gitignore$
+^.travis.yml$
