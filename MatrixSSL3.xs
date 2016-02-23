@@ -1010,25 +1010,28 @@ sess_new_client(keys, sessionId, cipherSuites, certValidator, expectedName, exte
 	}
 	RETVAL = (Crypt_MatrixSSL3_Sess *)ssl;
 	
-	if (ssl != NULL) {
-		key = sv_2mortal(newSViv(PTR2IV(ssl)));
-  
+  if (ssl != NULL) {
+	ENTER;
+	SAVETMPS;
+
+	key = sv_2mortal(newSViv(PTR2IV(ssl)));
+
   	// keep real callback in global hash: $certValidatorArg{ssl}=certValidator
   	if(SvOK(certValidator)) {
   		if(certValidatorArg==NULL)
   			certValidatorArg = newHV();
   		hv_store_ent(certValidatorArg, key, SvREFCNT_inc(SvRV(certValidator)), 0);
   	}
-  
   	// keep real callback in global hash: $extensionCbackArg{ssl}=extensionCback
   	if(SvOK(extensionCback)) {
   		if(extensionCbackArg==NULL)
   			extensionCbackArg = newHV();
   		hv_store_ent(extensionCbackArg, key, SvREFCNT_inc(SvRV(extensionCback)), 0);
   	}
-  }
 
 	FREETMPS;
+	LEAVE;
+  }
 
     OUTPUT:
 	RETVAL
@@ -1061,6 +1064,9 @@ sess_new_server(keys, certValidator)
 	}
 	RETVAL = (Crypt_MatrixSSL3_Sess *)ssl;
 	
+	ENTER;
+	SAVETMPS;
+
 	key = sv_2mortal(newSViv(PTR2IV(ssl)));
 
 	// keep real callback in global hash: $certValidatorArg{ssl}=certValidator
@@ -1071,6 +1077,7 @@ sess_new_server(keys, certValidator)
 	}
 
 	FREETMPS;
+	LEAVE;
 
     OUTPUT:
 	RETVAL
@@ -1397,6 +1404,9 @@ sess_set_ALPN_callback(ssl, cb_ALPN)
 	
 	matrixSslRegisterALPNCallback(ssl, ALPNCallback);
 	
+	ENTER;
+	SAVETMPS;
+
 	key = sv_2mortal(newSViv(PTR2IV(ssl)));
 
 	// keep real callback in global hash: $certValidatorArg{ssl}=certValidator
@@ -1405,6 +1415,7 @@ sess_set_ALPN_callback(ssl, cb_ALPN)
 	hv_store_ent(ALPNCallbackArg, key, SvREFCNT_inc(SvRV(cb_ALPN)), 0);
 
 	FREETMPS;
+	LEAVE;
     OUTPUT:
 
 void
@@ -1413,6 +1424,8 @@ sess_DESTROY(ssl)
 	SV *		key = NULL;
     INIT:
     CODE:
+	ENTER;
+	SAVETMPS;
 
 	// delete callback from global hashes
 	key = sv_2mortal(newSViv(PTR2IV(ssl)));
@@ -1423,10 +1436,11 @@ sess_DESTROY(ssl)
 	if(hv_exists_ent(ALPNCallbackArg, key, 0))
 		hv_delete_ent(ALPNCallbackArg, key, G_DISCARD, 0);
 
+	FREETMPS;
+	LEAVE;
+
 	matrixSslDeleteSession((ssl_t *)ssl);
 	del_obj();
-
-	FREETMPS;
 
     OUTPUT:
 
@@ -1588,6 +1602,9 @@ sess_encode_rehandshake(ssl, keys, certValidator, sessionOption, cipherSpecs)
 	
 	if (cipherSpecsBuf != NULL) free(cipherSpecsBuf);
 	
+	ENTER;
+	SAVETMPS;
+
 	// keep real callback in global hash: $certValidatorArg{ssl}=certValidator
 	key = sv_2mortal(newSViv(PTR2IV(ssl)));
 	if(certValidatorArg==NULL)
@@ -1596,6 +1613,9 @@ sess_encode_rehandshake(ssl, keys, certValidator, sessionOption, cipherSpecs)
 		hv_delete_ent(certValidatorArg, key, G_DISCARD, 0); // delete old callback
 	if(SvOK(certValidator))
 		hv_store_ent(certValidatorArg, key, SvREFCNT_inc(SvRV(certValidator)), 0);
+
+	FREETMPS;
+	LEAVE;
     OUTPUT:
 	RETVAL
 
