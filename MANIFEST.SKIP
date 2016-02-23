@@ -12,3 +12,5 @@ Crypt-MatrixSSL3.*.tar.gz
 \.c$
 \.o$
 \.swp$
+^.git/
+^.gitignore$
