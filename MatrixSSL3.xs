@@ -1204,10 +1204,11 @@ sess_init_SNI(ssl, index, ssl_id, sni_data = NULL)
 			warn("  SNI entry %d cert %s; key %s", i, cert, key);
 #endif
 			add_obj();
-			
 			rc = matrixSslNewKeys(&(ss->SNI_entries[i]->keys), NULL);
-			if (rc != PS_SUCCESS)
+			if (rc != PS_SUCCESS) {
+				del_obj();
 				croak("SNI matrixSslNewKeys failed %d", rc);
+			}
 			
 			rc = matrixSslLoadRsaKeys(ss->SNI_entries[i]->keys, cert, key, NULL, NULL);
 			if (rc != PS_SUCCESS)
