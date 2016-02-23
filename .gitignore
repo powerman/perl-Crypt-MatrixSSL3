@@ -13,4 +13,5 @@ MYMETA.*
 /*.c
 /*.o
 /*.bs
+/const-c.inc
 *.swp
