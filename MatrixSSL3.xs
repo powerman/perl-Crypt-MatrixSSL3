@@ -971,10 +971,10 @@ sess_new_client(keys, sessionId, cipherSuites, certValidator, expectedName, exte
 	SV **				item = NULL;
 	sslSessOpts_t *		sslOpts = NULL;
     
-	INIT:
-	if (SvOK(cipherSuites) && SvRV(cipherSuites) && SvTYPE(SvRV(cipherSuites)) == SVt_PVAV) {
+    INIT:
+	if (SvROK(cipherSuites) && SvTYPE(SvRV(cipherSuites)) == SVt_PVAV) {
 		cipherSuitesArray = (AV *) SvRV(cipherSuites);
-		
+
 		cipherCount = (uint16) av_len(cipherSuitesArray) + 1;
 		cipherSuitesBuf = (uint32 *) malloc(cipherCount * sizeof(uint32));
 		
@@ -982,6 +982,9 @@ sess_new_client(keys, sessionId, cipherSuites, certValidator, expectedName, exte
 			item = av_fetch(cipherSuitesArray, i, 0);
 			cipherSuitesBuf[i] = (uint32) SvIV(*item);
 		}
+	}
+	else if (SvOK(cipherSuites)) {
+		croak("cipherSuites should be undef or ARRAYREF");
 	}
 	
     CODE:
@@ -1563,9 +1566,9 @@ sess_encode_rehandshake(ssl, keys, certValidator, sessionOption, cipherSpecs)
 	SV **				item = NULL;
 	
     INIT:
-	if (SvOK(cipherSpecs) && SvRV(cipherSpecs) && SvTYPE(SvRV(cipherSpecs)) == SVt_PVAV) {
+	if (SvROK(cipherSpecs) && SvTYPE(SvRV(cipherSpecs)) == SVt_PVAV) {
 		cipherSpecsArray = (AV *) SvRV(cipherSpecs);
-		
+
 		cipherCount = (uint16) av_len(cipherSpecsArray) + 1;
 		cipherSpecsBuf = (uint32 *) malloc(cipherCount * sizeof(uint32));
 		
@@ -1573,6 +1576,9 @@ sess_encode_rehandshake(ssl, keys, certValidator, sessionOption, cipherSpecs)
 			item = av_fetch(cipherSpecsArray, i, 0);
 			cipherSpecsBuf[i] = (uint32) SvIV(*item);
 		}
+	}
+	else if (SvOK(cipherSpecs)) {
+		croak("cipherSpecs should be undef or ARRAYREF");
 	}
 
     CODE:
