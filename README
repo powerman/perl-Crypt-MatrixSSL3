@@ -12,7 +12,7 @@ This version works in linux.  Older versions worked in (at least)
 Windows and Mac too - let me know if you need a build for these,
 and I'll do the work to get it going for you.
 
-MatrixSSL is an Open Source (GNU Public License) product, and is
+MatrixSSL is an Open Source (GNU General Public License) product, and is
 also available commercially if you need freedom from GNU rules.
 
 Everything you need should be included here, but check the 
@@ -34,15 +34,11 @@ This module requires no other modules or libraries:
 
 COPYRIGHT AND LICENCE
 
-MatrixSSL is distrubed under the GNU Public License:-
+MatrixSSL is distributed under the GNU General Public License:-
 http://www.gnu.org/copyleft/gpl.html
 
 Crypt::MatrixSSL3 uses MatrixSSL, and so inherits the same License.
 
 Copyright (C) 2005,2006,2012 by C. N. Drake <christopher@pobox.com>.
-
-This library is free software; you can redistribute it and/or modify
-it under the same terms as Perl itself, either Perl version 5.8.3 or,
-at your option, any later version of Perl 5 you may have available.
-
+Copyright (C) 2012,2016 by Alex Efros <powerman@cpan.org>.
 

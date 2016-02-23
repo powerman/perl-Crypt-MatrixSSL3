@@ -327,7 +327,7 @@ You will need a "C" compiler to build this, unless you're getting
 the ".ppm" prebuilt Win32 version.  Crypt::MatrixSSL3 builds cleanly
 on (at least) Windows, Linux, and Macintosh machines.
 
-MatrixSSL is an Open Source (GNU Public License) product, and is
+MatrixSSL is an Open Source (GNU General Public License) product, and is
 also available commercially if you need freedom from GNU rules.
 
 Everything you need is included here, but check the MatrixSSL.org
@@ -597,7 +597,7 @@ and after last object will be destroyed.
  matrixSslClose
 
 If you write server intensive applications it is still better to control
-how often the matrixSSL library gets initialized/deinitialized. For this
+how often the MatrixSSL library gets initialized/deinitialized. For this
 you can call (note that these functions are not exported):
 
  Crypt::MatrixSSL3::open()
@@ -627,7 +627,7 @@ A bitwise OR combination of the following:
     OCSP_STAPLES_ENABLED             ( = 32) - handling of the "status_request" TLS extension by responding with an OCSP staple is enabled
     CERTIFICATE_TRANSPARENCY_ENABLED ( = 64) - handling of the "signed_certificate_timestamp" TLS extension is enabled
 
-Before using any of these features it's a good idea to test if matrixSSL is supporting them.
+Before using any of these features it's a good idea to test if MatrixSSL is supporting them.
 
 =item B<set_cipher_suite_enabled_status>( $cipherId, $status )
 
@@ -689,7 +689,7 @@ Parameters:
 
 =item $SCT_params
 
-Perl scalaer containg a file name with prepared extension data.
+Perl scalar contains a file name with prepared extension data.
 Perl array reference with file names of SCT binary structures that the function will use to create the extension data.
 
 =back
@@ -741,7 +741,7 @@ When this object will be destroyed will call:
  matrixSslLoadPkcs12( $keys, $p12File, $importPass, length $importPass,
     $macPass, length $macPass, $flags )
 
-=item $keys->B<load_DH_params( $DH_params_file )
+=item $keys->B<load_DH_params>( $DH_params_file )
 
   matrixSslLoadDhParams ( $keys, $DH_params_file )
 
@@ -879,13 +879,13 @@ Used to initialize the virtual host configuration for a server (socket). This fu
  1) $sni_index = $ssl->init_SNI( -1, $ssl_id, $sni_params ) - one time, after the first client was accepted and the server SSL session created
 
 When $sni_index is -1 or undef the XS module will allocate and initialize a SNI server structure using the
-parameters present in $sni_params. After that, it will register the matrixSSL SNI callback to an internal XS
+parameters present in $sni_params. After that, it will register the MatrixSSL SNI callback to an internal XS
 function using the newly created SNI server structure as parameter.
-This MUST be called only once per server socket and the resulte $sni_index value must be cached for subsequent calls.
+This MUST be called only once per server socket and the result $sni_index value must be cached for subsequent calls.
 
  2) $ssl->init_SNI( $sni_index, $ssl_id ) - many times, after clients are accepted and server SSL sessions created
 
-This will skip the SNI server initialization part and just register the matrixSSL SNI callback to an internal XS
+This will skip the SNI server initialization part and just register the MatrixSSL SNI callback to an internal XS
 function using the SNI server structure specified by $sni_index as parameter.
 
 Parameters:
@@ -929,12 +929,12 @@ This is a reference to an array that contains one or more array references:
 
 =item $ssl_id
 
-A 32 bit integer that uniquely identifies this sesion. This parameter will be sent back when matrixSSL calls the SNI callback defined in the XS module when a client sends a SNI extension.
-If the XS module is able ro match the requested client hostname it will call the Perl callback set with set_VHIndex_callback.
+A 32 bit integer that uniquely identifies this session. This parameter will be sent back when MatrixSSL calls the SNI callback defined in the XS module when a client sends a SNI extension.
+If the XS module is able to match the requested client hostname it will call the Perl callback set with set_VHIndex_callback.
 
 =back
 
-Returns the index of the internal SNI server structure used for registering the matrixSSL SNI callback. This MUST be saved after the first call.
+Returns the index of the internal SNI server structure used for registering the MatrixSSL SNI callback. This MUST be saved after the first call.
 
 =back
 
@@ -952,7 +952,7 @@ The $DERfile parameter specifies the file containing the OCSP staple in DER form
 Loads an OCSP staple to be returned if the client sends the "status_request" TLS extension.
 
 Note that this function is very inefficient because the loaded data is bound to the specified session and it will be freed when the session is destroyed.
-It has the advantage that the session will contain the lastest OCSP data if the OCSP DER file is refreshed in the meantime.
+It has the advantage that the session will contain the latest OCSP data if the OCSP DER file is refreshed in the meantime.
 
 Don't be lazy and use $ssl->set_OCSP_staple and refresh_OCSP_staple instead.
 
@@ -1075,22 +1075,18 @@ simple yet comprehensive documentation in PDF format.
 =head1 AUTHORS
 
  C. N. Drake, <christopher@pobox.com>
- Alex Efros  <powerman-asdf@ya.ru>
+ Alex Efros  <powerman@cpan.org>
 
 
 =head1 COPYRIGHT AND LICENSE
 
-MatrixSSL is distrubed under the GNU Public License:-
+MatrixSSL is distributed under the GNU General Public License:-
 http://www.gnu.org/copyleft/gpl.html
 
 Crypt::MatrixSSL3 uses MatrixSSL, and so inherits the same License.
 
  Copyright (C) 2005,2012,2016 by C. N. Drake.
- Copyright (C) 2012 by Alex Efros.
-
-This library is free software; you can redistribute it and/or modify
-it under the same terms as Perl itself, either Perl version 5.8.3 or,
-at your option, any later version of Perl 5 you may have available.
+ Copyright (C) 2012,2016 by Alex Efros.
 
 
 =cut
