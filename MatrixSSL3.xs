@@ -980,7 +980,7 @@ sess_new_client(keys, sessionId, cipherSuites, certValidator, expectedName, exte
 		
 		for (i = 0; i < cipherCount; i++) {
 			item = av_fetch(cipherSuitesArray, i, 0);
-			cipherSuitesBuf[i] = (uint32) SvNV(*item);
+			cipherSuitesBuf[i] = (uint32) SvIV(*item);
 		}
 	}
 	
