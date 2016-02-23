@@ -56,8 +56,7 @@ is 1, $client_rc, 'handshake complete (client)';
 ok !length $client2server, 'client outbuf empty after handshake';
 ok !length $server2client, 'server outbuf empty after handshake';
 
-my $anon;
-$anon = $Client_SSL->get_anon_status($anon = -1);
+my $anon = $Client_SSL->get_anon_status();
 is $anon, $wait_anon,
     'anon = '.($wait_anon == PS_TRUE ? 'PS_TRUE' : 'PS_FALSE');
 
