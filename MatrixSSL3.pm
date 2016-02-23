@@ -696,9 +696,9 @@ Perl array reference with file names of SCT binary structures that the function 
 
 Returns the number of files loaded in order to build extension data.
 
-=item B<set_VHindex_callback> ( \&VHIndexCallback )
+=item B<set_VHIndex_callback> ( \&VHIndexCallback )
 
-More information about &VHindexCallback in the CALLBACKS section.
+More information about &VHIndexCallback in the CALLBACKS section.
 
 =back
 
@@ -1052,7 +1052,7 @@ the client supports.
 The callback must return the 0-based index of a supported protocol or
 -1 if none of the client supplied protocols is supported.
 
-=item &VHindexCallback
+=item &VHIndexCallback
 
 Will be called whenever we have a successful match against the hostname specified by the client in its SNI extension.
 This will inform the Perl code which virtual host the current SSL session belongs to.
