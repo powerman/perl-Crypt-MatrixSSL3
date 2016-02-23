@@ -32,7 +32,7 @@ my $r = PS_SUCCESS;
 $keys = Crypt::MatrixSSL3::Keys->new();
 die "load_rsa: $r" unless ($r = $keys->load_rsa('t/cert/server.crt;t/cert/testCA.crt', 't/cert/server.key', undef, undef) == PS_SUCCESS);
 $ssl = Crypt::MatrixSSL3::Server->new($keys, undef);
-warn $keys->load_session_ticket_keys("1234567890123456", "12345678901234567890123456789012", 32, "12345678901234567890123456789012", 32);
+warn $keys->load_session_ticket_keys("1234567890123456", "12345678901234567890123456789012", "12345678901234567890123456789012");
 
 # Socket I/O:
 
