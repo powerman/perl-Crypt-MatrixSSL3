@@ -1087,7 +1087,7 @@ http://www.gnu.org/copyleft/gpl.html
 
 Crypt::MatrixSSL3 uses MatrixSSL, and so inherits the same License.
 
- Copyright (C) 2005,2012,2016 by C. N. Drake.
+ Copyright (C) 2005,2006,2012,2016 by C. N. Drake.
  Copyright (C) 2012,2016 by Alex Efros.
 
 
