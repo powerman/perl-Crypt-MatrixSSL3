@@ -33,14 +33,18 @@ $appOut = "GET / HTTP/1.0\r\nHost: ${HOST}\r\n\r\n";
 
 Crypt::MatrixSSL3::open();
 
-my $r = PS_SUCCESS;
-
+my $trustedCA = 'ca-certificates.crt';
+# $trustedCA = 't/cert/testCA.crt';
 $keys = Crypt::MatrixSSL3::Keys->new();
-#die "load_rsa: $r" unless ($r = $keys->load_rsa(undef, undef, undef, 'ca-certificates.crt') == PS_SUCCESS);
-die "load_rsa: $r" unless ($r = $keys->load_rsa(undef, undef, undef, 't/cert/testCA.crt') == PS_SUCCESS);
-warn "1";
-$ssl = Crypt::MatrixSSL3::Client->new($keys, undef, undef, sub {0}, undef, undef, undef);
-warn "2";
+if (my $rc = $keys->load_rsa(undef, undef, undef, $trustedCA)) {
+    die 'load_rsa: '.get_ssl_error($rc)."\n"
+}
+$ssl = Crypt::MatrixSSL3::Client->new($keys, undef, undef, sub {
+        my ($certInfo, $alert) = @_;
+        my $res = $alert ? get_ssl_alert("\x01".chr $alert) : 'OK';
+        warn "Certificate validation result: $res\n";
+        return 0;
+    }, undef, undef, undef);
 
 # Socket I/O:
 
