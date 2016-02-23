@@ -1,6 +1,6 @@
 use warnings;
 use strict;
-use Test::More tests => 337;
+use Test::More;
 use Test::Exception;
 
 use Crypt::MatrixSSL3 qw(:all);
@@ -78,8 +78,6 @@ handshake();
 io(1);
 fin();
 
-=cut
-
 new($trustedCAcertFiles, undef);
 handshake();
 io();
@@ -89,7 +87,6 @@ handshake();
 io(1);
 fin();
 
-
 new($trustedCAcertFiles, undef);
 handshake();
 io();
@@ -98,6 +95,8 @@ is MATRIXSSL_SUCCESS, $Client_SSL->encode_rehandshake(undef, undef, 0, [SSL_RSA_
 handshake();
 io(1);
 fin();
+
+=cut
 
 new($trustedCAcertFiles, sub{0});
 handshake();
@@ -137,10 +136,9 @@ io();
 fin();
 
 
-
-
 # diag "ALERTS: @Alert";
 
+done_testing();
 
 
 sub new {
