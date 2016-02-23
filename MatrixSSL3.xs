@@ -282,7 +282,6 @@ appExtensionCback(ssl_t *ssl, unsigned short type, unsigned short len, void *dat
 	dSP;
 	SV *	key;
 	SV *	callback;
-	//SV *	ext;
 	int	res;
 
 	ENTER;
@@ -854,7 +853,7 @@ keys_load_rsa_mem(keys, cert, priv, trustedCA)
 	STRLEN				certLen		= 0;
 	STRLEN				privLen		= 0;
 	STRLEN				trustedCALen	= 0;
-	INIT:
+    INIT:
     CODE:
 	/* All bufs can contain \0, so SvPV must be used instead of strlen() */
 	certBuf     = SvOK(cert)	? (unsigned char *) SvPV(cert, certLen)		: NULL;
@@ -901,9 +900,9 @@ keys_load_session_ticket_keys(keys, name, symkey, hashkey)
     nameBuf = SvOK(name) ? SvPV_nolen(name) : NULL;
     symkeyBuf = SvOK(symkey) ? SvPV(symkey, symkeyLen) : NULL;
     hashkeyBuf = SvOK(hashkey) ? SvPV(hashkey, hashkeyLen) : NULL;
-    RETVAL = matrixSslLoadSessionTicketKeys(keys, nameBuf, symkeyBuf, symkeyLen, hashkeyBuf, hashkeyLen);
+    RETVAL = (int) matrixSslLoadSessionTicketKeys(keys, nameBuf, symkeyBuf, symkeyLen, hashkeyBuf, hashkeyLen);
   OUTPUT:
-  RETVAL
+    RETVAL
 
 int
 keys_load_DH_params(keys, paramsFile)
@@ -923,13 +922,6 @@ sessid_new()
 	sslSessionId_t *		sessionId = NULL;
     CODE:
 	add_obj();
-	/*
-	sessionId = (sslSessionId_t *)malloc(sizeof(sslSessionId_t));
-	if(sessionId == NULL){
-	    del_obj();
-	    croak("%d", PS_MEM_FAIL);
-	}
-	*/
 	rc = matrixSslNewSessionId(&sessionId, NULL);
 	if(rc != PS_SUCCESS){
 	    del_obj();
@@ -946,7 +938,6 @@ sessid_DESTROY(sessionId)
 	Crypt_MatrixSSL3_SessID *	sessionId;
     CODE:
 	matrixSslDeleteSessionId((sslSessionId_t *) sessionId);
-	//free(sessionId);
 	del_obj();
     OUTPUT:
 
