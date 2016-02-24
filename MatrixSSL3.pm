@@ -761,15 +761,15 @@ When this object will be destroyed will call:
 
 =item B<new>()
 
-Return new object $sessid representing (sslSessionId_t*) type.
+Return new object $sessID representing (sslSessionId_t*) type.
 Throw exception if failed to allocate memory.
 When this object will be destroyed will free memory, so you should
 keep this object while there are exist Client/Server session
-which uses this $sessid.
+which uses this $sessID.
 
-=item $sessid->B<clear>()
+=item $sessID->B<clear>()
 
- matrixSslClearSessionId($sessid);
+ matrixSslClearSessionId($sessID);
 
 =back
 
@@ -777,9 +777,9 @@ which uses this $sessid.
 
 =over
 
-=item B<new>( $keys, $sessionId, \@cipherSuites, \&certValidator, $expectedName, $extensions, \&extensionCback )
+=item B<new>( $keys, $sessID, \@cipherSuites, \&certValidator, $expectedName, $extensions, \&extensionCback )
 
- matrixSslNewClientSession( $ssl, $keys, $sessionId, \@cipherSuites,
+ matrixSslNewClientSession( $ssl, $keys, $sessID, \@cipherSuites,
     \&certValidator, $expectedName, $extensions, \&extensionCback )
 
 Return new object $ssl.
@@ -828,7 +828,7 @@ but instead it append buffer returned by C API to the end of $outBuf.
 
  matrixSslSentData( $ssl, $bytes )
 
-=item $ssl->B<get_readbuf>( $ssl, $inBuf )
+=item $ssl->B<get_readbuf>( $inBuf )
 
 Unlike C API, it doesn't set $inBuf to memory location inside MatrixSSL,
 but instead it copy data from beginning of $inBuf into buffer returned by
@@ -838,6 +838,9 @@ than $inBuf contain if size of buffer provided by MatrixSSL will be smaller).
  $n = matrixSslGetReadbuf( $ssl, $buf )
  $n = min($n, length $inBuf)
  $buf = substr($inBuf, 0, $n, q{})
+
+It is safe to call it with empty $inBuf, but this isn't a good idea
+performance-wise.
 
 =item $ssl->B<received_data>( $bytes, $ptBuf )
 
