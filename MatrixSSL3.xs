@@ -1003,7 +1003,6 @@ sess_new_client(keys, sessionId, cipherSuites, certValidator, expectedName, exte
 	}
 	RETVAL = (Crypt_MatrixSSL3_Sess *)ssl;
 	
-  if (ssl != NULL) {
 	ENTER;
 	SAVETMPS;
 
@@ -1024,7 +1023,6 @@ sess_new_client(keys, sessionId, cipherSuites, certValidator, expectedName, exte
 
 	FREETMPS;
 	LEAVE;
-  }
 
     OUTPUT:
 	RETVAL
