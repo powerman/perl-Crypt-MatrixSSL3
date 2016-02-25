@@ -1,5 +1,7 @@
-Crypt-MatrixSSL3 version 3.7.3
-==============================
+[![Build Status](https://travis-ci.org/powerman/perl-Crypt-MatrixSSL3.svg?branch=master)](https://travis-ci.org/powerman/perl-Crypt-MatrixSSL3)
+[![Coverage Status](https://coveralls.io/repos/powerman/perl-Crypt-MatrixSSL3/badge.svg?branch=master)](https://coveralls.io/r/powerman/perl-Crypt-MatrixSSL3?branch=master)
+
+# Crypt-MatrixSSL3
 
 Crypt::MatrixSSL3 lets you use the MatrixSSL crypto library (see
 http://matrixssl.org/) from Perl.  With this module, you will be
@@ -19,7 +21,7 @@ Everything you need should be included here, but check the
 MatrixSSL.org web site to make sure you've got the latest version
 of the MatrixSSL "C" code.
 
-INSTALLATION
+# INSTALLATION
 
 To install this module type the following:
 
@@ -28,11 +30,11 @@ To install this module type the following:
    make test
    make install
 
-DEPENDENCIES
+# DEPENDENCIES
 
-This module requires no other modules or libraries:
+This module requires no other modules or libraries.
 
-COPYRIGHT AND LICENCE
+# COPYRIGHT AND LICENCE
 
 MatrixSSL is distributed under the GNU General Public License:-
 http://www.gnu.org/copyleft/gpl.html
@@ -40,5 +42,5 @@ http://www.gnu.org/copyleft/gpl.html
 Crypt::MatrixSSL3 uses MatrixSSL, and so inherits the same License.
 
 Copyright (C) 2005,2006,2012,2016 by C. N. Drake <christopher@pobox.com>.
-Copyright (C) 2012,2016 by Alex Efros <powerman@cpan.org>.
 
+Copyright (C) 2012,2016 by Alex Efros <powerman@cpan.org>.
