@@ -375,11 +375,11 @@ Used in matrixSslSetCipherSuiteEnabledStatus().
 
     #******************************************************************************
     #
-    #	Recommended cipher suites:
+    #   Recommended cipher suites:
     #
-    #	Define the following to enable various cipher suites
-    #	At least one of these must be defined.  If multiple are defined,
-    #	the handshake will determine which is best for the connection.
+    #   Define the following to enable various cipher suites
+    #   At least one of these must be defined.  If multiple are defined,
+    #   the handshake will determine which is best for the connection.
     #
 
     TLS_RSA_WITH_AES_128_CBC_SHA
@@ -430,8 +430,8 @@ Used in matrixSslSetCipherSuiteEnabledStatus().
 
     #******************************************************************************
     #
-    #	These cipher suites are secure, but not in general use. Enable only if 
-    #	specifically required by application.
+    #   These cipher suites are secure, but not in general use. Enable only if 
+    #   specifically required by application.
     #
     TLS_DHE_PSK_WITH_AES_256_CBC_SHA
     TLS_DHE_PSK_WITH_AES_128_CBC_SHA
@@ -443,7 +443,7 @@ Used in matrixSslSetCipherSuiteEnabledStatus().
 
     #******************************************************************************
     #
-    #	These cipher suites are generally considered weak, not recommended for use.
+    #   These cipher suites are generally considered weak, not recommended for use.
     #
     TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA
     SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA
@@ -455,9 +455,9 @@ Used in matrixSslSetCipherSuiteEnabledStatus().
 
     #******************************************************************************
     #
-    #	These cipher suites do not combine authentication and encryption and
-    #	are not recommended for use-cases that require strong security or 
-    #	Man-in-the-Middle protection.
+    #   These cipher suites do not combine authentication and encryption and
+    #   are not recommended for use-cases that require strong security or 
+    #   Man-in-the-Middle protection.
     #
     TLS_DH_anon_WITH_AES_256_CBC_SHA
     TLS_DH_anon_WITH_AES_128_CBC_SHA
@@ -908,30 +908,30 @@ For the first call this parameter MUST be -1. Subsequent calls MUST use the retu
 This is a reference to an array that contains one or more array references:
 
     $sni_params = [                                      # virtual hosts support - when a client sends a TLS SNI extension, the settings below will apply
-					                 #                         based on the requested hostname
-	# virtual host 0 (also referred in the code as SNI entry 0)
-	[
-	    'hostname',                                  # regular expression for matching the hostname
-	    '/path/to/certificate;/path/to/CA-chain',    # KEY - certificate (the CA-chain is optional)
-	    '/path/to/private_key',                      # KEY - private key
-	    '/path/to/DH_params',                        # KEY - file containing the DH parameter used with DH ciphers
-	    '1234567890123456',                          # KEY - TLS session tickets - 16 bytes unique identifier
-	    '12345678901234567890123456789012',          # KEY - TLS session tickets - 128/256 bit encryption key
-	    '12345678901234567890123456789012',          # KEY - TLS session tickets - 256 bit hash key
-	    '/path/to/OCSP_staple.der',                  # SESSION - file containing a OCSP staple that gets sent when a client
-	                                                 #           send a TLS status request extension
-	    [                                            # SESSION - Certificate Transparency SCT files used to build the 'signed_certificate_timestamp' TLS extension data buffer
-		'/path/to/SCT1.sct',
-		'/path/to/SCT2.sct',
-		...
-	    ]
-	    # instead of the Certificate Transparency SCT files you can specify a scalar with a single file that contains multiple SCT files
-	    # note that this file is not just a concatenation of the SCT files, but a ready-to-use 'signed_certificate_timestamp' TLS extension data buffer
-	    # see ct-submit.pl for more info
-	    #'/path/to/CT_extension_data_buffer
-	],
-	# virtual host 1
-	...
+                                                         #                         based on the requested hostname
+        # virtual host 0 (also referred in the code as SNI entry 0)
+        [
+            'hostname',                                  # regular expression for matching the hostname
+            '/path/to/certificate;/path/to/CA-chain',    # KEY - certificate (the CA-chain is optional)
+            '/path/to/private_key',                      # KEY - private key
+            '/path/to/DH_params',                        # KEY - file containing the DH parameter used with DH ciphers
+            '1234567890123456',                          # KEY - TLS session tickets - 16 bytes unique identifier
+            '12345678901234567890123456789012',          # KEY - TLS session tickets - 128/256 bit encryption key
+            '12345678901234567890123456789012',          # KEY - TLS session tickets - 256 bit hash key
+            '/path/to/OCSP_staple.der',                  # SESSION - file containing a OCSP staple that gets sent when a client
+                                                         #           send a TLS status request extension
+            [                                            # SESSION - Certificate Transparency SCT files used to build the 'signed_certificate_timestamp' TLS extension data buffer
+                '/path/to/SCT1.sct',
+                '/path/to/SCT2.sct',
+                ...
+            ]
+            # instead of the Certificate Transparency SCT files you can specify a scalar with a single file that contains multiple SCT files
+            # note that this file is not just a concatenation of the SCT files, but a ready-to-use 'signed_certificate_timestamp' TLS extension data buffer
+            # see ct-submit.pl for more info
+            #'/path/to/CT_extension_data_buffer
+        ],
+        # virtual host 1
+        ...
     ]
 
 =item $ssl_id

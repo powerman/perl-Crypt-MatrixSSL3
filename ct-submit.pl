@@ -43,18 +43,18 @@ foreach my $pem (@pem) {
     write_log("Reading certificate $pem");
     open(my $fh, "<$pem") or die("Cannot open $pem: $@");
     while(my $line = <$fh>) {
-	chomp($line);
-	next if ($line eq '');
-	if ($line =~ /\-+begin certificate\-+/i) {
-	    @cert = ();
-	    next;
-	}
-	if ($line =~ /\-+end certificate\-+/i) {
-	    my $b64 = join('', @cert);
-	    push(@chain, $b64);
-	    next;
-	}
-	push(@cert, $line);
+        chomp($line);
+        next if ($line eq '');
+        if ($line =~ /\-+begin certificate\-+/i) {
+            @cert = ();
+            next;
+        }
+        if ($line =~ /\-+end certificate\-+/i) {
+            my $b64 = join('', @cert);
+            push(@chain, $b64);
+            next;
+        }
+        push(@cert, $line);
     }
     close($fh);
 }
@@ -69,8 +69,8 @@ while (my($log_name, $log_url) = each(%logs)) {
     my $res = $ua->request($req);
     
     if (!$res->is_success) {
-	write_log("Failed: ", $res->status_line, "\n");
-	next;
+        write_log("Failed: ", $res->status_line, "\n");
+        next;
     }
     
     write_log("Got response from $log_url");
@@ -96,12 +96,12 @@ while (my($log_name, $log_url) = each(%logs)) {
     push(@sct, $bsct);
     
     if (defined($individual)) {
-	write_log("Writing $log_name.sct\n");
+        write_log("Writing $log_name.sct\n");
     
-	open(my $fh, ">$individual$log_name.sct") or die("Cannot open $log_name.sct for writing");
-	binmode($fh);
-	print $fh $bsct;
-	close($fh);
+        open(my $fh, ">$individual$log_name.sct") or die("Cannot open $log_name.sct for writing");
+        binmode($fh);
+        print $fh $bsct;
+        close($fh);
     }
 }
 
