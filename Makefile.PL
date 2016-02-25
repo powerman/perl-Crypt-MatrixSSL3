@@ -442,7 +442,6 @@ WriteMakefile(
     CCFLAGS             => $Config{ccflags} . $ccflags,
     LDDLFLAGS           => $Config{lddlflags} . $lddlflags,
     LIBS                => [$libs], # e.g., '-lm'
-    LIBS                => [$libs], # e.g., '-lm'
     DEFINE              => $define, # e.g., '-DHAVE_SOMETHING'
     INC                 => "-I. -I$mxbase -I$mxbase/crypto", # e.g., '-I. -I/usr/include/other'
     OBJECT              => "$mxobjs MatrixSSL3$o", # link all the C files too
