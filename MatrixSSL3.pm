@@ -306,13 +306,13 @@ Crypt::MatrixSSL3 - Perl extension for SSL and TLS using MatrixSSL.org v3.7.3
 
 =head1 SYNOPSIS
 
-    use Crypt::MatrixSSL3;
+  use Crypt::MatrixSSL3;
 
-    # 1. See the MatrixSSL documentation.
-    # 2. See scripts included in this package:
-    #     sample_ssl_client.pl
-    #     sample_ssl_server.pl
-    #     sample_functions.pl
+  # 1. See the MatrixSSL documentation.
+  # 2. See scripts included in this package:
+  #     sample_ssl_client.pl
+  #     sample_ssl_server.pl
+  #     sample_functions.pl
 
 
 =head1 DESCRIPTION
@@ -375,11 +375,11 @@ Used in matrixSslSetCipherSuiteEnabledStatus().
 
     #******************************************************************************
     #
-    #   Recommended cipher suites:
+    #	Recommended cipher suites:
     #
-    #   Define the following to enable various cipher suites
-    #   At least one of these must be defined.  If multiple are defined,
-    #   the handshake will determine which is best for the connection.
+    #	Define the following to enable various cipher suites
+    #	At least one of these must be defined.  If multiple are defined,
+    #	the handshake will determine which is best for the connection.
     #
 
     TLS_RSA_WITH_AES_128_CBC_SHA
@@ -430,8 +430,8 @@ Used in matrixSslSetCipherSuiteEnabledStatus().
 
     #******************************************************************************
     #
-    #   These cipher suites are secure, but not in general use. Enable only if 
-    #   specifically required by application.
+    #	These cipher suites are secure, but not in general use. Enable only if 
+    #	specifically required by application.
     #
     TLS_DHE_PSK_WITH_AES_256_CBC_SHA
     TLS_DHE_PSK_WITH_AES_128_CBC_SHA
@@ -443,7 +443,7 @@ Used in matrixSslSetCipherSuiteEnabledStatus().
 
     #******************************************************************************
     #
-    #   These cipher suites are generally considered weak, not recommended for use.
+    #	These cipher suites are generally considered weak, not recommended for use.
     #
     TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA
     SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA
@@ -455,9 +455,9 @@ Used in matrixSslSetCipherSuiteEnabledStatus().
 
     #******************************************************************************
     #
-    #   These cipher suites do not combine authentication and encryption and
-    #   are not recommended for use-cases that require strong security or 
-    #   Man-in-the-Middle protection.
+    #	These cipher suites do not combine authentication and encryption and
+    #	are not recommended for use-cases that require strong security or 
+    #	Man-in-the-Middle protection.
     #
     TLS_DH_anon_WITH_AES_256_CBC_SHA
     TLS_DH_anon_WITH_AES_128_CBC_SHA
@@ -593,29 +593,29 @@ These functions will be called automatically before creating first
 object of any class (::Keys, ::SessID, ::Client, ::Server or ::HelloExt)
 and after last object will be destroyed.
 
-    matrixSslOpen
-    matrixSslClose
+ matrixSslOpen
+ matrixSslClose
 
 These functions implement optimization which is useless in Perl:
 
-    matrixSslGetWritebuf
-    matrixSslEncodeWritebuf
+ matrixSslGetWritebuf
+ matrixSslEncodeWritebuf
 
 =over
 
-=item B<open>()
+=item B<Open>()
 
-=item B<close>()
+=item B<Close>()
 
 If you write server intensive applications it is still better to control
 how often the MatrixSSL library gets initialized/deinitialized. For this
 you can call
 
-    Crypt::MatrixSSL3::open()
+ Crypt::MatrixSSL3::open()
 
 to initialize the library at the start of you application and
 
-    Crypt::MatrixSSL3::close()
+ Crypt::MatrixSSL3::close()
 
 to deinitialize the library when your application ends.
 
@@ -635,7 +635,7 @@ Before using any of these features it's a good idea to test if MatrixSSL is supp
 
 =item B<set_cipher_suite_enabled_status>( $cipherId, $status )
 
-    matrixSslSetCipherSuiteEnabledStatus( NULL, $cipherId, $status )
+ matrixSslSetCipherSuiteEnabledStatus( NULL, $cipherId, $status )
 
 If this function will be used, matrixSslClose() will be never called.
 
@@ -713,8 +713,8 @@ returning error as matrixSslNew*() functions do. Exception will be
 thrown using C< croak($return_code) >, so to get $return_code from $@
 you should convert it back to number:
 
-    eval { $client = Crypt::MatrixSSL3::Client->new(...) };
-    $return_code = 0+$@ if $@;
+ eval { $client = Crypt::MatrixSSL3::Client->new(...) };
+ $return_code = 0+$@ if $@;
 
 =head2 Crypt::MatrixSSL3::Keys
 
@@ -722,36 +722,36 @@ you should convert it back to number:
 
 =item B<new>()
 
-    matrixSslNewKeys( $keys )
+ matrixSslNewKeys( $keys )
 
 Return new object $keys.
 Throw exception if matrixSslNewKeys() doesn't return PS_SUCCESS.
 When this object will be destroyed will call:
 
-    matrixSslDeleteKeys( $keys )
+ matrixSslDeleteKeys( $keys )
 
 =item $keys->B<load_rsa>( $certFile, $privFile, $privPass, $trustedCAcertFiles )
 
-    matrixSslLoadRsaKeys( $keys, $certFile,
-        $privFile, $privPass, $trustedCAcertFiles )
+ matrixSslLoadRsaKeys( $keys, $certFile,
+    $privFile, $privPass, $trustedCAcertFiles )
 
 =item $keys->B<load_rsa_mem>( $cert, $priv, $trustedCA )
 
-    matrixSslLoadRsaKeysMem( $keys, $cert, length $cert,
-        $priv, length $priv, $trustedCA, length $trustedCA )
+ matrixSslLoadRsaKeysMem( $keys, $cert, length $cert,
+    $priv, length $priv, $trustedCA, length $trustedCA )
 
 =item $keys->B<load_pkcs12>( $p12File, $importPass, $macPass, $flags )
 
-    matrixSslLoadPkcs12( $keys, $p12File, $importPass, length $importPass,
-        $macPass, length $macPass, $flags )
+ matrixSslLoadPkcs12( $keys, $p12File, $importPass, length $importPass,
+    $macPass, length $macPass, $flags )
 
 =item $keys->B<load_DH_params>( $DH_params_file )
 
-    matrixSslLoadDhParams ( $keys, $DH_params_file )
+  matrixSslLoadDhParams ( $keys, $DH_params_file )
 
 =item $keys->B<load_session_ticket_keys>( $name, $symkey, $hashkey ) C<server side>
 
-    matrixSslLoadSessionTicketKeys ($keys, $name, $symkey, length $symkey, $haskkey, length $hashkey )
+  matrixSslLoadSessionTicketKeys ($keys, $name, $symkey, length $symkey, $haskkey, length $hashkey )
 
 =back
 
@@ -761,15 +761,15 @@ When this object will be destroyed will call:
 
 =item B<new>()
 
-Return new object $sessID representing (sslSessionId_t*) type.
+Return new object $sessid representing (sslSessionId_t*) type.
 Throw exception if failed to allocate memory.
 When this object will be destroyed will free memory, so you should
 keep this object while there are exist Client/Server session
-which uses this $sessID.
+which uses this $sessid.
 
-=item $sessID->B<clear>()
+=item $sessid->B<clear>()
 
-    matrixSslClearSessionId($sessID);
+ matrixSslClearSessionId($sessid);
 
 =back
 
@@ -777,17 +777,17 @@ which uses this $sessID.
 
 =over
 
-=item B<new>( $keys, $sessID, \@cipherSuites, \&certValidator, $expectedName, $extensions, \&extensionCback )
+=item B<new>( $keys, $sessionId, \@cipherSuites, \&certValidator, $expectedName, $extensions, \&extensionCback )
 
-    matrixSslNewClientSession( $ssl, $keys, $sessID, \@cipherSuites,
-        \&certValidator, $expectedName, $extensions, \&extensionCback )
+ matrixSslNewClientSession( $ssl, $keys, $sessionId, \@cipherSuites,
+    \&certValidator, $expectedName, $extensions, \&extensionCback )
 
 Return new object $ssl.
 Throw exception if matrixSslNewClientSession() doesn't return
 MATRIXSSL_REQUEST_SEND.
 When this object will be destroyed will call:
 
-    matrixSslDeleteSession( $ssl )
+ matrixSslDeleteSession( $ssl )
 
 More information about callbacks &certValidator and &extensionCback
 in next section.
@@ -800,13 +800,13 @@ in next section.
 
 =item B<new>( $keys, \&certValidator )
 
-    matrixSslNewServerSession( $ssl, $keys, \&certValidator )
+ matrixSslNewServerSession( $ssl, $keys, \&certValidator )
 
 Return new object $ssl.
 Throw exception if matrixSslNewServerSession() doesn't return PS_SUCCESS.
 When this object will be destroyed will call:
 
-    matrixSslDeleteSession( $ssl )
+ matrixSslDeleteSession( $ssl )
 
 More information about callback &certValidator in next section.
 
@@ -821,76 +821,73 @@ More information about callback &certValidator in next section.
 Unlike C API, it doesn't set $outBuf to memory location inside MatrixSSL,
 but instead it append buffer returned by C API to the end of $outBuf.
 
-    matrixSslGetOutdata( $ssl, $tmpBuf )
-    $outBuf .= $tmpBuf
+ matrixSslGetOutdata( $ssl, $tmpBuf )
+ $outBuf .= $tmpBuf
 
 =item $ssl->B<sent_data>( $bytes )
 
-    matrixSslSentData( $ssl, $bytes )
+ matrixSslSentData( $ssl, $bytes )
 
-=item $ssl->B<get_readbuf>( $inBuf )
+=item $ssl->B<get_readbuf>( $ssl, $inBuf )
 
 Unlike C API, it doesn't set $inBuf to memory location inside MatrixSSL,
 but instead it copy data from beginning of $inBuf into buffer returned by
 C API and cut copied data from beginning of $inBuf (it may copy less bytes
 than $inBuf contain if size of buffer provided by MatrixSSL will be smaller).
 
-    $n = matrixSslGetReadbuf( $ssl, $buf )
-    $n = min($n, length $inBuf)
-    $buf = substr($inBuf, 0, $n, q{})
-
-It is safe to call it with empty $inBuf, but this isn't a good idea
-performance-wise.
+ $n = matrixSslGetReadbuf( $ssl, $buf )
+ $n = min($n, length $inBuf)
+ $buf = substr($inBuf, 0, $n, q{})
 
 =item $ssl->B<received_data>( $bytes, $ptBuf )
 
-    matrixSslReceivedData( $ssl, $bytes, $ptBuf, $ptLen )
+ matrixSslReceivedData( $ssl, $bytes, $ptBuf, $ptLen )
 
 =item $ssl->B<processed_data>( $ptBuf )
 
-    matrixSslProcessedData( $ssl, $ptBuf, $ptLen )
+ matrixSslProcessedData( $ssl, $ptBuf, $ptLen )
 
 In case matrixSslReceivedData() or matrixSslProcessedData() will return
 MATRIXSSL_RECEIVED_ALERT, you can get alert level and description from
 $ptBuf:
 
-    my ($level, $descr) = get_ssl_alert($ptBuf);
+ my ($level, $descr) = get_ssl_alert($ptBuf);
 
 =item $ssl->B<encode_to_outdata>( $outBuf )
 
-    matrixSslEncodeToOutdata( $ssl, $outBuf, length $outBuf )
+ matrixSslEncodeToOutdata( $ssl, $outBuf, length $outBuf )
 
 =item $ssl->B<encode_closure_alert>( )
 
-    matrixSslEncodeClosureAlert( $ssl )
+ matrixSslEncodeClosureAlert( $ssl )
 
 =item $ssl->B<encode_rehandshake>( $keys, \&certValidator, $sessionOption, \@cipherSuites )
 
-    matrixSslEncodeRehandshake( $ssl, $keys, \&certValidator,
-        $sessionOption, \@cipherSuites )
+ matrixSslEncodeRehandshake( $ssl, $keys, \&certValidator,
+    $sessionOption, \@cipherSuites )
 
 More information about callback &certValidator in next section.
 
 =item $ssl->B<set_cipher_suite_enabled_status>( $cipherId, $status )
 
-    matrixSslSetCipherSuiteEnabledStatus( $ssl, $cipherId, $status )
+ matrixSslSetCipherSuiteEnabledStatus( $ssl, $cipherId, $status )
 
 =item $anon = $ssl->B<get_anon_status>()
 
-    matrixSslGetAnonStatus( $ssl, $anon )
+ matrixSslGetAnonStatus( $ssl, $anon )
 
 =item $ssl->B<init_SNI>( $sni_index, $ssl_id, $sni_params ) C<server side>
 
 Used to initialize the virtual host configuration for a server (socket). This function can be called in two ways:
 
-    1) $sni_index = $ssl->init_SNI( -1, $ssl_id, $sni_params ) - one time, after the first client was accepted and the server SSL session created
+ 1) $sni_index = $ssl->init_SNI( -1, $ssl_id, $sni_params ) - one time, after the first client was accepted and the server SSL session created
 
 When $sni_index is -1 or undef the XS module will allocate and initialize a SNI server structure using the
 parameters present in $sni_params. After that, it will register the MatrixSSL SNI callback to an internal XS
 function using the newly created SNI server structure as parameter.
 This MUST be called only once per server socket and the result $sni_index value must be cached for subsequent calls.
 
-    2) $ssl->init_SNI( $sni_index, $ssl_id ) - many times, after clients are accepted and server SSL sessions created
+ 2) $ssl->init_SNI( $sni_index, $ssl_id ) - many times, after clients are accepted and server SSL sessions created
 
 This will skip the SNI server initialization part and just register the MatrixSSL SNI callback to an internal XS
 function using the SNI server structure specified by $sni_index as parameter.
@@ -908,30 +905,30 @@ For the first call this parameter MUST be -1. Subsequent calls MUST use the retu
 This is a reference to an array that contains one or more array references:
 
     $sni_params = [                                      # virtual hosts support - when a client sends a TLS SNI extension, the settings below will apply
-                                                         #                         based on the requested hostname
-        # virtual host 0 (also referred in the code as SNI entry 0)
-        [
-            'hostname',                                  # regular expression for matching the hostname
-            '/path/to/certificate;/path/to/CA-chain',    # KEY - certificate (the CA-chain is optional)
-            '/path/to/private_key',                      # KEY - private key
-            '/path/to/DH_params',                        # KEY - file containing the DH parameter used with DH ciphers
-            '1234567890123456',                          # KEY - TLS session tickets - 16 bytes unique identifier
-            '12345678901234567890123456789012',          # KEY - TLS session tickets - 128/256 bit encryption key
-            '12345678901234567890123456789012',          # KEY - TLS session tickets - 256 bit hash key
-            '/path/to/OCSP_staple.der',                  # SESSION - file containing a OCSP staple that gets sent when a client
-                                                         #           send a TLS status request extension
-            [                                            # SESSION - Certificate Transparency SCT files used to build the 'signed_certificate_timestamp' TLS extension data buffer
-                '/path/to/SCT1.sct',
-                '/path/to/SCT2.sct',
-                ...
-            ]
-            # instead of the Certificate Transparency SCT files you can specify a scalar with a single file that contains multiple SCT files
-            # note that this file is not just a concatenation of the SCT files, but a ready-to-use 'signed_certificate_timestamp' TLS extension data buffer
-            # see ct-submit.pl for more info
-            #'/path/to/CT_extension_data_buffer
-        ],
-        # virtual host 1
-        ...
+					                 #                         based on the requested hostname
+	# virtual host 0 (also referred in the code as SNI entry 0)
+	[
+	    'hostname',                                  # regular expression for matching the hostname
+	    '/path/to/certificate;/path/to/CA-chain',    # KEY - certificate (the CA-chain is optional)
+	    '/path/to/private_key',                      # KEY - private key
+	    '/path/to/DH_params',                        # KEY - file containing the DH parameter used with DH ciphers
+	    '1234567890123456',                          # KEY - TLS session tickets - 16 bytes unique identifier
+	    '12345678901234567890123456789012',          # KEY - TLS session tickets - 128/256 bit encryption key
+	    '12345678901234567890123456789012',          # KEY - TLS session tickets - 256 bit hash key
+	    '/path/to/OCSP_staple.der',                  # SESSION - file containing a OCSP staple that gets sent when a client
+	                                                 #           send a TLS status request extension
+	    [                                            # SESSION - Certificate Transparency SCT files used to build the 'signed_certificate_timestamp' TLS extension data buffer
+		'/path/to/SCT1.sct',
+		'/path/to/SCT2.sct',
+		...
+	    ]
+	    # instead of the Certificate Transparency SCT files you can specify a scalar with a single file that contains multiple SCT files
+	    # note that this file is not just a concatenation of the SCT files, but a ready-to-use 'signed_certificate_timestamp' TLS extension data buffer
+	    # see ct-submit.pl for more info
+	    #'/path/to/CT_extension_data_buffer
+	],
+	# virtual host 1
+	...
     ]
 
 =item $ssl_id
@@ -984,17 +981,17 @@ More information about callback &ALPNcb in next section.
 
 =item B<new>( )
 
-    matrixSslNewHelloExtension>( $extension )
+ matrixSslNewHelloExtension>( $extension )
 
 Return new object $extension.
 Throw exception if matrixSslNewHelloExtension() doesn't return PS_SUCCESS.
 When this object will be destroyed will call:
 
-    matrixSslDeleteHelloExtension( $extension )
+ matrixSslDeleteHelloExtension( $extension )
 
 =item $extension->B<load>( $ext, $extType )
 
-    matrixSslLoadHelloExtension( $extension, $ext, length $ext, $extType )
+ matrixSslLoadHelloExtension( $extension, $ext, length $ext, $extType )
 
 =back
 
@@ -1011,30 +1008,30 @@ Will be called with two scalar params: $certInfo and $alert
 Param $certInfo instead of (psX509Cert_t *) will contain reference to
 array with certificates. Each certificate will be hash in this format:
 
-    notBefore       => $notBefore,
-    notAfter        => $notAfter,
-    subjectAltName  => {
-        dns             => $dns,
-        uri             => $uri,
-        email           => $email,
-    },
-    subject        => {
-        country         => $country,
-        state           => $state,
-        locality        => $locality,
-        organization    => $organization,
-        orgUnit         => $orgUnit,
-        commonName      => $commonName,
-    },
-    issuer         => {
-        country         => $country,
-        state           => $state,
-        locality        => $locality,
-        organization    => $organization,
-        orgUnit         => $orgUnit,
-        commonName      => $commonName,
-    },
-    authStatus     => $authStatus,
+ notBefore      => $notBefore,
+ notAfter       => $notAfter,
+ subjectAltName => {
+                dns             => $dns,
+                uri             => $uri,
+                email           => $email,
+                },
+ subject        => {
+                country         => $country,
+                state           => $state,
+                locality        => $locality,
+                organization    => $organization,
+                orgUnit         => $orgUnit,
+                commonName      => $commonName,
+                },
+ issuer         => {
+                country         => $country,
+                state           => $state,
+                locality        => $locality,
+                organization    => $organization,
+                orgUnit         => $orgUnit,
+                commonName      => $commonName,
+                },
+ authStatus     => $authStatus,
 
 This callback must return single scalar with integer value (as described in
 MatrixSSL documentation). If callback die(), then warning will be printed,
@@ -1063,9 +1060,8 @@ Will be called whenever we have a successful match against the hostname specifie
 This will inform the Perl code which virtual host the current SSL session belongs to.
 
 Will be called with 2 parameters:
-
-    $ssl_id - this is the $ssl_id used in the $ssl->init_SNI(...) function call
-    $index - a 0-based int specifying which virtual host matchd the client requested hostname
+  $ssl_id - this is the $ssl_id used in the $ssl->init_SNI(...) function call
+  $index - a 0-based int specifying which virtual host matchd the client requested hostname
 
 Doesn't return anything.
 
@@ -1080,8 +1076,8 @@ simple yet comprehensive documentation in PDF format.
 
 =head1 AUTHORS
 
-    C. N. Drake, <christopher@pobox.com>
-    Alex Efros  <powerman@cpan.org>
+ C. N. Drake, <christopher@pobox.com>
+ Alex Efros  <powerman@cpan.org>
 
 
 =head1 COPYRIGHT AND LICENSE
@@ -1091,8 +1087,8 @@ http://www.gnu.org/copyleft/gpl.html
 
 Crypt::MatrixSSL3 uses MatrixSSL, and so inherits the same License.
 
-    Copyright (C) 2005,2006,2012,2016 by C. N. Drake.
-    Copyright (C) 2012,2016 by Alex Efros.
+ Copyright (C) 2005,2006,2012,2016 by C. N. Drake.
+ Copyright (C) 2012,2016 by Alex Efros.
 
 
 =cut
