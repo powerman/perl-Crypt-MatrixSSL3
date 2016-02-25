@@ -1,0 +1,114 @@
+--- matrixssl-3-7-2b-open-original/matrixssl/matrixsslApi.c	2015-03-18 20:57:06.000000000 +0000
++++ matrixssl-3-7-2b-open/matrixssl/matrixsslApi.c	2016-02-25 11:15:33.000000000 +0000
+@@ -215,6 +215,98 @@ void matrixSslDeleteSessionId(sslSession
+ #endif /* USE_CLIENT_SIDE_SSL */
+ 
+ #ifdef USE_SERVER_SIDE_SSL
++
++#ifdef ENABLE_CERTIFICATE_STATUS_REQUEST
++
++/******************************************************************************/
++/*
++	Loads the OCSP DER response for the session from the specified file
++	This exact content will be sent when a client sends a "status request"
++	extension in its CLIENT_HELLO message
++
++	Subsequent calls to this functions refresh the OCSP DER response inside
++	the ssl structure
++
++	Calling this function with a NULL DERfile parameter will free the memory
++	if allocated in the past
++
++	Note that this is inefficient as the OCSP DER response will be loaded
++	for each session. A more efficient approach is to manage the OCSP DER
++	response buffer yourself and just call matrixSslSetOcspDER to setup the
++	pointer and size
++*/
++int32 matrixSslLoadOcspDER(ssl_t *ssl, const unsigned char *DERfile)
++{
++	int32 rc = PS_SUCCESS;
++	
++	// free previous loaded OCSP DER if any
++	if (ssl->status_request_DER_must_free) {
++		psFree(ssl->status_request_DER, NULL);
++		ssl->status_request_DER = NULL;
++		ssl->status_request_DER_size = 0;
++		ssl->status_request_DER_must_free = 0;
++	}
++
++	// read the new file (if specified)
++	if (DERfile != NULL) {
++		rc = psGetFileBuf(NULL, DERfile, &ssl->status_request_DER, &ssl->status_request_DER_size);
++	
++		if (rc == PS_SUCCESS) {
++			// signal that we must free when the session is done
++			ssl->status_request_DER_must_free = 1;
++		}
++	}
++
++	psTraceIntInfo("Loaded OCSP DER size = %d\n", ssl->status_request_DER_size);
++	psTracePtrCore("SSL = %p\n", ssl);
++	psTracePtrCore("DER = %p\n", ssl->status_request_DER);
++	psTraceIntInfo("DERs = %d\n", ssl->status_request_DER_size);
++	
++	return rc;
++}
++
++/******************************************************************************/
++/*
++	Sets up the pointer and size of an OCSP DER response freeing a previoulsy
++	loaded OCSP DER response if necessary
++*/
++int32 matrixSslSetOcspDER(ssl_t *ssl, unsigned char *OCSP_DER, int32 OCSP_DER_size)
++{
++	// check if an OCSP DER response is already loaded so we free the allocated
++	// memory before setting the pointer to prevent leaks
++	if (ssl->status_request_DER_must_free) {
++		psFree(ssl->status_request_DER, NULL);
++		ssl->status_request_DER = NULL;
++		ssl->status_request_DER_size = 0;
++		ssl->status_request_DER_must_free = 0;
++	}
++	
++	// setup the new pointer and size
++	ssl->status_request_DER = OCSP_DER;
++	ssl->status_request_DER_size = OCSP_DER_size;
++	
++	return PS_SUCCESS;
++}
++
++#endif /* ENABLE_CERTIFICATE_STATUS_REQUEST */
++
++#ifdef ENABLE_SIGNED_CERTIFICATE_TIMESTAMP
++
++/******************************************************************************/
++/*
++	Sets up the session's SCT buffer and SCT buffer size using a buffer
++	containing one or more SCT entries
++*/
++int32 matrixSslSetSCT(ssl_t *ssl, unsigned char *SCT, int32 SCT_size)
++{
++	ssl->SCT = SCT;
++	ssl->SCT_size = SCT_size;
++	
++	return PS_SUCCESS;
++}
++
++#endif /* ENABLE_SIGNED_CERTIFICATE_TIMESTAMP */
++
+ /******************************************************************************/
+ /*
+ 	Create a new server SSL session
+@@ -288,9 +380,11 @@ NEW_SVR_ERROR:
+ }
+ 
+ void matrixSslRegisterSNICallback(ssl_t *ssl, void (*sni_cb)(void *ssl,
+-	char *hostname, int32 hostnameLen, sslKeys_t **newKeys))
++	char *hostname, int32 hostnameLen, sslKeys_t **newKeys, void *userPtr, int32 ssl_id), void *sni_cb_userPtr, int32 sni_cb_ssl_id)
+ {
+ 	ssl->sni_cb = sni_cb;
++	ssl->sni_cb_userPtr = sni_cb_userPtr;
++	ssl->sni_cb_ssl_id = sni_cb_ssl_id;
+ }
+ 
+ #ifdef USE_ALPN
