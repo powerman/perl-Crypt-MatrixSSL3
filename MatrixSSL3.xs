@@ -22,7 +22,13 @@ typedef sslSessionId_t  Crypt_MatrixSSL3_SessID;
 typedef ssl_t           Crypt_MatrixSSL3_Sess;
 typedef tlsExtension_t  Crypt_MatrixSSL3_HelloExt;
 
+static int matrixssl_initialized = 0;
+
+#ifdef MATRIX_DEBUG
 static int objects = 0;
+#endif
+
+sslSessOpts_t sslOpts;
 
 /*****************************************************************************
     SNI entries  a.k.a virtual hosts per server.
@@ -106,36 +112,33 @@ typedef struct s_SCT_buffer {
 t_SCT_buffer *SCT_buffers[MAX_SCT_BUFFERS];
 int16 SCT_buffer_index = 0;
 
+
 void add_obj() {
     int rc;
 
-    if (objects == 0) {
-#ifdef MATRIX_DEBUG
-        warn("Calling matrixSslOpen()");
-#endif
+    if (!matrixssl_initialized) {
+        matrixssl_initialized = 1;
+        
         rc = matrixSslOpen();
         if (rc != PS_SUCCESS)
             croak("%d", rc);
     }
 #ifdef MATRIX_DEBUG
     warn("add_obj: objects number %d -> %d", objects, objects + 1);
-#endif
     objects++;
+#endif
 }
 
+
+#ifdef MATRIX_DEBUG
 void del_obj() {
-#ifdef MATRIX_DEBUG
     warn("del_obj: objects number %d -> %d", objects, objects - 1);
-#endif
     objects--;
-    if (objects == 0) {
-#ifdef MATRIX_DEBUG
-        warn("Calling matrixSslClose()");
-#endif
-        matrixSslClose();
-    } else if (objects < 0)
-        croak("del_obj: internal error");
 }
+#else
+#define del_obj()
+#endif
+
 
 /*
  * my_hv_store() helper macro to avoid writting hash key names twice or
@@ -404,11 +407,15 @@ void SNI_callback(void *ssl, char *hostname, int32 hostnameLen, sslKeys_t **newK
     unsigned char _hostname[255];
 #ifndef WIN32
     int regex_res = 0;
+#if defined(MATRIX_DEBUG)
     char regex_error[255];
+#endif
 #endif
     t_SNI_server *ss = (t_SNI_server *) userPtr;
 
-    memcpy(_hostname, hostname, hostnameLen < 255 ? hostnameLen : 254);
+    // TODO: modify matrixSSL so it returns a null terminated hostname so this is no longer necessary
+    if (hostnameLen > 254) hostnameLen = 254;
+    memcpy(_hostname, hostname, hostnameLen);
     _hostname[hostnameLen] = 0;
 
 #ifdef MATRIX_DEBUG
@@ -552,7 +559,7 @@ int build_SCT_buffer(SV *ar, unsigned char **buffer, int32 *buffer_size) {
         memcpy(c, sct, sct_size);
         c+= sct_size;
 
-        psFree(sct, NULL);
+        free(sct);
     }
 
     return sct_array_size;
@@ -563,6 +570,17 @@ MODULE = Crypt::MatrixSSL3      PACKAGE = Crypt::MatrixSSL3
 INCLUDE: const-xs.inc
 
 PROTOTYPES: ENABLE
+
+int _getObjCount()
+    CODE:
+#ifdef MATRIX_DEBUG
+    RETVAL = objects;
+#else
+    RETVAL = 0;
+#endif
+    OUTPUT:
+    RETVAL
+
 
 int set_cipher_suite_enabled_status(cipherId, status)
     short cipherId;
@@ -575,11 +593,11 @@ int set_cipher_suite_enabled_status(cipherId, status)
     OUTPUT:
     RETVAL
 
-void open()
+void Open()
     CODE:
     add_obj();
 
-void close()
+void Close()
     int i = 0, j = 0;
     t_SNI_server *ss = NULL;
 
@@ -595,7 +613,7 @@ void close()
 #ifdef MATRIX_DEBUG
             warn("Releasing OCSP staple buffer %d, size = %d", i, OCSP_staples[i]->OCSP_staple_size);
 #endif
-            psFree(OCSP_staples[i]->OCSP_staple, NULL);
+            free(OCSP_staples[i]->OCSP_staple);
         }
 #ifdef MATRIX_DEBUG
         warn("Releasing OCSP staple %d", i);
@@ -612,7 +630,7 @@ void close()
 #ifdef MATRIX_DEBUG
             warn("Releasing SCT extension buffer %d, size = %d", i, SCT_buffers[i]->SCT_size);
 #endif
-            psFree(SCT_buffers[i]->SCT, NULL);
+            free(SCT_buffers[i]->SCT);
         }
 #ifdef MATRIX_DEBUG
         warn("Releasing SCT buffer %d", i);
@@ -647,14 +665,14 @@ void close()
 #ifdef MATRIX_DEBUG
                 warn("  Releasing OCSP staple buffer for SNI entry %d, size = %d", i, ss->SNI_entries[i]->OCSP_staple_size);
 #endif
-                psFree(ss->SNI_entries[i]->OCSP_staple, NULL);
+                free(ss->SNI_entries[i]->OCSP_staple);
             }
 
             if (ss->SNI_entries[i]->SCT != NULL) {
 #ifdef MATRIX_DEBUG
                 warn("  Releasing SCT extension buffer for SNI entry %d, size = %d", i, ss->SNI_entries[i]->SCT_size);
 #endif
-                psFree(ss->SNI_entries[i]->SCT, NULL);
+                free(ss->SNI_entries[i]->SCT);
             }
 #ifdef MATRIX_DEBUG
             warn("  Releasing SNI entry %d", i);
@@ -666,7 +684,11 @@ void close()
 #endif
         free(ss);
     }
-
+#ifdef MATRIX_DEBUG
+    warn("Calling matrixSslClose()");
+#endif
+    matrixSslClose();
+    matrixssl_initialized = 0;
 
 int refresh_OCSP_staple(server_index, index, DERfile)
     int server_index = SvOK(ST(0)) ? SvIV(ST(0)) : -1;
@@ -916,6 +938,7 @@ int keys_load_session_ticket_keys(keys, name, symkey, hashkey)
     OUTPUT:
     RETVAL
 
+
 int keys_load_DH_params(keys, paramsFile)
     Crypt_MatrixSSL3_Keys *keys;
     char *paramsFile = SvOK(ST(1)) ? SvPV_nolen(ST(1)) : NULL;
@@ -984,7 +1007,6 @@ Crypt_MatrixSSL3_Sess *sess_new_client(keys, sessionId, cipherSuites, certValida
 
     PREINIT:
     uint32 cipherSuitesBuf[64];
-    sslSessOpts_t sslOpts;
 
     INIT:
     if (SvROK(cipherSuites) && SvTYPE(SvRV(cipherSuites)) == SVt_PVAV) {
@@ -1054,9 +1076,6 @@ Crypt_MatrixSSL3_Sess *sess_new_server(keys, certValidator)
     SV *key = NULL;
     int rc = 0;
 
-    PREINIT:
-    sslSessOpts_t sslOpts;
-
     CODE:
     add_obj();
 
@@ -1120,7 +1139,6 @@ int sess_init_SNI(ssl, index, ssl_id, sni_data = NULL)
     int regex_res = 0;
     char regex_error[255];
 #endif
-
     CODE:
 #ifdef MATRIX_DEBUG
     warn("initSNI: index %d", index);
@@ -1158,7 +1176,7 @@ int sess_init_SNI(ssl, index, ssl_id, sni_data = NULL)
     ss = SNI_servers[index];
 
     // initialize SNI server structure
-    if (!(SvOK(sni_data) && SvRV(sni_data) && SvTYPE(SvRV(sni_data)) == SVt_PVAV))
+    if (!(SvROK(sni_data) && SvTYPE(SvRV(sni_data)) == SVt_PVAV))
         croak("Expected SNI data to be an array reference");
 
     // our array of arrays
@@ -1252,6 +1270,7 @@ int sess_init_SNI(ssl, index, ssl_id, sni_data = NULL)
 #ifdef MATRIX_DEBUG
             warn("  SNI entry %d session ticket ID %.16s", i, item);
 #endif
+            if (item_len > 16) item_len = 16;
             memcpy(stk_id, item, item_len);
 
             // element 5 - encryption key
@@ -1371,6 +1390,7 @@ int sess_set_OCSP_staple(ssl, index, DERfile = NULL)
     OUTPUT:
     RETVAL
 
+
 int sess_set_SCT_buffer(ssl, index, SCT_params = NULL)
     Crypt_MatrixSSL3_Sess *ssl;
     int index = SvOK(ST(1)) ? SvIV(ST(1)) : -1;
@@ -1410,6 +1430,7 @@ int sess_set_SCT_buffer(ssl, index, SCT_params = NULL)
     OUTPUT:
     RETVAL
 
+
 void sess_set_ALPN_callback(ssl, cb_ALPN)
     Crypt_MatrixSSL3_Sess *ssl;
     SV *cb_ALPN;
@@ -1435,6 +1456,7 @@ void sess_set_ALPN_callback(ssl, cb_ALPN)
 
     FREETMPS;
     LEAVE;
+
 
 void sess_DESTROY(ssl)
     Crypt_MatrixSSL3_Sess *ssl;
@@ -1576,8 +1598,7 @@ int sess_set_cipher_suite_enabled_status(ssl, cipherId, status);
     RETVAL
 
 
-int
-sess_encode_closure_alert(ssl)
+int sess_encode_closure_alert(ssl)
     Crypt_MatrixSSL3_Sess *ssl;
 
     CODE:

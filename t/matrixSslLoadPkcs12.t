@@ -5,7 +5,7 @@ use Test::Exception;
 
 use Crypt::MatrixSSL3 qw( :DEFAULT :Error );
 
-Crypt::MatrixSSL3::open();
+Crypt::MatrixSSL3::Open();
 
 my $p12File             = 't/cert/server.p12';
 my $p12File_nopass      = 't/cert/server_nopass.p12';
@@ -47,4 +47,4 @@ sub _load_pkcs12 {
     return $keys->load_pkcs12($_[0], $_[1], $_[2], $_[3]);
 }
 
-Crypt::MatrixSSL3::close();
+Crypt::MatrixSSL3::Close();

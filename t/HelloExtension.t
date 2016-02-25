@@ -8,7 +8,7 @@ use IO::Socket;
 
 use Crypt::MatrixSSL3 qw(:all);
 
-Crypt::MatrixSSL3::open();
+Crypt::MatrixSSL3::Open();
 
 use constant RFC3546_SERVER_NAME => 0;          # "server_name" extension type
 use constant RFC3546_SERVER_NAME_HOST_NAME => 0;# "host_name" host name type
@@ -31,8 +31,8 @@ doit($host2);
 
 sub ext_server_name {
     my ($host) = @_;
-    my $servername = pack 'C n/a', RFC3546_SERVER_NAME_HOST_NAME, $host;
-    my $data = pack 'n/a', $servername;
+    my $servername = pack 'C n/a*', RFC3546_SERVER_NAME_HOST_NAME, $host;
+    my $data = pack 'n/a*', $servername;
     return ($data, RFC3546_SERVER_NAME);
 }
 
@@ -155,4 +155,4 @@ sub alert {
     return -1;
 }
 
-Crypt::MatrixSSL3::close();
+Crypt::MatrixSSL3::Close();

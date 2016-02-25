@@ -5,7 +5,7 @@ use Test::Exception;
 
 use Crypt::MatrixSSL3 qw( :DEFAULT :Error :Cipher :Bool );
 
-Crypt::MatrixSSL3::open();
+Crypt::MatrixSSL3::Open();
 
 my ($ssl, $keys);
 
@@ -48,4 +48,4 @@ undef $ssl;
 undef $keys;
 ok(1, 'matrixSslClose');
 
-Crypt::MatrixSSL3::close();
+Crypt::MatrixSSL3::Close();

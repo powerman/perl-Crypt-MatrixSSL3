@@ -1,0 +1,23 @@
+--- matrixssl-3-7-2b-open-original/crypto/cryptoConfig.h	2015-03-18 20:57:05.000000000 +0000
++++ matrixssl-3-7-2b-open/crypto/cryptoConfig.h	2016-02-24 21:04:19.000000000 +0000
+@@ -202,7 +202,19 @@
+ /* @security Zero the stack of functions operating on secret data */
+ #define USE_BURN_STACK
+ 
++/******************************************************************************/
++/*
++	On non POSIX compliant systems the certificate validation tests are not
++	performed and certificates have their auth flags updated with
++	cert->authFailFlags |= PS_CERT_AUTH_FAIL_DATE_FLAG;
++	which means that all certificates will fail the date validation test
++
++	If you enable ALL_CERTS_PASS_DATE_VALIDATION then all certificates
++	will pass the certificate date validation test
++
++	Again, this works only for non POSIX compliant systems
++*/
++/* #define ALL_CERTS_PASS_DATE_VALIDATION */
+ 
+ #endif /* _h_PS_CRYPTOCONFIG */
+ /******************************************************************************/
+-

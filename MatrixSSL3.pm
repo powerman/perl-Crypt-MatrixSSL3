@@ -603,19 +603,19 @@ These functions implement optimization which is useless in Perl:
 
 =over
 
-=item B<open>()
+=item B<Open>()
 
-=item B<close>()
+=item B<Close>()
 
 If you write server intensive applications it is still better to control
 how often the MatrixSSL library gets initialized/deinitialized. For this
 you can call
 
-    Crypt::MatrixSSL3::open()
+    Crypt::MatrixSSL3::Open()
 
 to initialize the library at the start of you application and
 
-    Crypt::MatrixSSL3::close()
+    Crypt::MatrixSSL3::Close()
 
 to deinitialize the library when your application ends.
 

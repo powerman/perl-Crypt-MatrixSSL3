@@ -5,7 +5,7 @@ use Test::Exception;
 
 use Crypt::MatrixSSL3 qw( :DEFAULT :Error );
 
-Crypt::MatrixSSL3::open();
+Crypt::MatrixSSL3::Open();
 
 my $trustedCAcertFiles  = 't/cert/testCA.crt';
 my $certFile            = 't/cert/server.crt';
@@ -75,4 +75,4 @@ sub _load_rsa_mem {
     return $keys->load_rsa_mem($_[0], $_[1], $_[2]);
 }
 
-Crypt::MatrixSSL3::close();
+Crypt::MatrixSSL3::Close();

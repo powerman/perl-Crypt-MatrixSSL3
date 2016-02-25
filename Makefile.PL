@@ -170,7 +170,8 @@ my @cOptions = (
     'USE_TLS_1_2',
 
     # matrixsslConfig.h - Disables SSL version 3.0
-    #'DISABLE_SSLV3',
+    # TODO: disable the definition in matrixSSL so users will be able to support it if the comment the next line
+    'DISABLE_SSLV3',
 
     # matrixsslConfig.h - Disables TLS 1.0 if USE_TLS is enabled but only later versions of the protocol are desired
     #'DISABLE_TLS_1_0',
@@ -253,9 +254,11 @@ my @cOptions = (
     # cryptoConfig.h - Enables fast math for 1024-bit public key operations
     #'USE_1024_KEY_SPEED_OPTIMIZATIONS',
     
-    # cryptoConfig.h - RSA and Diffie-Hellman speed vs. runtime memory tradeoff. Default is to optimize for smaller RAM.
+    # cryptoConfig.h - RSA and Diffie-Hellman speed vs. runtime memory tradeoff. Default is to optimize for smaller RAM. Chose only one
     #'PS_PUBKEY_OPTIMIZE_FOR_SMALLER_RAM',
-    'PS_PUBKEY_OPTIMIZE_FOR_FASTER_SPEED',
+    # OSX defines __OPTIMIZE__ and __OPTIMIZE_SIZE__ which triggers matrixSSL to define
+    # PS_PUBKEY_OPTIMIZE_FOR_SMALLER_RAM and having both triggers a compilation error
+    ($^O !~ /darwin/ ? 'PS_PUBKEY_OPTIMIZE_FOR_FASTER_SPEED' : undef),
 
     # cryptoConfig.h - Optionally enable for selected algorithms to improve
     # performance at the cost of increased binary code size.   
@@ -303,6 +306,10 @@ my @cOptions = (
     ($^O =~ /linux/ ? 'LINUX' : undef),
     ($^O !~ /Win32/ ? 'POSIX' : undef),
     ($^O !~ /Win32|darwin/ && $Config{myuname} =~ /x86_64|amd64|x64/ ? 'PSTM_64BIT' : undef),
+
+    # this is needed because on Windows matrixSSL doesn't do certificate date validation
+    # and just sets PS_CERT_AUTH_FAIL_DATE_FLAG for every certificate which means they all fail auth
+    ($^O =~ /Win32/ ? 'ALL_CERTS_PASS_DATE_VALIDATION' : undef),
 );
 
 # Compute the compiler definitions string
@@ -335,7 +342,7 @@ if (!-d $mxbase) {
 }
 
 # Apply cumulative patch, if any
-if (-r "$mxbase.patch") {
+if (-r "./patches") {
     # Test for patch
     my $r = system("patch f.c.orig f.c 2> null");
     unlink 'null';
@@ -345,9 +352,14 @@ if (-r "$mxbase.patch") {
         $pp = lc $pp eq 'y' ? 'y' : 'n';
         die "Aborting..." unless ($pp eq 'y');
     } else {
-        # apply patch
-        # replacing \n with \n will change \n to \r\n on Win, without this patch.exe will crash
-        system("cd $mxbase && perl -pe \"s/\\n/\\n/\" ../$mxbase.patch | patch -p1 -N");
+        opendir (DIR, "./patches") or die $!;
+        while (my $file = readdir(DIR)) {
+            next if (($file eq '.') || ($file eq '..'));
+            # apply patch
+            # replacing \n with \n will change \n to \r\n on Win, without this patch.exe will crash
+            system("cd $mxbase && perl -pe \"s/\\n/\\n/\" ../patches/$file | patch -p1 -N");
+        }
+        closedir(DIR);
     }
 }
 
@@ -427,8 +439,8 @@ WriteMakefile(
       (ABSTRACT_FROM    => 'MatrixSSL3.pm', # retrieve abstract from module
        AUTHOR           => 'C. N. Drake <christopher@pobox.com>')
     : ()),
-    CCFLAGS     => $Config{ccflags} . $ccflags,
-    LDDLFLAGS   => $Config{lddlflags} . $lddlflags,
+    CCFLAGS             => $Config{ccflags} . $ccflags,
+    LDDLFLAGS           => $Config{lddlflags} . $lddlflags,
     LIBS                => [$libs], # e.g., '-lm'
     DEFINE              => $define, # e.g., '-DHAVE_SOMETHING'
     INC                 => "-I. -I$mxbase -I$mxbase/crypto", # e.g., '-I. -I/usr/include/other'
