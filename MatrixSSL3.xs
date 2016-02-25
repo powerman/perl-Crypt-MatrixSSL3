@@ -22,7 +22,12 @@ typedef sslSessionId_t  Crypt_MatrixSSL3_SessID;
 typedef ssl_t           Crypt_MatrixSSL3_Sess;
 typedef tlsExtension_t  Crypt_MatrixSSL3_HelloExt;
 
+static int matrixssl_initialized = 0;
+
+#ifdef MATRIX_DEBUG
 static int objects = 0;
+#endif
+
 sslSessOpts_t sslOpts;
 
 /*****************************************************************************
@@ -62,7 +67,7 @@ typedef struct s_SNI_entry {
     virtual hosts.
 
     For each server we can have:
-    a maximum of MAX_SNI_ENTRIES virtual hosts
+        a maximum of MAX_SNI_ENTRIES virtual hosts
 */
 
 #define MAX_SNI_SERVERS     16
@@ -107,36 +112,33 @@ typedef struct s_SCT_buffer {
 t_SCT_buffer *SCT_buffers[MAX_SCT_BUFFERS];
 int16 SCT_buffer_index = 0;
 
+
 void add_obj() {
     int rc;
 
-    if (objects == 0) {
-#ifdef MATRIX_DEBUG
-        warn("Calling matrixSslOpen()");
-#endif
+    if (!matrixssl_initialized) {
+        matrixssl_initialized = 1;
+        
         rc = matrixSslOpen();
         if (rc != PS_SUCCESS)
             croak("%d", rc);
     }
 #ifdef MATRIX_DEBUG
     warn("add_obj: objects number %d -> %d", objects, objects + 1);
-#endif
     objects++;
+#endif
 }
 
+
+#ifdef MATRIX_DEBUG
 void del_obj() {
-#ifdef MATRIX_DEBUG
     warn("del_obj: objects number %d -> %d", objects, objects - 1);
-#endif
     objects--;
-    if (objects == 0) {
-#ifdef MATRIX_DEBUG
-        warn("Should call matrixSslClose()");
-#endif
-        //matrixSslClose();
-    } else if (objects < 0)
-        croak("del_obj: internal error");
 }
+#else
+#define del_obj()
+#endif
+
 
 /*
  * my_hv_store() helper macro to avoid writting hash key names twice or
@@ -317,6 +319,7 @@ int32 appExtensionCback(ssl_t *ssl, unsigned short type, unsigned short len, voi
 
     return res;
 }
+
 
 /*
  * Hash which will contain perl's ALPNCallback CODEREF
@@ -570,10 +573,14 @@ PROTOTYPES: ENABLE
 
 int _getObjCount()
     CODE:
+#ifdef MATRIX_DEBUG
     RETVAL = objects;
-
+#else
+    RETVAL = 0;
+#endif
     OUTPUT:
     RETVAL
+
 
 int set_cipher_suite_enabled_status(cipherId, status)
     short cipherId;
@@ -681,6 +688,7 @@ void Close()
     warn("Calling matrixSslClose()");
 #endif
     matrixSslClose();
+    matrixssl_initialized = 0;
 
 int refresh_OCSP_staple(server_index, index, DERfile)
     int server_index = SvOK(ST(0)) ? SvIV(ST(0)) : -1;
@@ -785,11 +793,13 @@ int refresh_SCT_buffer(server_index, index, SCT_params)
     OUTPUT:
     RETVAL
 
+
 void set_VHIndex_callback(vh_index_cb)
     SV *vh_index_cb;
 
     CODE:
     VHIndexCallback = SvREFCNT_inc(SvRV(vh_index_cb));
+
 
 unsigned int capabilities()
     CODE:
@@ -817,7 +827,9 @@ unsigned int capabilities()
     OUTPUT:
     RETVAL
 
+
 MODULE = Crypt::MatrixSSL3  PACKAGE = Crypt::MatrixSSL3::KeysPtr    PREFIX = keys_
+
 
 Crypt_MatrixSSL3_Keys *keys_new()
     INIT:
@@ -837,12 +849,14 @@ Crypt_MatrixSSL3_Keys *keys_new()
     OUTPUT:
     RETVAL
 
+
 void keys_DESTROY(keys);
     Crypt_MatrixSSL3_Keys *keys;
 
     CODE:
     matrixSslDeleteKeys((sslKeys_t *)keys);
     del_obj();
+
 
 int keys_load_rsa(keys, certFile, privFile, privPass, trustedCAcertFiles)
     Crypt_MatrixSSL3_Keys *keys;
@@ -856,6 +870,7 @@ int keys_load_rsa(keys, certFile, privFile, privPass, trustedCAcertFiles)
 
     OUTPUT:
     RETVAL
+
 
 int keys_load_rsa_mem(keys, cert, priv, trustedCA)
     Crypt_MatrixSSL3_Keys *keys;
@@ -881,6 +896,7 @@ int keys_load_rsa_mem(keys, cert, priv, trustedCA)
     OUTPUT:
     RETVAL
 
+
 int keys_load_pkcs12(keys, p12File, importPass, macPass, flags)
     Crypt_MatrixSSL3_Keys *keys;
     char *p12File = SvOK(ST(1)) ? SvPV_nolen(ST(1)) : NULL;
@@ -902,6 +918,7 @@ int keys_load_pkcs12(keys, p12File, importPass, macPass, flags)
     OUTPUT:
     RETVAL
 
+
 int keys_load_session_ticket_keys(keys, name, symkey, hashkey)
     Crypt_MatrixSSL3_Keys *keys;
     SV *name; 
@@ -920,6 +937,7 @@ int keys_load_session_ticket_keys(keys, name, symkey, hashkey)
     OUTPUT:
     RETVAL
 
+
 int keys_load_DH_params(keys, paramsFile)
     Crypt_MatrixSSL3_Keys *keys;
     char *paramsFile = SvOK(ST(1)) ? SvPV_nolen(ST(1)) : NULL;
@@ -930,7 +948,9 @@ int keys_load_DH_params(keys, paramsFile)
     OUTPUT:
     RETVAL
 
+
 MODULE = Crypt::MatrixSSL3  PACKAGE = Crypt::MatrixSSL3::SessIDPtr  PREFIX = sessid_
+
 
 Crypt_MatrixSSL3_SessID *sessid_new()
     INIT:
@@ -950,6 +970,7 @@ Crypt_MatrixSSL3_SessID *sessid_new()
     OUTPUT:
     RETVAL
 
+
 void sessid_DESTROY(sessionId)
     Crypt_MatrixSSL3_SessID *sessionId;
 
@@ -957,13 +978,16 @@ void sessid_DESTROY(sessionId)
     matrixSslDeleteSessionId((sslSessionId_t *) sessionId);
     del_obj();
 
+
 void sessid_clear(sessionId)
     Crypt_MatrixSSL3_SessID *sessionId;
 
     CODE:
     matrixSslClearSessionId((sslSessionId_t *) sessionId);
 
+
 MODULE = Crypt::MatrixSSL3  PACKAGE = Crypt::MatrixSSL3::SessPtr    PREFIX = sess_
+
 
 Crypt_MatrixSSL3_Sess *sess_new_client(keys, sessionId, cipherSuites, certValidator, expectedName, extensions, extensionCback)
     Crypt_MatrixSSL3_Keys *keys;
@@ -1043,6 +1067,7 @@ Crypt_MatrixSSL3_Sess *sess_new_client(keys, sessionId, cipherSuites, certValida
     OUTPUT:
     RETVAL
 
+
 Crypt_MatrixSSL3_Sess *sess_new_server(keys, certValidator)
     Crypt_MatrixSSL3_Keys *keys;
     SV *certValidator;
@@ -1083,6 +1108,7 @@ Crypt_MatrixSSL3_Sess *sess_new_server(keys, certValidator)
 
     OUTPUT:
     RETVAL
+
 
 int sess_init_SNI(ssl, index, ssl_id, sni_data = NULL)
     Crypt_MatrixSSL3_Sess *ssl;
@@ -1312,6 +1338,7 @@ int sess_init_SNI(ssl, index, ssl_id, sni_data = NULL)
     OUTPUT:
     RETVAL
 
+
 int sess_load_OCSP_staple(ssl, DERfile)
     Crypt_MatrixSSL3_Sess * ssl;
     char *DERfile = SvOK(ST(1)) ? SvPV_nolen(ST(1)) : NULL;
@@ -1321,6 +1348,7 @@ int sess_load_OCSP_staple(ssl, DERfile)
 
     OUTPUT:
     RETVAL
+
 
 int sess_set_OCSP_staple(ssl, index, DERfile = NULL)
     Crypt_MatrixSSL3_Sess *ssl;
@@ -1361,6 +1389,7 @@ int sess_set_OCSP_staple(ssl, index, DERfile = NULL)
     OUTPUT:
     RETVAL
 
+
 int sess_set_SCT_buffer(ssl, index, SCT_params = NULL)
     Crypt_MatrixSSL3_Sess *ssl;
     int index = SvOK(ST(1)) ? SvIV(ST(1)) : -1;
@@ -1400,6 +1429,7 @@ int sess_set_SCT_buffer(ssl, index, SCT_params = NULL)
     OUTPUT:
     RETVAL
 
+
 void sess_set_ALPN_callback(ssl, cb_ALPN)
     Crypt_MatrixSSL3_Sess *ssl;
     SV *cb_ALPN;
@@ -1426,6 +1456,7 @@ void sess_set_ALPN_callback(ssl, cb_ALPN)
     FREETMPS;
     LEAVE;
 
+
 void sess_DESTROY(ssl)
     Crypt_MatrixSSL3_Sess *ssl;
     SV *key = NULL;
@@ -1449,6 +1480,7 @@ void sess_DESTROY(ssl)
     matrixSslDeleteSession((ssl_t *)ssl);
     del_obj();
 
+
 int sess_get_outdata(ssl, outBuf)
     Crypt_MatrixSSL3_Sess *ssl;
     SV *outBuf;
@@ -1463,6 +1495,7 @@ int sess_get_outdata(ssl, outBuf)
     OUTPUT:
     RETVAL
 
+
 int sess_sent_data(ssl, bytes)
     Crypt_MatrixSSL3_Sess *ssl;
     int bytes;
@@ -1472,6 +1505,7 @@ int sess_sent_data(ssl, bytes)
 
     OUTPUT:
     RETVAL
+
 
 int sess_get_readbuf(ssl, inBuf);
     Crypt_MatrixSSL3_Sess *ssl;
@@ -1495,6 +1529,7 @@ int sess_get_readbuf(ssl, inBuf);
     OUTPUT:
     RETVAL
 
+
 int sess_received_data(ssl, bytes, ptBuf)
     Crypt_MatrixSSL3_Sess *ssl;
     unsigned int  bytes;
@@ -1509,6 +1544,7 @@ int sess_received_data(ssl, bytes, ptBuf)
     OUTPUT:
     RETVAL
 
+
 int sess_processed_data(ssl, ptBuf)
     Crypt_MatrixSSL3_Sess *ssl;
     SV *ptBuf;
@@ -1521,6 +1557,7 @@ int sess_processed_data(ssl, ptBuf)
 
     OUTPUT:
     RETVAL
+
 
 int sess_encode_to_outdata(ssl, outBuf)
     Crypt_MatrixSSL3_Sess *ssl;
@@ -1535,6 +1572,7 @@ int sess_encode_to_outdata(ssl, outBuf)
     OUTPUT:
     RETVAL
 
+
 int sess_get_anon_status(ssl)
     Crypt_MatrixSSL3_Sess *ssl;
     int32 anon = 0;
@@ -1545,6 +1583,7 @@ int sess_get_anon_status(ssl)
 
     OUTPUT:
     RETVAL
+
 
 int sess_set_cipher_suite_enabled_status(ssl, cipherId, status);
     Crypt_MatrixSSL3_Sess *ssl;
@@ -1557,8 +1596,8 @@ int sess_set_cipher_suite_enabled_status(ssl, cipherId, status);
     OUTPUT:
     RETVAL
 
-int
-sess_encode_closure_alert(ssl)
+
+int sess_encode_closure_alert(ssl)
     Crypt_MatrixSSL3_Sess *ssl;
 
     CODE:
@@ -1566,6 +1605,7 @@ sess_encode_closure_alert(ssl)
 
     OUTPUT:
     RETVAL
+
 
 int sess_encode_rehandshake(ssl, keys, certValidator, sessionOption, cipherSpecs)
     Crypt_MatrixSSL3_Sess *ssl;
@@ -1599,8 +1639,8 @@ int sess_encode_rehandshake(ssl, keys, certValidator, sessionOption, cipherSpecs
 
     CODE:
     RETVAL = matrixSslEncodeRehandshake((ssl_t *)ssl, (sslKeys_t *)keys,
-            (SvOK(certValidator) ? appCertValidator : NULL),
-            sessionOption, cipherSpecsBuf, cipherCount);
+                (SvOK(certValidator) ? appCertValidator : NULL),
+                sessionOption, cipherSpecsBuf, cipherCount);
 
     ENTER;
     SAVETMPS;
@@ -1620,7 +1660,9 @@ int sess_encode_rehandshake(ssl, keys, certValidator, sessionOption, cipherSpecs
     OUTPUT:
     RETVAL
 
+
 MODULE = Crypt::MatrixSSL3  PACKAGE = Crypt::MatrixSSL3::HelloExtPtr    PREFIX = helloext_
+
 
 Crypt_MatrixSSL3_HelloExt *helloext_new()
     INIT:
@@ -1640,12 +1682,14 @@ Crypt_MatrixSSL3_HelloExt *helloext_new()
     OUTPUT:
     RETVAL
 
+
 void helloext_DESTROY(extension)
     Crypt_MatrixSSL3_HelloExt *extension;
 
     CODE:
     matrixSslDeleteHelloExtension((tlsExtension_t *)extension);
     del_obj();
+
 
 int helloext_load(extension, ext, extType)
     Crypt_MatrixSSL3_HelloExt *extension;
