@@ -402,7 +402,7 @@ void SNI_callback(void *ssl, char *hostname, int32 hostnameLen, sslKeys_t **newK
     int32 i = 0, res;
     ssl_t *pssl = (ssl_t *) ssl;
     unsigned char _hostname[255];
-#if defined(MATRIX_DEBUG) && !defined(WIN32)
+#ifndef WIN32
     int regex_res = 0;
     char regex_error[255];
 #endif
