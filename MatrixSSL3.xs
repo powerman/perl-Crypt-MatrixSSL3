@@ -988,6 +988,8 @@ Crypt_MatrixSSL3_Sess *sess_new_client(keys, sessionId, cipherSuites, certValida
         cipherSuitesArray = (AV *) SvRV(cipherSuites);
 
         cipherCount = (uint16) av_len(cipherSuitesArray) + 1;
+        if (cipherCount > 64)
+            croak("cipherSuites should not contain more than 64 ciphers");
         if (cipherCount > 64) cipherCount = 64;
 
         for (i = 0; i < cipherCount; i++) {
@@ -1585,6 +1587,8 @@ int sess_encode_rehandshake(ssl, keys, certValidator, sessionOption, cipherSpecs
         cipherSpecsArray = (AV *) SvRV(cipherSpecs);
 
         cipherCount = (uint16) av_len(cipherSpecsArray) + 1;
+        if (cipherCount > 64)
+            croak("cipherSuites should not contain more than 64 ciphers");
         if (cipherCount > 64) cipherCount = 64;
 
         for (i = 0; i < cipherCount; i++) {
