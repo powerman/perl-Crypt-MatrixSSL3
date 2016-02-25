@@ -1,0 +1,89 @@
+--- matrixssl-3-7-2b-open-original/matrixssl/matrixssllib.h	2015-03-18 20:57:06.000000000 +0000
++++ matrixssl-3-7-2b-open/matrixssl/matrixssllib.h	2016-02-25 11:17:10.000000000 +0000
+@@ -1164,6 +1164,7 @@ typedef int32 psX509Cert_t;
+ #define SSL_ALERT_PROTOCOL_VERSION			70
+ #define SSL_ALERT_INSUFFICIENT_SECURITY		71
+ #define SSL_ALERT_INTERNAL_ERROR			80
++#define SSL_ALERT_INAPPROPRIATE_FALLBACK		86
+ #define SSL_ALERT_NO_RENEGOTIATION			100
+ #define SSL_ALERT_UNSUPPORTED_EXTENSION		110
+ #define SSL_ALERT_UNRECOGNIZED_NAME			112
+@@ -1274,6 +1275,7 @@ typedef int32 psX509Cert_t;
+ #define SSL_HS_CERTIFICATE_VERIFY	15
+ #define SSL_HS_CLIENT_KEY_EXCHANGE	16
+ #define SSL_HS_FINISHED				20
++#define SSL_HS_CERTIFICATE_STATUS		22
+ #define SSL_HS_DONE					255	/* Handshake complete (internal) */
+ 
+ #define	INIT_ENCRYPT_CIPHER		0
+@@ -1282,6 +1284,7 @@ typedef int32 psX509Cert_t;
+ #define HMAC_CREATE	1
+ #define HMAC_VERIFY 2
+ 
++#define CERTIFICATE_STATUS_OCSP		1
+ 
+ #ifdef USE_TLS_1_2
+ #define HASH_SIG_256_RSA	0x0401	/* SHA256 hash and RSA sig */
+@@ -1334,6 +1337,7 @@ typedef int32 psX509Cert_t;
+ #define TLS_RSA_WITH_AES_128_CBC_SHA		0x002F		/* 47 */
+ #define TLS_RSA_WITH_AES_256_CBC_SHA		0x0035		/* 53 */
+ #define TLS_EMPTY_RENEGOTIATION_INFO_SCSV	0x00FF
++#define TLS_FALLBACK_SCSV                       0x5600
+ 
+ #define TLS_RSA_WITH_IDEA_CBC_SHA			0x0007		/* 7 */
+ #define	SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA	0x0016		/* 22 */
+@@ -1390,10 +1394,12 @@ typedef int32 psX509Cert_t;
+ #define EXT_SNI							 0
+ #define EXT_MAX_FRAGMENT_LEN			 1
+ #define EXT_TRUNCATED_HMAC				 4
++#define EXT_STATUS_REQUEST				5
+ #define EXT_ELLIPTIC_CURVE				10	/* Client-send only */
+ #define EXT_ELLIPTIC_POINTS				11
+ #define EXT_SIGNATURE_ALGORITHMS		13
+ #define EXT_ALPN						16
++#define EXT_SIGNED_CERTIFICATE_TIMESTAMP		18
+ #define EXT_SESSION_TICKET				35
+ #define EXT_RENEGOTIATION_INFO			0xFF01
+ 
+@@ -1744,7 +1750,10 @@ typedef struct ssl {
+ #ifdef USE_SERVER_SIDE_SSL
+ 	uint16			disabledCiphers[SSL_MAX_DISABLED_CIPHERS];
+ 	void			(*sni_cb)(void *ssl, char *hostname, int32 hostnameLen,
+-						sslKeys_t **newKeys);
++						sslKeys_t **newKeys, void *userPtr, int32 ssl_id);
++	void			*sni_cb_userPtr;
++	int32			sni_cb_ssl_id;
++
+ #ifdef USE_ALPN
+ 	void			(*srv_alpn_cb)(void *ssl, short protoCount,
+ 						char *proto[MAX_PROTO_EXT],
+@@ -1874,6 +1883,20 @@ typedef struct ssl {
+ 	void *memAllocPtr; /* Will be passed to psOpenPool for each call
+ 							related to this session */
+ 	void *userPtr;
++	
++#ifdef ENABLE_CERTIFICATE_STATUS_REQUEST
++	/* DER buffer for status request extension */
++	char status_request;
++	unsigned char *status_request_DER;
++	int32 status_request_DER_size;
++	char status_request_DER_must_free;
++#endif
++
++#ifdef ENABLE_SIGNED_CERTIFICATE_TIMESTAMP
++	char SCT_request;
++	unsigned char* SCT;
++	int32 SCT_size;
++#endif
+ } ssl_t;
+ 
+ /* Type to pass optional features to NewSession calls */
+@@ -1994,7 +2017,7 @@ extern int32 matrixSessionTicketLen(void
+ /*
+ 	cipherSuite.c
+ */
+-extern sslCipherSpec_t *sslGetCipherSpec(ssl_t *ssl, uint32 cid);
++extern sslCipherSpec_t *sslGetCipherSpec(ssl_t *ssl, uint32 cid, int16 *index);
+ extern int32 sslGetCipherSpecListLen(ssl_t *ssl);
+ extern int32 sslGetCipherSpecList(ssl_t *ssl, unsigned char *c, int32 len,
+ 				int32 addScsv);

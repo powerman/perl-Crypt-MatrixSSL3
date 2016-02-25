@@ -1,0 +1,96 @@
+--- matrixssl-3-7-2b-open-original/matrixssl/cipherSuite.c	2015-03-18 20:57:06.000000000 +0000
++++ matrixssl-3-7-2b-open/matrixssl/cipherSuite.c	2016-02-24 21:04:19.000000000 +0000
+@@ -1777,33 +1777,33 @@ int32 eccSuitesSupported(ssl_t *ssl, uin
+ 	int32	i = 0;
+ 
+ 	if (cipherSpecLen == 0) {
+-		if (sslGetCipherSpec(ssl, TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA) ||
+-				sslGetCipherSpec(ssl, TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA) ||
+-				sslGetCipherSpec(ssl, TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA) ||
+-				sslGetCipherSpec(ssl, TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA) ||
+-				sslGetCipherSpec(ssl, TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA) ||
+-				sslGetCipherSpec(ssl, TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA) ||
+-				sslGetCipherSpec(ssl, TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA) ||
+-				sslGetCipherSpec(ssl, TLS_ECDH_RSA_WITH_AES_256_CBC_SHA) ||
++		if (sslGetCipherSpec(ssl, TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA, NULL) ||
++				sslGetCipherSpec(ssl, TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA, NULL) ||
++				sslGetCipherSpec(ssl, TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA, NULL) ||
++				sslGetCipherSpec(ssl, TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA, NULL) ||
++				sslGetCipherSpec(ssl, TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA, NULL) ||
++				sslGetCipherSpec(ssl, TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA, NULL) ||
++				sslGetCipherSpec(ssl, TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA, NULL) ||
++				sslGetCipherSpec(ssl, TLS_ECDH_RSA_WITH_AES_256_CBC_SHA, NULL) ||
+ #ifdef USE_TLS_1_2
+-				sslGetCipherSpec(ssl, TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256)||
+-				sslGetCipherSpec(ssl, TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384)||
+-				sslGetCipherSpec(ssl, TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256) ||
+-				sslGetCipherSpec(ssl, TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384) ||
+-				sslGetCipherSpec(ssl, TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256) ||
+-				sslGetCipherSpec(ssl, TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384) ||
+-				sslGetCipherSpec(ssl, TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256)||
+-				sslGetCipherSpec(ssl, TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384)||
+-				sslGetCipherSpec(ssl, TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256) ||
+-				sslGetCipherSpec(ssl, TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384) ||
+-				sslGetCipherSpec(ssl, TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) ||
+-				sslGetCipherSpec(ssl, TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) ||
+-				sslGetCipherSpec(ssl, TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256) ||
+-				sslGetCipherSpec(ssl, TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384) ||
+-				sslGetCipherSpec(ssl, TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256) ||
+-				sslGetCipherSpec(ssl, TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384) ||
++				sslGetCipherSpec(ssl, TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256, NULL)||
++				sslGetCipherSpec(ssl, TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384, NULL)||
++				sslGetCipherSpec(ssl, TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256, NULL) ||
++				sslGetCipherSpec(ssl, TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384, NULL) ||
++				sslGetCipherSpec(ssl, TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256, NULL) ||
++				sslGetCipherSpec(ssl, TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384, NULL) ||
++				sslGetCipherSpec(ssl, TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256, NULL)||
++				sslGetCipherSpec(ssl, TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384, NULL)||
++				sslGetCipherSpec(ssl, TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256, NULL) ||
++				sslGetCipherSpec(ssl, TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384, NULL) ||
++				sslGetCipherSpec(ssl, TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256, NULL) ||
++				sslGetCipherSpec(ssl, TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384, NULL) ||
++				sslGetCipherSpec(ssl, TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256, NULL) ||
++				sslGetCipherSpec(ssl, TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384, NULL) ||
++				sslGetCipherSpec(ssl, TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256, NULL) ||
++				sslGetCipherSpec(ssl, TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384, NULL) ||
+ #endif
+-				sslGetCipherSpec(ssl, TLS_ECDH_RSA_WITH_AES_128_CBC_SHA)) {
++				sslGetCipherSpec(ssl, TLS_ECDH_RSA_WITH_AES_128_CBC_SHA, NULL)) {
+ 			return 1;
+ 		}
+ 	} else {
+@@ -1874,8 +1874,11 @@ int32 csCheckCertAgainstCipherSuite(int3
+ 	Lookup the given cipher spec ID and return a pointer to the structure
+ 	if found.  This is used when negotiating security, to find out what suites
+ 	we support.
++
++	If a cipher is found and the index pointer is not NULL then the cipher's
++	index according to our list is returned in the index pointer
+ */
+-sslCipherSpec_t *sslGetCipherSpec(ssl_t *ssl, uint32 id)
++sslCipherSpec_t *sslGetCipherSpec(ssl_t *ssl, uint32 id, int16 *index)
+ {
+ 	int16	i;
+ #ifdef USE_SERVER_SIDE_SSL
+@@ -1953,11 +1956,13 @@ sslCipherSpec_t *sslGetCipherSpec(ssl_t 
+ 			/*	Unusable due to key material not available? */
+ #ifdef VALIDATE_KEY_MATERIAL
+ 			if (haveKeyMaterial(ssl, supportedCiphers[i].type, 0) == PS_SUCCESS) {
++				if (index != NULL) *index = i;
+ 				return &supportedCiphers[i];
+ 			}
+ 			psTraceIntInfo("Matched cipher suite %d but no supporting keys\n",
+ 				id);
+ #else
++			if (index != NULL) *index = i;
+ 			return &supportedCiphers[i];
+ #endif /* VALIDATE_KEY_MATERIAL */
+ 		}
+@@ -2014,6 +2019,7 @@ int32 sslGetCipherSpecList(ssl_t *ssl, u
+ 	}
+ 	i *= 2;
+ 	i -= (unsigned short)ignored;
++
+ #ifdef ENABLE_SECURE_REHANDSHAKES
+ 	if (addScsv == 1) {
+ #ifdef USE_CLIENT_SIDE_SSL

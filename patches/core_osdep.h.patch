@@ -1,0 +1,14 @@
+--- matrixssl-3-7-2b-open-original/core/osdep.h	2015-03-18 20:57:05.000000000 +0000
++++ matrixssl-3-7-2b-open/core/osdep.h	2016-02-25 12:24:34.000000000 +0000
+@@ -128,9 +128,9 @@
+ 
+ #ifdef WIN32
+  #ifndef _USRDLL
+-  #define PSPUBLIC extern __declspec(dllimport)
++  #define PSPUBLIC extern
+  #else
+-  #define PSPUBLIC extern __declspec(dllexport)
++  #define PSPUBLIC extern
+  #endif
+ #else
+  #define PSPUBLIC extern
