@@ -261,7 +261,7 @@ sub alert {
 
 sub leaktest {
     my $test = shift;
-    my %arg  = (init=>10, test=>100, max_mem_diff=>128, diag=>0, @_);
+    my %arg  = (init=>10, test=>100, max_mem_diff=>256, diag=>0, @_);
     my $tmp = 'x' x 1000000; undef $tmp;
     my $code = sub { no strict 'refs'; \&$test(); };
     for (1 .. $arg{init}) { $code->(); };
@@ -269,8 +269,8 @@ sub leaktest {
     my $fd  = FD_used();
     for (1 .. $arg{test}) { $code->(); };
     diag sprintf("---- MEM $test\nWAS: %d\nNOW: %d\n", $mem, MEM_used()) if $arg{diag};
-    ok( MEM_used() - $mem < $arg{max_mem_diff},  "MEM: $test" );
-    is( FD_used() - $fd, 0,                      " FD: $test" );
+    cmp_ok(MEM_used() - $mem, '<=', $arg{max_mem_diff}, "MEM: $test" );
+    is(FD_used(), $fd,                                  " FD: $test" );
 }
 
 #########################
