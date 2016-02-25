@@ -31,8 +31,8 @@ doit($host2);
 
 sub ext_server_name {
     my ($host) = @_;
-    my $servername = pack 'C n/a', RFC3546_SERVER_NAME_HOST_NAME, $host;
-    my $data = pack 'n/a', $servername;
+    my $servername = pack 'C n/a*', RFC3546_SERVER_NAME_HOST_NAME, $host;
+    my $data = pack 'n/a*', $servername;
     return ($data, RFC3546_SERVER_NAME);
 }
 

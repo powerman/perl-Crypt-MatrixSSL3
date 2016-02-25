@@ -1,0 +1,45 @@
+--- matrixssl-3-7-2b-open-original/matrixssl/matrixsslConfig.h	2015-03-18 20:57:06.000000000 +0000
++++ matrixssl-3-7-2b-open/matrixssl/matrixsslConfig.h	2016-02-24 21:04:19.000000000 +0000
+@@ -61,9 +61,9 @@ extern "C" {
+ 	the handshake will determine which is best for the connection.
+ */
+ 
+-#define USE_TLS_RSA_WITH_AES_128_CBC_SHA
++/* #define USE_TLS_RSA_WITH_AES_128_CBC_SHA */
+ #define USE_TLS_RSA_WITH_AES_256_CBC_SHA
+-#define USE_TLS_RSA_WITH_AES_128_CBC_SHA256 /* TLS 1.2 */
++/* #define USE_TLS_RSA_WITH_AES_128_CBC_SHA256 */ /* TLS 1.2 */ 
+ #define USE_TLS_RSA_WITH_AES_256_CBC_SHA256 /* TLS 1.2 */
+ /* #define USE_TLS_RSA_WITH_AES_128_GCM_SHA256 */ /* TLS 1.2 */
+ /* #define USE_TLS_RSA_WITH_AES_256_GCM_SHA384 */ /* TLS 1.2 */
+@@ -380,6 +380,30 @@ extern "C" {
+ */
+ /* #define USE_ZLIB_COMPRESSION */	/* @security INSECURE */
+ 
++/******************************************************************************/
++/*
++	Protection against protocol downgrade attacks.
++	https://tools.ietf.org/html/draft-ietf-tls-downgrade-scsv-00
++*/
++
++#define ENABLE_TLS_FALLBACK_SCSV
++
++/******************************************************************************/
++/*
++	Partial implementation of the Certificate Status Request extension
++	https://tools.ietf.org/html/rfc6066#section-8
++*/
++
++/* #define ENABLE_CERTIFICATE_STATUS_REQUEST */
++
++/******************************************************************************/
++/*
++	Implementation of the Certificate Transparency extension
++	(signed_certificate_timestamp)
++	https://tools.ietf.org/html/rfc6962
++*/
++
++/* #define ENABLE_SIGNED_CERTIFICATE_TIMESTAMP */
+ 
+ #ifdef __cplusplus
+ }

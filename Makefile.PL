@@ -30,11 +30,11 @@ my @cOptions = (
 
     #******************************************************************************
     #
-    #   Recommended cipher suites:
+    #	Recommended cipher suites:
     #
-    #   Define the following to enable various cipher suites
-    #   At least one of these must be defined.  If multiple are defined,
-    #   the handshake will determine which is best for the connection.
+    #	Define the following to enable various cipher suites
+    #	At least one of these must be defined.  If multiple are defined,
+    #	the handshake will determine which is best for the connection.
     #
 
     'USE_TLS_RSA_WITH_AES_128_CBC_SHA',
@@ -84,8 +84,8 @@ my @cOptions = (
 
     #******************************************************************************
     #
-    #   These cipher suites are secure, but not in general use. Enable only if 
-    #   specifically required by application.
+    #	These cipher suites are secure, but not in general use. Enable only if 
+    #	specifically required by application.
     #
     'USE_TLS_DHE_PSK_WITH_AES_256_CBC_SHA',
     'USE_TLS_DHE_PSK_WITH_AES_128_CBC_SHA',
@@ -96,7 +96,7 @@ my @cOptions = (
 
     #******************************************************************************
     #
-    #   These cipher suites are generally considered weak, not recommended for use.
+    #	These cipher suites are generally considered weak, not recommended for use.
     #
     #'USE_TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA', #x
     #'USE_SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA',
@@ -107,9 +107,9 @@ my @cOptions = (
 
     #******************************************************************************
     #
-    #   These cipher suites do not combine authentication and encryption and
-    #   are not recommended for use-cases that require strong security or 
-    #   Man-in-the-Middle protection.
+    #	These cipher suites do not combine authentication and encryption and
+    #	are not recommended for use-cases that require strong security or 
+    #	Man-in-the-Middle protection.
     #
     #'USE_TLS_DH_anon_WITH_AES_256_CBC_SHA',
     #'USE_TLS_DH_anon_WITH_AES_128_CBC_SHA',
@@ -154,6 +154,9 @@ my @cOptions = (
     # certificates and private keys.
     'MATRIX_USE_FILE_SYSTEM',
 
+    # matrixsslConfig.h - Enabled client authentication
+    'USE_CLIENT_AUTH',
+
     # matrixsslConfig.h - Enables client side SSL support
     'USE_CLIENT_SIDE_SSL',
 
@@ -170,7 +173,8 @@ my @cOptions = (
     'USE_TLS_1_2',
 
     # matrixsslConfig.h - Disables SSL version 3.0
-    #'DISABLE_SSLV3',
+    # TODO: disable the definition in matrixSSL so users will be able to support it if the comment the next line
+    'DISABLE_SSLV3',
 
     # matrixsslConfig.h - Disables TLS 1.0 if USE_TLS is enabled but only later versions of the protocol are desired
     #'DISABLE_TLS_1_0',
@@ -253,9 +257,11 @@ my @cOptions = (
     # cryptoConfig.h - Enables fast math for 1024-bit public key operations
     #'USE_1024_KEY_SPEED_OPTIMIZATIONS',
     
-    # cryptoConfig.h - RSA and Diffie-Hellman speed vs. runtime memory tradeoff. Default is to optimize for smaller RAM.
+    # cryptoConfig.h - RSA and Diffie-Hellman speed vs. runtime memory tradeoff. Default is to optimize for smaller RAM. Chose only one
     #'PS_PUBKEY_OPTIMIZE_FOR_SMALLER_RAM',
-    'PS_PUBKEY_OPTIMIZE_FOR_FASTER_SPEED',
+    # OSX defines __OPTIMIZE__ and __OPTIMIZE_SIZE__ which triggers matrixSSL to define
+    # PS_PUBKEY_OPTIMIZE_FOR_SMALLER_RAM and having both triggers a compilation error
+    ($^O !~ /darwin/ ? 'PS_PUBKEY_OPTIMIZE_FOR_FASTER_SPEED' : undef),
 
     # cryptoConfig.h - Optionally enable for selected algorithms to improve
     # performance at the cost of increased binary code size.   
@@ -303,6 +309,10 @@ my @cOptions = (
     ($^O =~ /linux/ ? 'LINUX' : undef),
     ($^O !~ /Win32/ ? 'POSIX' : undef),
     ($^O !~ /Win32|darwin/ && $Config{myuname} =~ /x86_64|amd64|x64/ ? 'PSTM_64BIT' : undef),
+
+    # this is needed because on Windows matrixSSL doesn't do certificate date validation
+    # and just sets PS_CERT_AUTH_FAIL_DATE_FLAG for every certificate which means they all fail auth
+    ($^O =~ /Win32/ ? 'ALL_CERTS_PASS_DATE_VALIDATION' : undef),
 );
 
 # Compute the compiler definitions string
@@ -311,7 +321,7 @@ my $debug_build = 0;
 foreach my $d (@cOptions) {
     next unless $d;
     if ($d =~ /^!(.*)/) {
-        $define .= "-U$1 " unless ($define =~ /\-U$1\s/);
+        $define .= "-U$1 " unless ($define =~ /\-U$1\s/);;
     } else {
         $define .= "-D$d " unless ($define =~ /\-D$d\s/);
     }
@@ -327,15 +337,15 @@ my $mxfiles = "$mxbase.files";
 my $mxmodfiles = "modfiles";
 
 # Extract the MatrixSSL original source if it's not already extracted.
-if (!-d $mxbase) {
-    use Archive::Tar;
-    my $tar = Archive::Tar->new;
-    $tar->read("$mxbase.tgz");
-    $tar->extract();
+if(!-d $mxbase) {
+  use Archive::Tar;
+  my $tar = Archive::Tar->new;
+  $tar->read("$mxbase.tgz");
+  $tar->extract();
 }
 
 # Apply cumulative patch, if any
-if (-r "$mxbase.patch") {
+if (-r "./patches") {
     # Test for patch
     my $r = system("patch f.c.orig f.c 2> null");
     unlink 'null';
@@ -345,9 +355,14 @@ if (-r "$mxbase.patch") {
         $pp = lc $pp eq 'y' ? 'y' : 'n';
         die "Aborting..." unless ($pp eq 'y');
     } else {
-        # apply patch
-        # replacing \n with \n will change \n to \r\n on Win, without this patch.exe will crash
-        system("cd $mxbase && perl -pe \"s/\\n/\\n/\" ../$mxbase.patch | patch -p1 -N");
+        opendir (DIR, "./patches") or die $!;
+        while (my $file = readdir(DIR)) {
+            next if (($file eq '.') || ($file eq '..'));
+            # apply patch
+            # replacing \n with \n will change \n to \r\n on Win, without this patch.exe will crash
+            system("cd $mxbase && perl -pe \"s/\\n/\\n/\" ../patches/$file | patch -p1 -N");
+        }
+        closedir(DIR);
     }
 }
 
@@ -361,7 +376,6 @@ if (-r "$mxbase.patch") {
 #       7. change all the leading "./" to $mxbase/
 #       8. join them all on to one line and assign them all to "$mxfiles"; be careful NOT to expand the "$mxext" or "$mxbase" (eg: use single quotes)
 #       9. replace the os/linux/linux$mxext one with os/$os_src$mxext
-
 
 # Autogenerate list with object files produced by MatrixSSL because it's
 # different between MatrixSSL versions.
@@ -411,9 +425,9 @@ if ($^O =~ /Win32/) {
 }
 
 WriteMakefile(
-    NAME                => 'Crypt::MatrixSSL3',
-    VERSION_FROM        => 'MatrixSSL3.pm', # finds $VERSION
-    PREREQ_PM           => {
+    NAME		=> 'Crypt::MatrixSSL3',
+    VERSION_FROM	=> 'MatrixSSL3.pm', # finds $VERSION
+    PREREQ_PM		=> {
         'version'           => 0,
         'Config'            => 0,
         'Archive::Tar'      => 0,
@@ -429,13 +443,12 @@ WriteMakefile(
     : ()),
     CCFLAGS     => $Config{ccflags} . $ccflags,
     LDDLFLAGS   => $Config{lddlflags} . $lddlflags,
-    LIBS                => [$libs], # e.g., '-lm'
-    DEFINE              => $define, # e.g., '-DHAVE_SOMETHING'
-    INC                 => "-I. -I$mxbase -I$mxbase/crypto", # e.g., '-I. -I/usr/include/other'
-    OBJECT              => "$mxobjs MatrixSSL3$o", # link all the C files too
+    LIBS		=> [$libs], # e.g., '-lm'
+    DEFINE		=> $define, # e.g., '-DHAVE_SOMETHING'
+    INC		        => "-I. -I$mxbase -I$mxbase/crypto", # e.g., '-I. -I/usr/include/other'
+    OBJECT		=> "$mxobjs MatrixSSL3$o", # link all the C files too
     clean               => {FILES => "$mxobjs Matrixssl$o"},
 );
-
 
 if (eval {require ExtUtils::Constant; 1}) {
     open my $f, '<', 'MatrixSSL3.pm' or die "open: $!";
@@ -452,7 +465,6 @@ if (eval {require ExtUtils::Constant; 1}) {
         XS_FILE      => 'const-xs.inc',
     );
 }
-
 
 =for currently contained in the patch we apply
 
@@ -488,6 +500,6 @@ sub c_o {
 # Here, we fudge the replacement of the original MatrixSSL source code for the clean
 sub clean_subdirs {
 #Was:  return "clean_subdirs :\t$(NOECHO) $(NOOP)\n";
-    return qq ~clean_subdirs :\n\t\$(MV) "$mxbase" "/tmp/delme-$$-$mxbase"\n~;
-    # return qq ~clean_subdirs :\n\t\$(CP) "$mxbase/src/pki/matrixPki.h.ori" "$mxbase/src/pki/matrixPki.h"\n~;
+  return qq ~clean_subdirs :\n\t\$(MV) "$mxbase" "/tmp/delme-$$-$mxbase"\n~;
+  # return qq ~clean_subdirs :\n\t\$(CP) "$mxbase/src/pki/matrixPki.h.ori" "$mxbase/src/pki/matrixPki.h"\n~;
 }

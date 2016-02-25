@@ -1,0 +1,14 @@
+--- matrixssl-3-7-2b-open-original/core/coreApi.h	2015-03-18 20:57:08.000000000 +0000
++++ matrixssl-3-7-2b-open/core/coreApi.h	2016-02-24 21:04:19.000000000 +0000
+@@ -40,6 +40,11 @@
+ #include "list.h"
+ #include "psmalloc.h"
+ 
++#ifdef USE_SHARED_SESSION_CACHE
++#include <sys/mman.h>
++#include <fcntl.h>
++#endif
++
+ /******************************************************************************/
+ /*
+ 	psCore return codes
