@@ -1120,6 +1120,7 @@ int sess_init_SNI(ssl, index, ssl_id, sni_data = NULL)
     int regex_res = 0;
     char regex_error[255];
 #endif
+
     CODE:
 #ifdef MATRIX_DEBUG
     warn("initSNI: index %d", index);
@@ -1618,8 +1619,8 @@ int sess_encode_rehandshake(ssl, keys, certValidator, sessionOption, cipherSpecs
 
     CODE:
     RETVAL = matrixSslEncodeRehandshake((ssl_t *)ssl, (sslKeys_t *)keys,
-            (SvOK(certValidator) ? appCertValidator : NULL),
-            sessionOption, cipherSpecsBuf, cipherCount);
+                (SvOK(certValidator) ? appCertValidator : NULL),
+                sessionOption, cipherSpecsBuf, cipherCount);
 
     ENTER;
     SAVETMPS;

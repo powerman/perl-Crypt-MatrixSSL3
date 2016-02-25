@@ -77,11 +77,11 @@ while (my($log_name, $log_url) = each(%logs)) {
     my $sct = from_json($res->content);
     
     write_log(
-      "  version: ", $sct->{'sct_version'}, "\n",
-      "  log ID : ", $sct->{'id'}, "\n",
-      "  timestamp: ", $sct->{'timestamp'}, "\n",
-      "  extensions: ", $sct->{'extensions'}, "\n",
-      "  signature: ", $sct->{'signature'}, "\n"
+        "  version: ", $sct->{'sct_version'}, "\n",
+        "  log ID : ", $sct->{'id'}, "\n",
+        "  timestamp: ", $sct->{'timestamp'}, "\n",
+        "  extensions: ", $sct->{'extensions'}, "\n",
+        "  signature: ", $sct->{'signature'}, "\n"
     );
     
     my $id = decode_base64($sct->{'id'});
@@ -138,11 +138,11 @@ ct-submit - Query the Certificate Transparency logs
 
 ct-submit [options]
 
-  Options:
-    --help
-    --pem cert1,cert2,...
-    --extbuf /path/to/CT.sct
-    --individual /path/to/sct/
+    Options:
+        --help
+        --pem cert1,cert2,...
+        --extbuf /path/to/CT.sct
+        --individual /path/to/sct/
 
 =head1 OPTIONS
 
