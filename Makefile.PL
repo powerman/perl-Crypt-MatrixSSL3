@@ -170,7 +170,7 @@ my @cOptions = (
     'USE_TLS_1_2',
 
     # matrixsslConfig.h - Disables SSL version 3.0
-    # TODO: disable the definition in matrixSSL so users will be able to support it if the comment the next line
+    # TODO: disable the definition in matrixSSL so users will be able to support it if they comment the next line
     'DISABLE_SSLV3',
 
     # matrixsslConfig.h - Disables TLS 1.0 if USE_TLS is enabled but only later versions of the protocol are desired
@@ -254,7 +254,7 @@ my @cOptions = (
     # cryptoConfig.h - Enables fast math for 1024-bit public key operations
     #'USE_1024_KEY_SPEED_OPTIMIZATIONS',
     
-    # cryptoConfig.h - RSA and Diffie-Hellman speed vs. runtime memory tradeoff. Default is to optimize for smaller RAM. Chose only one
+    # cryptoConfig.h - RSA and Diffie-Hellman speed vs. runtime memory tradeoff. Default is to optimize for smaller RAM. Choose only one
     #'PS_PUBKEY_OPTIMIZE_FOR_SMALLER_RAM',
     # OSX defines __OPTIMIZE__ and __OPTIMIZE_SIZE__ which triggers matrixSSL to define
     # PS_PUBKEY_OPTIMIZE_FOR_SMALLER_RAM and having both triggers a compilation error
