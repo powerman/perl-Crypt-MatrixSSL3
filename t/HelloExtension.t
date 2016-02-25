@@ -8,7 +8,7 @@ use IO::Socket;
 
 use Crypt::MatrixSSL3 qw(:all);
 
-Crypt::MatrixSSL3::open();
+Crypt::MatrixSSL3::Open();
 
 use constant RFC3546_SERVER_NAME => 0;          # "server_name" extension type
 use constant RFC3546_SERVER_NAME_HOST_NAME => 0;# "host_name" host name type
@@ -153,4 +153,4 @@ sub alert {
     return -1;
 }
 
-Crypt::MatrixSSL3::close();
+Crypt::MatrixSSL3::Close();

@@ -5,7 +5,7 @@ use Test::Exception;
 
 use Crypt::MatrixSSL3 qw(:all);
 
-Crypt::MatrixSSL3::open();
+Crypt::MatrixSSL3::Open();
 
 my $certFile            = 't/cert/server.crt';
 my $privFile            = 't/cert/server.key';
@@ -155,4 +155,4 @@ sub alert {
     return;
 }
 
-Crypt::MatrixSSL3::close();
+Crypt::MatrixSSL3::Close();

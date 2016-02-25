@@ -7,7 +7,7 @@ use IO::Socket;
 
 use Crypt::MatrixSSL3 qw(:all);
 
-Crypt::MatrixSSL3::open();
+Crypt::MatrixSSL3::Open();
 
 my $trustedCAbundle     = 'ca-certificates.crt';
 my $target              = 'www.google.com:443';
@@ -125,4 +125,4 @@ sub alert {
     return;
 }
 
-Crypt::MatrixSSL3::close();
+Crypt::MatrixSSL3::Close();
