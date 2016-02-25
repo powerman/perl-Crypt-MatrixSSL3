@@ -828,7 +828,7 @@ but instead it append buffer returned by C API to the end of $outBuf.
 
     matrixSslSentData( $ssl, $bytes )
 
-=item $ssl->B<get_readbuf>( $ssl, $inBuf )
+=item $ssl->B<get_readbuf>( $inBuf )
 
 Unlike C API, it doesn't set $inBuf to memory location inside MatrixSSL,
 but instead it copy data from beginning of $inBuf into buffer returned by
