@@ -743,6 +743,7 @@ int refresh_OCSP_staple(server_index, index, DERfile)
     OUTPUT:
     RETVAL
 
+
 int refresh_SCT_buffer(server_index, index, SCT_params)
     int server_index = SvOK(ST(0)) ? SvIV(ST(0)) : -1;
     int index = SvOK(ST(1)) ? SvIV(ST(1)): -1;

@@ -30,11 +30,11 @@ my @cOptions = (
 
     #******************************************************************************
     #
-    #  Recommended cipher suites:
+    #   Recommended cipher suites:
     #
-    #  Define the following to enable various cipher suites
-    #  At least one of these must be defined.  If multiple are defined,
-    #  the handshake will determine which is best for the connection.
+    #   Define the following to enable various cipher suites
+    #   At least one of these must be defined.  If multiple are defined,
+    #   the handshake will determine which is best for the connection.
     #
 
     'USE_TLS_RSA_WITH_AES_128_CBC_SHA',
@@ -84,8 +84,8 @@ my @cOptions = (
 
     #******************************************************************************
     #
-    #  These cipher suites are secure, but not in general use. Enable only if 
-    #  specifically required by application.
+    #   These cipher suites are secure, but not in general use. Enable only if 
+    #   specifically required by application.
     #
     'USE_TLS_DHE_PSK_WITH_AES_256_CBC_SHA',
     'USE_TLS_DHE_PSK_WITH_AES_128_CBC_SHA',
@@ -96,7 +96,7 @@ my @cOptions = (
 
     #******************************************************************************
     #
-    #  These cipher suites are generally considered weak, not recommended for use.
+    #   These cipher suites are generally considered weak, not recommended for use.
     #
     #'USE_TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA', #x
     #'USE_SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA',
@@ -107,9 +107,9 @@ my @cOptions = (
 
     #******************************************************************************
     #
-    #  These cipher suites do not combine authentication and encryption and
-    #  are not recommended for use-cases that require strong security or 
-    #  Man-in-the-Middle protection.
+    #   These cipher suites do not combine authentication and encryption and
+    #   are not recommended for use-cases that require strong security or 
+    #   Man-in-the-Middle protection.
     #
     #'USE_TLS_DH_anon_WITH_AES_256_CBC_SHA',
     #'USE_TLS_DH_anon_WITH_AES_128_CBC_SHA',
@@ -318,7 +318,7 @@ my $debug_build = 0;
 foreach my $d (@cOptions) {
     next unless $d;
     if ($d =~ /^!(.*)/) {
-        $define .= "-U$1 " unless ($define =~ /\-U$1\s/);;
+        $define .= "-U$1 " unless ($define =~ /\-U$1\s/);
     } else {
         $define .= "-D$d " unless ($define =~ /\-D$d\s/);
     }
@@ -334,7 +334,7 @@ my $mxfiles = "$mxbase.files";
 my $mxmodfiles = "modfiles";
 
 # Extract the MatrixSSL original source if it's not already extracted.
-if(!-d $mxbase) {
+if (!-d $mxbase) {
     use Archive::Tar;
     my $tar = Archive::Tar->new;
     $tar->read("$mxbase.tgz");
@@ -373,6 +373,7 @@ if (-r "./patches") {
 #       7. change all the leading "./" to $mxbase/
 #       8. join them all on to one line and assign them all to "$mxfiles"; be careful NOT to expand the "$mxext" or "$mxbase" (eg: use single quotes)
 #       9. replace the os/linux/linux$mxext one with os/$os_src$mxext
+
 
 # Autogenerate list with object files produced by MatrixSSL because it's
 # different between MatrixSSL versions.
@@ -448,6 +449,7 @@ WriteMakefile(
     clean               => {FILES => "$mxobjs Matrixssl$o"},
 );
 
+
 if (eval {require ExtUtils::Constant; 1}) {
     open my $f, '<', 'MatrixSSL3.pm' or die "open: $!";
     my %names = map {s/^\s*//;s/\s*$//;$_=>1} grep /^\s+[A-Z][a-zA-Z0-9_]+\s*$/, <$f>;
@@ -463,6 +465,7 @@ if (eval {require ExtUtils::Constant; 1}) {
         XS_FILE      => 'const-xs.inc',
     );
 }
+
 
 =for currently contained in the patch we apply
 
