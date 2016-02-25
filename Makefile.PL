@@ -311,7 +311,7 @@ my $debug_build = 0;
 foreach my $d (@cOptions) {
     next unless $d;
     if ($d =~ /^!(.*)/) {
-        $define .= "-U$1 " unless ($define =~ /\-U$1\s/);;
+        $define .= "-U$1 " unless ($define =~ /\-U$1\s/);
     } else {
         $define .= "-D$d " unless ($define =~ /\-D$d\s/);
     }
@@ -327,11 +327,11 @@ my $mxfiles = "$mxbase.files";
 my $mxmodfiles = "modfiles";
 
 # Extract the MatrixSSL original source if it's not already extracted.
-if(!-d $mxbase) {
-  use Archive::Tar;
-  my $tar = Archive::Tar->new;
-  $tar->read("$mxbase.tgz");
-  $tar->extract();
+if (!-d $mxbase) {
+    use Archive::Tar;
+    my $tar = Archive::Tar->new;
+    $tar->read("$mxbase.tgz");
+    $tar->extract();
 }
 
 # Apply cumulative patch, if any
@@ -488,6 +488,6 @@ sub c_o {
 # Here, we fudge the replacement of the original MatrixSSL source code for the clean
 sub clean_subdirs {
 #Was:  return "clean_subdirs :\t$(NOECHO) $(NOOP)\n";
-  return qq ~clean_subdirs :\n\t\$(MV) "$mxbase" "/tmp/delme-$$-$mxbase"\n~;
-  # return qq ~clean_subdirs :\n\t\$(CP) "$mxbase/src/pki/matrixPki.h.ori" "$mxbase/src/pki/matrixPki.h"\n~;
+    return qq ~clean_subdirs :\n\t\$(MV) "$mxbase" "/tmp/delme-$$-$mxbase"\n~;
+    # return qq ~clean_subdirs :\n\t\$(CP) "$mxbase/src/pki/matrixPki.h.ori" "$mxbase/src/pki/matrixPki.h"\n~;
 }
