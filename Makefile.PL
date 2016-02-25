@@ -258,7 +258,7 @@ my @cOptions = (
     #'PS_PUBKEY_OPTIMIZE_FOR_SMALLER_RAM',
     # OSX defines __OPTIMIZE__ and __OPTIMIZE_SIZE__ which triggers matrixSSL to define
     # PS_PUBKEY_OPTIMIZE_FOR_SMALLER_RAM and having both triggers a compilation error
-    ($^O !~ /darwin/ ? 'PS_PUBKEY_OPTIMIZE_FOR_FASTER_SPEED' : undef),
+    ($^O !~ /darwin/ ? 'PS_PUBKEY_OPTIMIZE_FOR_FASTER_SPEED' : ()),
 
     # cryptoConfig.h - Optionally enable for selected algorithms to improve
     # performance at the cost of increased binary code size.   
@@ -303,20 +303,19 @@ my @cOptions = (
     # OS related and other stuff
     # ------
 
-    ($^O =~ /linux/ ? 'LINUX' : undef),
-    ($^O !~ /Win32/ ? 'POSIX' : undef),
-    ($^O !~ /Win32|darwin/ && $Config{myuname} =~ /x86_64|amd64|x64/ ? 'PSTM_64BIT' : undef),
+    ($^O =~ /linux/ ? 'LINUX' : ()),
+    ($^O !~ /Win32/ ? 'POSIX' : ()),
+    ($^O !~ /Win32|darwin/ && $Config{myuname} =~ /x86_64|amd64|x64/ ? 'PSTM_64BIT' : ()),
 
     # this is needed because on Windows matrixSSL doesn't do certificate date validation
     # and just sets PS_CERT_AUTH_FAIL_DATE_FLAG for every certificate which means they all fail auth
-    ($^O =~ /Win32/ ? 'ALL_CERTS_PASS_DATE_VALIDATION' : undef),
+    ($^O =~ /Win32/ ? 'ALL_CERTS_PASS_DATE_VALIDATION' : ()),
 );
 
 # Compute the compiler definitions string
 my $define = '';
 my $debug_build = 0;
 foreach my $d (@cOptions) {
-    next unless $d;
     if ($d =~ /^!(.*)/) {
         $define .= "-U$1 " unless ($define =~ /\-U$1\s/);
     } else {
