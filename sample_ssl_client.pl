@@ -17,7 +17,6 @@ warn <<"EOUSAGE";
 Crypt::MatrixSSL3 sample SSL client.
 Usage: $0 [hostname [port]]
 Now downloading: https://${HOST}:${PORT}/
-
 EOUSAGE
 
 # Initialize vars:
@@ -29,10 +28,11 @@ my ($ssl, $keys);                               # for MatrixSSL
 
 $appOut = "GET / HTTP/1.0\r\nHost: ${HOST}\r\n\r\n";
 
-# Initialize MatrixSSL (as client):
-
 my $trustedCA = 'ca-certificates.crt';
 # $trustedCA = 't/cert/testCA.crt';
+
+# Initialize MatrixSSL (as client):
+
 $keys = Crypt::MatrixSSL3::Keys->new();
 if (my $rc = $keys->load_rsa(undef, undef, undef, $trustedCA)) {
     die 'load_rsa: '.get_ssl_error($rc)."\n"
@@ -54,12 +54,18 @@ while (!$eof && !$err) {
     # I/O
     $eof = nb_io($sock, $in, $out);
     $err = ssl_io($ssl, $in, $out, $appIn, $appOut, $handshakeIsComplete);
+    if ($err eq 'close') {
+        $err = undef;
+        $sock->blocking(1);
+        my $n = syswrite $sock, $out;
+        die "syswrite: $!" if !defined $n;
+        last;
+    }
 }
 
-close($sock);
+close $sock;
 
 # Process result:
 
 print $appIn;
 die $err if $err;
-
