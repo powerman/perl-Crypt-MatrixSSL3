@@ -767,7 +767,7 @@ When this object will be destroyed will free memory, so you should
 keep this object while there are exist Client/Server session
 which uses this $sessID.
 
-=item $sessid->B<clear>()
+=item $sessID->B<clear>()
 
     matrixSslClearSessionId($sessID);
 
@@ -777,9 +777,9 @@ which uses this $sessID.
 
 =over
 
-=item B<new>( $keys, $sessionID, \@cipherSuites, \&certValidator, $expectedName, $extensions, \&extensionCback )
+=item B<new>( $keys, $sessID, \@cipherSuites, \&certValidator, $expectedName, $extensions, \&extensionCback )
 
-    matrixSslNewClientSession( $ssl, $keys, $sessionID, \@cipherSuites,
+    matrixSslNewClientSession( $ssl, $keys, $sessID, \@cipherSuites,
         \&certValidator, $expectedName, $extensions, \&extensionCback )
 
 Return new object $ssl.
@@ -821,7 +821,7 @@ More information about callback &certValidator in next section.
 Unlike C API, it doesn't set $outBuf to memory location inside MatrixSSL,
 but instead it append buffer returned by C API to the end of $outBuf.
 
-    matrixSslGetOutdata( $ssl, $tmpBuf )
+    matrixSslGetOutdata( $tmpBuf )
     $outBuf .= $tmpBuf
 
 =item $ssl->B<sent_data>( $bytes )
@@ -921,9 +921,9 @@ This is a reference to an array that contains one or more array references:
             '/path/to/OCSP_staple.der',                  # SESSION - file containing a OCSP staple that gets sent when a client
                                                          #           send a TLS status request extension
             [                                            # SESSION - Certificate Transparency SCT files used to build the 'signed_certificate_timestamp' TLS extension data buffer
-            '/path/to/SCT1.sct',
-            '/path/to/SCT2.sct',
-            ...
+                '/path/to/SCT1.sct',
+                '/path/to/SCT2.sct',
+                ...
             ]
             # instead of the Certificate Transparency SCT files you can specify a scalar with a single file that contains multiple SCT files
             # note that this file is not just a concatenation of the SCT files, but a ready-to-use 'signed_certificate_timestamp' TLS extension data buffer
@@ -1011,9 +1011,9 @@ Will be called with two scalar params: $certInfo and $alert
 Param $certInfo instead of (psX509Cert_t *) will contain reference to
 array with certificates. Each certificate will be hash in this format:
 
-    notBefore      => $notBefore,
-    notAfter       => $notAfter,
-    subjectAltName => {
+    notBefore       => $notBefore,
+    notAfter        => $notAfter,
+    subjectAltName  => {
         dns             => $dns,
         uri             => $uri,
         email           => $email,
@@ -1063,6 +1063,7 @@ Will be called whenever we have a successful match against the hostname specifie
 This will inform the Perl code which virtual host the current SSL session belongs to.
 
 Will be called with 2 parameters:
+
     $ssl_id - this is the $ssl_id used in the $ssl->init_SNI(...) function call
     $index - a 0-based int specifying which virtual host matchd the client requested hostname
 
