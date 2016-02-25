@@ -1,7 +1,7 @@
 [![Build Status](https://travis-ci.org/powerman/perl-Crypt-MatrixSSL3.svg?branch=master)](https://travis-ci.org/powerman/perl-Crypt-MatrixSSL3)
 [![Coverage Status](https://coveralls.io/repos/powerman/perl-Crypt-MatrixSSL3/badge.svg?branch=master)](https://coveralls.io/r/powerman/perl-Crypt-MatrixSSL3?branch=master)
 
-# Crypt-MatrixSSL3
+# DESCRIPTION
 
 Crypt::MatrixSSL3 lets you use the MatrixSSL crypto library (see
 http://matrixssl.org/) from Perl.  With this module, you will be
@@ -25,10 +25,10 @@ of the MatrixSSL "C" code.
 
 To install this module type the following:
 
-   perl Makefile.PL
-   make
-   make test
-   make install
+       perl Makefile.PL
+       make
+       make test
+       make install
 
 # DEPENDENCIES
 
