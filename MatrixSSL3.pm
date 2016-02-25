@@ -821,7 +821,7 @@ More information about callback &certValidator in next section.
 Unlike C API, it doesn't set $outBuf to memory location inside MatrixSSL,
 but instead it append buffer returned by C API to the end of $outBuf.
 
-    matrixSslGetOutdata( $tmpBuf )
+    matrixSslGetOutdata( $ssl, $tmpBuf )
     $outBuf .= $tmpBuf
 
 =item $ssl->B<sent_data>( $bytes )
