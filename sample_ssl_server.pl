@@ -25,16 +25,14 @@ my ($in, $out, $appIn, $appOut) = (q{}) x 4;    # ssl and app buffers
 my ($handshakeIsComplete, $err);                # ssl state
 my ($ssl, $keys);                               # for MatrixSSL
 
-my $crt = 't/cert/server.crt;t/cert/testCA.crt';
-my $key = 't/cert/server.key';
-
 # Initialize MatrixSSL (as server):
 
+my $r = PS_SUCCESS;
+
 $keys = Crypt::MatrixSSL3::Keys->new();
-if (my $rc = $keys->load_rsa($crt, $key, undef, undef)) {
-    die 'load_rsa: '.get_ssl_error($rc)."\n"
-}
+die "load_rsa: $r" unless ($r = $keys->load_rsa('t/cert/server.crt;t/cert/testCA.crt', 't/cert/server.key', undef, undef) == PS_SUCCESS);
 $ssl = Crypt::MatrixSSL3::Server->new($keys, undef);
+warn $keys->load_session_ticket_keys("1234567890123456", "12345678901234567890123456789012", "12345678901234567890123456789012");
 
 # Socket I/O:
 
@@ -46,27 +44,20 @@ $sock->blocking(0);
 my $processed;  # flag: true if client request was processed
 while (!$eof && !$err && !($processed && !length $out)) {
     # Processing client request and sending reply.
-    if (!$processed && $appIn =~ /\A(.*?\r\n\r\n)/ms) {
+    if (!$processed && $appIn =~ /\r\n\r\n/) {
         $appOut = "HTTP/1.0 200 OK\r\nServer: Crypt::MatrixSSL3\r\n\r\n"
-                . "Below is copy of your request headers:\r\n$1";
+                . "Below is copy of your request:\r\n$appIn";
         $processed = 1;
     }
     # I/O
     $eof = nb_io($sock, $in, $out);
     $err = ssl_io($ssl, $in, $out, $appIn, $appOut, $handshakeIsComplete);
-    if ($err eq 'close') {
-        $err = undef;
-        $sock->blocking(1);
-        my $n = syswrite $sock, $out;
-        die "syswrite: $!" if !defined $n;
-        last;
-    }
 }
 
-close $sock;
-close $srvsock;
+close($sock);
+close($srvsock);
 
 # Process result:
 
-print $appIn;
 die $err if $err;
+
