@@ -26,9 +26,9 @@ static int objects = 0;
 
 /*****************************************************************************
     SNI entries  a.k.a virtual hosts per server.
-    
+
     We can handle a maximum MAX_SNI_ENTRIES virtual hosts.
-    
+
     For each host we can have:
         certificate
         key
@@ -56,10 +56,10 @@ typedef struct s_SNI_entry {
 
 /*****************************************************************************
     SNI servers
-    
+
     We can handle a maximum MAX_SNI_SERVERS server - each with its own 
     virtual hosts.
-    
+
     For each server we can have:
         a maximum of MAX_SNI_ENTRIES virtual hosts
 */
@@ -76,7 +76,7 @@ int16 SNI_server_index = 0;
 
 /*****************************************************************************
     OCSP DER response buffers
-    
+
     These are used when the client doesn't support/send a SNI extension
 */
 
@@ -92,7 +92,7 @@ int16 OCSP_staple_index = 0;
 
 /*****************************************************************************
     Certificate Transparency buffers
-    
+
     These are used when the client doesn't support/send a SNI extension
 */
 
@@ -164,10 +164,10 @@ int32 appCertValidator(ssl_t *ssl, psX509Cert_t *certInfo, int32 alert) {
 
     ENTER;
     SAVETMPS;
-    
+
     key = sv_2mortal(newSViv(PTR2IV(ssl)));
     callback = HeVAL(hv_fetch_ent(certValidatorArg, key, 0, 0));
-    
+
     /* Convert (psX509Cert_t *) structs into array of hashes. */
     certs = (AV *)sv_2mortal((SV *)newAV());
     for (; certInfo != NULL; certInfo=certInfo->next) {
@@ -233,24 +233,24 @@ int32 appCertValidator(ssl_t *ssl, psX509Cert_t *certInfo, int32 alert) {
             newRV(sv_2mortal((SV *)issuer)), 0);
         my_hv_store(sslCertInfo, "authStatus",
             newSViv(certInfo->authStatus), 0);
-        
+
         // TODO There is a lot more (less useful) fields available…
 
         av_push(certs, newRV(sv_2mortal((SV *)sslCertInfo)));
     }
-    
+
     PUSHMARK(SP);
     XPUSHs(sv_2mortal(newRV((SV *)certs)));
     XPUSHs(sv_2mortal(newSViv(alert)));
     PUTBACK;
 
     res = call_sv(callback, G_EVAL|G_SCALAR);
-    
+
     SPAGAIN;
-    
+
     if (res != 1)
         croak("Internal error: perl callback doesn't return 1 scalar!");
-    
+
     if (SvTRUE(ERRSV)) {
         warn("%s", SvPV_nolen(ERRSV));
         warn("die() in certValidate callback not allowed, continue...\n");
@@ -295,12 +295,12 @@ int32 appExtensionCback(ssl_t *ssl, unsigned short type, unsigned short len, voi
     PUTBACK;
 
     res = call_sv(callback, G_EVAL|G_SCALAR);
-    
+
     SPAGAIN;
-    
+
     if (res != 1)
         croak("Internal error: perl callback doesn't return 1 scalar!");
-    
+
     if (SvTRUE(ERRSV)) {
         warn("%s", SvPV_nolen(ERRSV));
         warn("die() in extensionCback callback not allowed, continue...\n");
@@ -342,7 +342,7 @@ void ALPNCallback(void *ssl, short protoCount, char *proto[MAX_PROTO_EXT], int32
     callback = HeVAL(hv_fetch_ent(ALPNCallbackArg, key, 0, 0));
 
     protos = (AV *)sv_2mortal((SV *)newAV());
-    
+
     for (i = 0; i < protoCount; i++) {
         SV *p = newSVpv(proto[i], protoLen[i]);
         av_push(protos, p);
@@ -353,12 +353,12 @@ void ALPNCallback(void *ssl, short protoCount, char *proto[MAX_PROTO_EXT], int32
     PUTBACK;
 
     res = call_sv(callback, G_EVAL|G_SCALAR);
-    
+
     SPAGAIN;
-    
+
     if (res != 1)
         croak("Internal error: perl callback doesn't return 1 scalar!");
-    
+
     if (SvTRUE(ERRSV)) {
         warn("%s", SvPV_nolen(ERRSV));
         warn("die() in ALPNCallback callback not allowed, continue...\n");
@@ -407,7 +407,7 @@ void SNI_callback(void *ssl, char *hostname, int32 hostnameLen, sslKeys_t **newK
     char regex_error[255];
 #endif
     t_SNI_server *ss = (t_SNI_server *) userPtr;
-    
+
     memcpy(_hostname, hostname, hostnameLen < 255 ? hostnameLen : 254);
     _hostname[hostnameLen] = 0;
 
@@ -415,7 +415,7 @@ void SNI_callback(void *ssl, char *hostname, int32 hostnameLen, sslKeys_t **newK
     warn("SNI_callback: looking for hostname %s, userPtr %p, ssl_id %d", _hostname, userPtr, ssl_id);
 #endif
     *newKeys = NULL;
-    
+
     for (i = 0; i < ss->SNI_entries_number; i++)
 #ifndef WIN32
         if ((regex_res = regexec(&(ss->SNI_entries[i]->regex_hostname), (const char *) _hostname, 0, NULL, 0)) == 0) {
@@ -435,10 +435,10 @@ void SNI_callback(void *ssl, char *hostname, int32 hostnameLen, sslKeys_t **newK
             warn("Error matching %d SNI entry: %s", i, regex_error);
 #endif
         }
-    
+
     if ((i < ss->SNI_entries_number) && (VHIndexCallback != NULL)) {
         dSP;
-        
+
         ENTER;
         SAVETMPS;
 
@@ -448,9 +448,9 @@ void SNI_callback(void *ssl, char *hostname, int32 hostnameLen, sslKeys_t **newK
         PUTBACK;
 
         res = call_sv(VHIndexCallback, G_EVAL|G_SCALAR);
-    
+
         SPAGAIN;
-    
+
         if (SvTRUE(ERRSV)) {
             warn("%s", SvPV_nolen(ERRSV));
             warn("die() in ALPNCallback callback not allowed, continue...\n");
@@ -494,13 +494,13 @@ int build_SCT_buffer(SV *ar, unsigned char **buffer, int32 *buffer_size) {
         if (!SvROK(ar)) {
             // a single file
             item = SvPV(ar, item_len);
-            
+
             if (item == NULL)
                 croak("build_SCT_buffer: expecting a scalar or array reference as first parameter");
-            
+
             if ((rc = psGetFileBuf(NULL, item, buffer, buffer_size)) != PS_SUCCESS)
                 croak("Error %d trying to read file %s", rc, item);
-            
+
             return 1;
         } else {
             if (SvTYPE(SvRV(ar)) != SVt_PVAV)
@@ -509,20 +509,20 @@ int build_SCT_buffer(SV *ar, unsigned char **buffer, int32 *buffer_size) {
     } else {
         croak("build_SCT_buffer: expecting a scalar or array reference as first parameter");
     }
-    
+
     // get the SCT files array
     sct_array = (AV *) SvRV(ar);
-    
+
     // get number of SCT files
     sct_array_size = (uint16) av_len(sct_array) + 1;
-    
+
 #ifdef MATRIX_DEBUG
     warn("Preparing to read %d SCT files", sct_array_size);
 #endif
     for (i = 0; i < sct_array_size; i++) {
         item_sv = *av_fetch(sct_array, i, 0);
         item = SvPV(item_sv, item_len);
-        
+
 #ifdef WIN32
         if (_stat(item, &fstat) != 0)
 #else
@@ -534,27 +534,27 @@ int build_SCT_buffer(SV *ar, unsigned char **buffer, int32 *buffer_size) {
 #endif
         sct_total_size += (size_t) fstat.st_size;
     }
-    
+
     sct_total_size += sct_array_size * 2;
     *buffer_size = sct_total_size;
-    
+
     c = *buffer = (unsigned char *) malloc(sct_total_size);
-    
+
     for (i = 0; i < sct_array_size; i++) {
         item_sv = *av_fetch(sct_array, i, 0);
         item = SvPV(item_sv, item_len);
-        
+
         if ((rc = psGetFileBuf(NULL, item, &sct, &sct_size)) != PS_SUCCESS)
             croak("Error %d trying to read file %s", rc, item);
-        
+
         *c = (sct_size & 0xFF00) >> 8; c++;
         *c = (sct_size & 0xFF); c++;
         memcpy(c, sct, sct_size);
         c+= sct_size;
-        
+
         psFree(sct, NULL);
     }
-    
+
     return sct_array_size;
 }
 
@@ -567,11 +567,11 @@ PROTOTYPES: ENABLE
 int set_cipher_suite_enabled_status(cipherId, status)
     short cipherId;
     int status;
-    
+
     CODE:
     add_obj();
     RETVAL = matrixSslSetCipherSuiteEnabledStatus(NULL, cipherId, status);
-    
+
     OUTPUT:
     RETVAL
 
@@ -582,10 +582,10 @@ void open()
 void close()
     int i = 0, j = 0;
     t_SNI_server *ss = NULL;
-    
+
     CODE:
     del_obj();
-    
+
     // release OCSP staples
 #ifdef MATRIX_DEBUG
     warn("----\nReleasing %d OCSP staples", OCSP_staple_index);
@@ -619,12 +619,12 @@ void close()
 #endif
         free(SCT_buffers[i]);
     }
-    
+
     // release SNI servers
 #ifdef MATRIX_DEBUG
     warn("----\nReleasing %d SNI servers", SNI_server_index);
 #endif
-    
+
     for (j = 0; j < SNI_server_index; j++) {
         ss = SNI_servers[j];
 #ifdef MATRIX_DEBUG
@@ -642,14 +642,14 @@ void close()
 #endif
             matrixSslDeleteKeys(ss->SNI_entries[i]->keys);
             del_obj();
-            
+
             if (ss->SNI_entries[i]->OCSP_staple != NULL) {
 #ifdef MATRIX_DEBUG
                 warn("  Releasing OCSP staple buffer for SNI entry %d, size = %d", i, ss->SNI_entries[i]->OCSP_staple_size);
 #endif
                 psFree(ss->SNI_entries[i]->OCSP_staple, NULL);
             }
-            
+
             if (ss->SNI_entries[i]->SCT != NULL) {
 #ifdef MATRIX_DEBUG
                 warn("  Releasing SCT extension buffer for SNI entry %d, size = %d", i, ss->SNI_entries[i]->SCT_size);
@@ -685,7 +685,7 @@ int refresh_OCSP_staple(server_index, index, DERfile)
 #endif
         if (index >= OCSP_staple_index)
             croak("Out of range default OCSP stape buffer index specified: %d > %d", index, OCSP_staple_index - 1);
-        
+
         p_buffer = &(OCSP_staples[index]->OCSP_staple);
         p_size = &(OCSP_staples[index]->OCSP_staple_size);
     } else {
@@ -694,30 +694,30 @@ int refresh_OCSP_staple(server_index, index, DERfile)
 #endif
         if (server_index >= SNI_server_index)
             croak("Out of range SNI server index spcified: %d > %d", server_index, SNI_server_index - 1);
-        
+
         if (index >= SNI_servers[server_index]->SNI_entries_number)
             croak("Out of range SNI entry index spcified for SNI server %d: %d > %d", server_index, index, SNI_servers[server_index]->SNI_entries_number - 1);
-        
+
         p_buffer = &(SNI_servers[server_index]->SNI_entries[index]->OCSP_staple);
         p_size = &(SNI_servers[server_index]->SNI_entries[index]->OCSP_staple_size);
     }
-    
+
     // free previous buffer if necessary
     if (*p_buffer) {
         free(*p_buffer);
         *p_buffer = NULL;
     }
     *p_size = 0;
-    
+
     rc = psGetFileBuf(NULL, DERfile, p_buffer, p_size);
-    
+
     if (rc != PS_SUCCESS)
         croak("Failed to load OCSP staple %s; %d", DERfile, rc);
 #ifdef MATRIX_DEBUG
     warn("Refreshed OCSP staple: %p %d", *p_buffer, *p_size);
 #endif
     RETVAL = rc;
-    
+
     OUTPUT:
     RETVAL
 
@@ -739,7 +739,7 @@ int refresh_SCT_buffer(server_index, index, SCT_params)
 #endif
         if (index >= SCT_buffer_index)
             croak("Out of range default SCT buffer index specified: %d > %d", index, SCT_buffer_index - 1);
-        
+
         p_buffer = &(SCT_buffers[index]->SCT);
         p_size = &(SCT_buffers[index]->SCT_size);
     } else {
@@ -748,34 +748,34 @@ int refresh_SCT_buffer(server_index, index, SCT_params)
 #endif
         if (server_index >= SNI_server_index)
             croak("Out of range SNI server index spcified: %d > %d", server_index, SNI_server_index - 1);
-        
+
         if (index >= SNI_servers[server_index]->SNI_entries_number)
             croak("Out of range SNI entry index spcified for SNI server %d: %d > %d", server_index, index, SNI_servers[server_index]->SNI_entries_number - 1);
-        
+
         p_buffer = &(SNI_servers[server_index]->SNI_entries[index]->SCT);
         p_size = &(SNI_servers[server_index]->SNI_entries[index]->SCT_size);
     }
-    
+
     // free previous buffer if necessary
     if (*p_buffer) {
         free(*p_buffer);
         *p_buffer = NULL;
     }
     *p_size = 0;
-    
+
     rc = build_SCT_buffer(SCT_params, p_buffer, p_size);
 #ifdef MATRIX_DEBUG
     warn("Refreshed SCT buffer: Loaded %d SCT files, %p %d", rc, *p_buffer, *p_size);
 #endif
     RETVAL = rc;
-    
+
     OUTPUT:
     RETVAL
 
 
 void set_VHIndex_callback(vh_index_cb)
     SV *vh_index_cb;
-    
+
     CODE:
     VHIndexCallback = SvREFCNT_inc(SvRV(vh_index_cb));
 
@@ -802,7 +802,7 @@ unsigned int capabilities()
     RETVAL |= CERTIFICATE_TRANSPARENCY_ENABLED;
 #endif
     RETVAL |= SNI_ENABLED;
-    
+
     OUTPUT:
     RETVAL
 
@@ -814,7 +814,7 @@ Crypt_MatrixSSL3_Keys *keys_new()
     INIT:
     sslKeys_t *keys;
     int rc;
-    
+
     CODE:
     add_obj();
     rc = matrixSslNewKeys(&keys, NULL);
@@ -824,14 +824,14 @@ Crypt_MatrixSSL3_Keys *keys_new()
     }
 
     RETVAL = (Crypt_MatrixSSL3_Keys *)keys;
-    
+
     OUTPUT:
     RETVAL
 
 
 void keys_DESTROY(keys);
     Crypt_MatrixSSL3_Keys *keys;
-    
+
     CODE:
     matrixSslDeleteKeys((sslKeys_t *)keys);
     del_obj();
@@ -843,7 +843,7 @@ int keys_load_rsa(keys, certFile, privFile, privPass, trustedCAcertFiles)
     char *privFile = SvOK(ST(2)) ? SvPV_nolen(ST(2)) : NULL;
     char *privPass = SvOK(ST(3)) ? SvPV_nolen(ST(3)) : NULL;
     char *trustedCAcertFiles = SvOK(ST(4)) ? SvPV_nolen(ST(4)) : NULL;
-    
+
     CODE:
     RETVAL = (int) matrixSslLoadRsaKeys((sslKeys_t *)keys, certFile, privFile, privPass, trustedCAcertFiles);
 
@@ -886,11 +886,11 @@ int keys_load_pkcs12(keys, p12File, importPass, macPass, flags)
     unsigned char *macPassBuf = NULL;
     STRLEN importPassLen   = 0;
     STRLEN macPassLen  = 0;
-    
+
     CODE:
     importPassBuf= SvOK(importPass) ? (unsigned char *) SvPV(importPass, importPassLen) : NULL;
     macPassBuf = SvOK(macPass) ? (unsigned char *) SvPV(macPass, macPassLen) : NULL;
-    
+
     RETVAL = matrixSslLoadPkcs12((sslKeys_t *)keys, (unsigned char *) p12File, importPassBuf, importPassLen,
                                   macPassBuf, macPassLen, flags);
 
@@ -912,17 +912,17 @@ int keys_load_session_ticket_keys(keys, name, symkey, hashkey)
     hashkeyBuf = SvOK(hashkey) ? SvPV(hashkey, hashkeyLen) : NULL;
 
     RETVAL = (int) matrixSslLoadSessionTicketKeys(keys, nameBuf, symkeyBuf, symkeyLen, hashkeyBuf, hashkeyLen);
-    
+
     OUTPUT:
     RETVAL
 
 int keys_load_DH_params(keys, paramsFile)
     Crypt_MatrixSSL3_Keys *keys;
     char *paramsFile = SvOK(ST(1)) ? SvPV_nolen(ST(1)) : NULL;
-    
+
     CODE:
     RETVAL = (int) matrixSslLoadDhParams((sslKeys_t *)keys, paramsFile);
-    
+
     OUTPUT:
     RETVAL
 
@@ -934,7 +934,7 @@ Crypt_MatrixSSL3_SessID *sessid_new()
     INIT:
     int rc = PS_SUCCESS;
     sslSessionId_t *sessionId = NULL;
-    
+
     CODE:
     add_obj();
     rc = matrixSslNewSessionId(&sessionId, NULL);
@@ -944,14 +944,14 @@ Crypt_MatrixSSL3_SessID *sessid_new()
     }
 
     RETVAL = (Crypt_MatrixSSL3_SessID *)sessionId;
-    
+
     OUTPUT:
     RETVAL
 
 
 void sessid_DESTROY(sessionId)
     Crypt_MatrixSSL3_SessID *sessionId;
-    
+
     CODE:
     matrixSslDeleteSessionId((sslSessionId_t *) sessionId);
     del_obj();
@@ -985,14 +985,14 @@ Crypt_MatrixSSL3_Sess *sess_new_client(keys, sessionId, cipherSuites, certValida
     PREINIT:
     uint32 cipherSuitesBuf[64];
     sslSessOpts_t sslOpts;
-    
+
     INIT:
     if (SvROK(cipherSuites) && SvTYPE(SvRV(cipherSuites)) == SVt_PVAV) {
         cipherSuitesArray = (AV *) SvRV(cipherSuites);
 
         cipherCount = (uint16) av_len(cipherSuitesArray) + 1;
         if (cipherCount > 64) cipherCount = 64;
-        
+
         for (i = 0; i < cipherCount; i++) {
             item = av_fetch(cipherSuitesArray, i, 0);
             cipherSuitesBuf[i] = (uint32) SvIV(*item);
@@ -1000,12 +1000,12 @@ Crypt_MatrixSSL3_Sess *sess_new_client(keys, sessionId, cipherSuites, certValida
     } else if (SvOK(cipherSuites)) {
         croak("cipherSuites should be undef or ARRAYREF");
     }
-    
+
     CODE:
     add_obj();
-    
+
     memset((void *) &sslOpts, 0, sizeof(sslSessOpts_t));
-    
+
     rc = matrixSslNewClientSession(&ssl,
             (sslKeys_t *)keys, (sslSessionId_t *)sessionId, cipherSuitesBuf, cipherCount,
             (SvOK(certValidator) ? appCertValidator : NULL),
@@ -1013,14 +1013,14 @@ Crypt_MatrixSSL3_Sess *sess_new_client(keys, sessionId, cipherSuites, certValida
             (tlsExtension_t *) extensions,
             (SvOK(extensionCback) ? appExtensionCback : NULL),
             &sslOpts);
-    
+
     if (rc != MATRIXSSL_REQUEST_SEND) {
         del_obj();
         croak("%d", rc);
     }
 
     RETVAL = (Crypt_MatrixSSL3_Sess *)ssl;
-    
+
     ENTER;
     SAVETMPS;
 
@@ -1055,7 +1055,7 @@ Crypt_MatrixSSL3_Sess *sess_new_server(keys, certValidator)
 
     PREINIT:
     sslSessOpts_t sslOpts;
-    
+
     CODE:
     add_obj();
 
@@ -1071,7 +1071,7 @@ Crypt_MatrixSSL3_Sess *sess_new_server(keys, certValidator)
     }
 
     RETVAL = (Crypt_MatrixSSL3_Sess *)ssl;
-    
+
     ENTER;
     SAVETMPS;
 
@@ -1134,7 +1134,7 @@ int sess_init_SNI(ssl, index, ssl_id, sni_data = NULL)
         // create new SNI site buffer
         SNI_servers[SNI_server_index] = (t_SNI_server *) malloc(sizeof(t_SNI_server));
         memset(SNI_servers[SNI_server_index], 0, sizeof(t_SNI_server));
-        
+
         index = SNI_server_index;
         SNI_server_index++;
     } else {
@@ -1142,23 +1142,23 @@ int sess_init_SNI(ssl, index, ssl_id, sni_data = NULL)
         // check if index points to a valid SNI site structure
         if (index >= SNI_server_index)
             croak("Requested SNI site index out of range %d > %d", index, SNI_server_index - 1);
-        
+
         // just set the callback and we're done
 #ifdef MATRIX_DEBUG
         warn("Setting up SNI callback using SNI server %d, %p", index, SNI_servers[index]);
 #endif
         matrixSslRegisterSNICallback(ssl, SNI_callback, SNI_servers[index], ssl_id);
-        
+
         XSRETURN_IV(index);
     }
-    
+
     // set up pointer to the newly SNI site
     ss = SNI_servers[index];
-    
+
     // initialize SNI server structure
     if (!(SvOK(sni_data) && SvRV(sni_data) && SvTYPE(SvRV(sni_data)) == SVt_PVAV))
         croak("Expected SNI data to be an array reference");
-    
+
     // our array of arrays
     sni_array = (AV *) SvRV(sni_data);
 
@@ -1175,14 +1175,14 @@ int sess_init_SNI(ssl, index, ssl_id, sni_data = NULL)
         // alocate memory for each SNI structure
         ss->SNI_entries[i] = (t_SNI_entry *) malloc( sizeof(t_SNI_entry));
         memset(ss->SNI_entries[i], 0, sizeof(t_SNI_entry));
-        
+
         // get one array at the time
         sd_sv = *av_fetch(sni_array, i, 0);
 
         // make sure we have an array reference
         if (!(SvROK(sd_sv) && SvTYPE(SvRV(sd_sv)) == SVt_PVAV))
             croak("Expected elements of SNI data to be arrays");
-        
+
         // get per host SNI data
         sd = (AV *) SvRV(sd_sv);
 
@@ -1190,7 +1190,7 @@ int sess_init_SNI(ssl, index, ssl_id, sni_data = NULL)
         item_sv = *av_fetch(sd, 0, 0);
         if (!SvOK(item_sv))
             croak("Hostname not specified in SNI entry %d", i);
-        
+
         item = (unsigned char *) SvPV(item_sv , item_len);
 #ifdef MATRIX_DEBUG
         warn("  SNI entry %d Hostname = %s\n", i, item);
@@ -1200,7 +1200,7 @@ int sess_init_SNI(ssl, index, ssl_id, sni_data = NULL)
         ss->SNI_entries[i]->hostnameLen = item_len;
 #else
         regex_res = regcomp(&(ss->SNI_entries[i]->regex_hostname), item, REG_EXTENDED | REG_ICASE | REG_NOSUB);
-        
+
         if (regex_res != 0) {
             regerror(regex_res, &(ss->SNI_entries[i]->regex_hostname), regex_error, 255);
             croak("Error compiling hostname regex %s: %s", item, regex_error);
@@ -1209,7 +1209,7 @@ int sess_init_SNI(ssl, index, ssl_id, sni_data = NULL)
         // element 1,2 - key & cert for this host
         cert_sv = *av_fetch(sd, 1, 0);
         key_sv = *av_fetch(sd, 2, 0);
-        
+
         if (SvOK(cert_sv) && SvOK(key_sv)) {
             cert = (unsigned char *) SvPV_nolen(cert_sv);
             key = (unsigned char *) SvPV_nolen(key_sv);
@@ -1222,15 +1222,15 @@ int sess_init_SNI(ssl, index, ssl_id, sni_data = NULL)
                 del_obj();
                 croak("SNI matrixSslNewKeys failed %d", rc);
             }
-            
+
             rc = matrixSslLoadRsaKeys(ss->SNI_entries[i]->keys, cert, key, NULL, NULL);
             if (rc != PS_SUCCESS)
                 croak("SNI matrixSslLoadRsaKeys failed %d; %s; %s", rc, cert, key);
         }
-        
+
         // element 3 - DH param
         item_sv = *av_fetch(sd, 3, 0);
-        
+
         if (SvOK(item_sv)) {
             item = (unsigned char *) SvPV_nolen(item_sv);
 #ifdef MATRIX_DEBUG
@@ -1240,10 +1240,10 @@ int sess_init_SNI(ssl, index, ssl_id, sni_data = NULL)
             if (rc != PS_SUCCESS)
                 croak("SNI matrixSslLoadDhParams failed %d; %s", rc, item);
         }
-        
+
         // element 4,5,6 - session tickets id, encryption key, hash key
         item_sv = *av_fetch(sd, 4, 0);
-        
+
         // if the id is undef that means no session ticket support
         if (SvOK(item_sv)) {
             item = (unsigned char *) SvPV(item_sv, item_len);
@@ -1251,12 +1251,12 @@ int sess_init_SNI(ssl, index, ssl_id, sni_data = NULL)
             warn("  SNI entry %d session ticket ID %.16s", i, item);
 #endif
             memcpy(stk_id, item, item_len);
-            
+
             // element 5 - encryption key
             item_sv = *av_fetch(sd, 5, 0);
             if (!SvOK(item_sv))
                 croak("undef encryption key in SNI structure %d", i);
-            
+
             item = (unsigned char *) SvPV(item_sv, item_len);
             if (!((item_len == 16) || (item_len == 32)))
                 croak("size of the encryption key in SNI structure %d must be 16/32. Now it is %d", i, item_len);
@@ -1265,12 +1265,12 @@ int sess_init_SNI(ssl, index, ssl_id, sni_data = NULL)
 #endif
             memcpy(stk_ek, item, item_len);
             stk_ek_len = item_len;
-            
+
             // element 6 - hash key
             item_sv = *av_fetch(sd, 6, 0);
             if (!SvOK(item_sv))
                 croak("undef hash key in SNI structure %d", i);
-            
+
             item = (unsigned char *) SvPV(item_sv, item_len);
             if (item_len != 32)
                 croak("size of the hash key in SNI structure %d must be 16/32. Now it is %d", i, item_len);
@@ -1279,15 +1279,15 @@ int sess_init_SNI(ssl, index, ssl_id, sni_data = NULL)
 #endif
             memcpy(stk_hk, item, item_len);
             stk_hk_len = item_len;
-            
+
             rc = matrixSslLoadSessionTicketKeys(ss->SNI_entries[i]->keys, stk_id, stk_ek, stk_ek_len, stk_hk, stk_hk_len);
             if (rc != PS_SUCCESS)
                 croak("SNI matrixSslLoadSessionTicketKeys failed %d; %s; %s", rc, cert, key);
         }
-        
+
         // element 7 - OCSP DER file
         item_sv = *av_fetch(sd, 7, 0);
-        
+
         if (SvOK(item_sv)) {
             item = (unsigned char *) SvPV_nolen(item_sv);
 #ifdef MATRIX_DEBUG
@@ -1297,10 +1297,10 @@ int sess_init_SNI(ssl, index, ssl_id, sni_data = NULL)
             if (rc != PS_SUCCESS)
                 croak("SNI psGetFileBuf failed %d; %s", rc, item);
         };
-        
+
         // element 8 - SCT files
         item_sv = *av_fetch(sd, 8, 0);
-        
+
         if (SvOK(item_sv)) {
             res = build_SCT_buffer(item_sv, &(ss->SNI_entries[i]->SCT), &(ss->SNI_entries[i]->SCT_size));
 #ifdef MATRIX_DEBUG
@@ -1314,7 +1314,7 @@ int sess_init_SNI(ssl, index, ssl_id, sni_data = NULL)
     warn("Setting up SNI callback using SNI server %d, %p", index, ss);
 #endif
     matrixSslRegisterSNICallback(ssl, SNI_callback, ss, ssl_id);
-    
+
     OUTPUT:
     RETVAL
 
@@ -1325,7 +1325,7 @@ int sess_load_OCSP_staple(ssl, DERfile)
 
     CODE:
     RETVAL = (int) matrixSslLoadOcspDER(ssl, DERfile);
-    
+
     OUTPUT:
     RETVAL
 
@@ -1335,7 +1335,7 @@ int sess_set_OCSP_staple(ssl, index, DERfile = NULL)
     int index = SvOK(ST(1)) ? SvIV(ST(1)) : -1;
     char *DERfile;
     int rc = PS_SUCCESS;
-    
+
     CODE:
 #ifdef MATRIX_DEBUG
     warn("set_OCSP_staple: file %s, index %d", DERfile, index);
@@ -1345,27 +1345,27 @@ int sess_set_OCSP_staple(ssl, index, DERfile = NULL)
         // check limits
         if (OCSP_staple_index == MAX_OCSP_STAPLES)
             croak("We have already loaded the maximum number of %d OCSP staples", MAX_OCSP_STAPLES);
-        
+
         OCSP_staples[OCSP_staple_index] = (t_OCSP_staple *) malloc(sizeof(t_OCSP_staple));
         memset(OCSP_staples[OCSP_staple_index], 0, sizeof(t_OCSP_staple));
-        
+
         rc = psGetFileBuf(NULL, DERfile, &(OCSP_staples[OCSP_staple_index]->OCSP_staple), &(OCSP_staples[OCSP_staple_index]->OCSP_staple_size));
-        
+
         if (rc != PS_SUCCESS)
             croak("Failed to load DER response %s; %d", DERfile, rc);
 
         index = OCSP_staple_index;
         OCSP_staple_index++;
     }
-    
+
     // check if index points to a valid OCSP response buffer
     if (index >= OCSP_staple_index)
         croak("Requested index out of range %d > %d", index, OCSP_staple_index);
-    
+
     matrixSslSetOcspDER(ssl, OCSP_staples[index]->OCSP_staple, OCSP_staples[index]->OCSP_staple_size);
 
     RETVAL = index;
-    
+
     OUTPUT:
     RETVAL
 
@@ -1374,7 +1374,7 @@ int sess_set_SCT_buffer(ssl, index, SCT_params = NULL)
     int index = SvOK(ST(1)) ? SvIV(ST(1)) : -1;
     SV* SCT_params;
     int ars = 0, rc = PS_SUCCESS;
-    
+
     CODE:
 #ifdef MATRIX_DEBUG
     warn("set_SCT_buffer: index %d", index);
@@ -1384,27 +1384,27 @@ int sess_set_SCT_buffer(ssl, index, SCT_params = NULL)
         // check limits
         if (SCT_buffer_index == MAX_SCT_BUFFERS)
             croak("We have already loaded the maximum number of %d SCT buffers", MAX_SCT_BUFFERS);
-        
+
         index = SCT_buffer_index;
         SCT_buffers[index] = (t_SCT_buffer *) malloc(sizeof(t_SCT_buffer));
         memset(SCT_buffers[index], 0, sizeof(t_SCT_buffer));
-        
+
         ars = build_SCT_buffer(SCT_params, &(SCT_buffers[index]->SCT), &(SCT_buffers[index]->SCT_size));
 #ifdef MATRIX_DEBUG
         warn("Read %d SCT files for SCT buffer %d; Total SCT buffer size = %d", ars, index, SCT_buffers[index]->SCT_size);
 #endif
-        
+
         SCT_buffer_index++;
     }
-    
+
     // check if index points to a valid SCT buffer
     if (index >= SCT_buffer_index)
         croak("Requested SCT buffer index out of range %d > %d", index, SCT_buffer_index);
-    
+
     matrixSslSetSCT(ssl, SCT_buffers[index]->SCT, SCT_buffers[index]->SCT_size);
 
     RETVAL = index;
-    
+
     OUTPUT:
     RETVAL
 
@@ -1413,14 +1413,14 @@ void sess_set_ALPN_callback(ssl, cb_ALPN)
     SV *cb_ALPN;
     SV *key = NULL;
     int rc = 0;
-    
+
     CODE:
     if (!SvOK(cb_ALPN)) {
         croak("You must specify the ALPN callback");
     }
-    
+
     matrixSslRegisterALPNCallback(ssl, ALPNCallback);
-    
+
     ENTER;
     SAVETMPS;
 
@@ -1437,7 +1437,7 @@ void sess_set_ALPN_callback(ssl, cb_ALPN)
 void sess_DESTROY(ssl)
     Crypt_MatrixSSL3_Sess *ssl;
     SV *key = NULL;
-    
+
     CODE:
     ENTER;
     SAVETMPS;
@@ -1462,13 +1462,13 @@ int sess_get_outdata(ssl, outBuf)
     Crypt_MatrixSSL3_Sess *ssl;
     SV *outBuf;
     unsigned char *buf = NULL;
-    
+
     CODE:
     RETVAL = matrixSslGetOutdata((ssl_t *)ssl, &buf);
     /* append answer to the output */
     if (RETVAL > 0)
         sv_catpvn_mg(outBuf, (const char *) buf, RETVAL);
-    
+
     OUTPUT:
     RETVAL
 
@@ -1476,10 +1476,10 @@ int sess_get_outdata(ssl, outBuf)
 int sess_sent_data(ssl, bytes)
     Crypt_MatrixSSL3_Sess *ssl;
     int bytes;
-    
+
     CODE:
     RETVAL = matrixSslSentData((ssl_t *)ssl, bytes);
-    
+
     OUTPUT:
     RETVAL
 
@@ -1490,7 +1490,7 @@ int sess_get_readbuf(ssl, inBuf);
     STRLEN bufsz = 0;
     unsigned char *buf = NULL;
     unsigned char *readbuf = NULL;
-    
+
     CODE:
     RETVAL = matrixSslGetReadbuf((ssl_t *)ssl, &readbuf);
 
@@ -1517,7 +1517,7 @@ int sess_received_data(ssl, bytes, ptBuf)
     CODE:
     RETVAL = matrixSslReceivedData((ssl_t *)ssl, bytes, &buf, (uint32 *) &bufsz);
     sv_setpvn_mg(ptBuf, (const char *) buf, (buf==NULL ? 0 : bufsz));
-    
+
     OUTPUT:
     RETVAL
 
@@ -1527,11 +1527,11 @@ int sess_processed_data(ssl, ptBuf)
     SV *ptBuf;
     unsigned char *buf = NULL;
     unsigned int bufsz = 0;
-    
+
     CODE:
     RETVAL = matrixSslProcessedData((ssl_t *)ssl, &buf, (uint32 *) &bufsz);
     sv_setpvn_mg(ptBuf, (const char *) buf, (buf==NULL ? 0 : bufsz));
-    
+
     OUTPUT:
     RETVAL
 
@@ -1541,11 +1541,11 @@ int sess_encode_to_outdata(ssl, outBuf)
     SV *outBuf;
     unsigned char *buf = NULL;
     STRLEN bufsz = 0;
-    
+
     CODE:
     buf = (unsigned char *) SvPV(outBuf, bufsz);
     RETVAL = matrixSslEncodeToOutdata((ssl_t *)ssl, buf, bufsz);
-    
+
     OUTPUT:
     RETVAL
 
@@ -1553,11 +1553,11 @@ int sess_encode_to_outdata(ssl, outBuf)
 int sess_get_anon_status(ssl)
     Crypt_MatrixSSL3_Sess *ssl;
     int32 anon = 0;
-    
+
     CODE:
     matrixSslGetAnonStatus((ssl_t *)ssl, &anon);
     RETVAL = (int) anon;
-    
+
     OUTPUT:
     RETVAL
 
@@ -1566,10 +1566,10 @@ int sess_set_cipher_suite_enabled_status(ssl, cipherId, status);
     Crypt_MatrixSSL3_Sess *ssl;
     short cipherId;
     int status;
-    
+
     CODE:
     RETVAL = matrixSslSetCipherSuiteEnabledStatus((ssl_t *)ssl, cipherId, status);
-    
+
     OUTPUT:
     RETVAL
 
@@ -1577,10 +1577,10 @@ int sess_set_cipher_suite_enabled_status(ssl, cipherId, status);
 int
 sess_encode_closure_alert(ssl)
     Crypt_MatrixSSL3_Sess *ssl;
-    
+
     CODE:
     RETVAL = matrixSslEncodeClosureAlert((ssl_t *)ssl);
-    
+
     OUTPUT:
     RETVAL
 
@@ -1595,7 +1595,7 @@ int sess_encode_rehandshake(ssl, keys, certValidator, sessionOption, cipherSpecs
     uint16 cipherCount = 0, i = 0;
     AV *cipherSpecsArray = NULL;
     SV **item = NULL;
-    
+
     PREINIT:
     uint32 cipherSpecsBuf[64];
 
@@ -1605,7 +1605,7 @@ int sess_encode_rehandshake(ssl, keys, certValidator, sessionOption, cipherSpecs
 
         cipherCount = (uint16) av_len(cipherSpecsArray) + 1;
         if (cipherCount > 64) cipherCount = 64;
-        
+
         for (i = 0; i < cipherCount; i++) {
             item = av_fetch(cipherSpecsArray, i, 0);
             cipherSpecsBuf[i] = (uint32) SvIV(*item);
@@ -1618,7 +1618,7 @@ int sess_encode_rehandshake(ssl, keys, certValidator, sessionOption, cipherSpecs
     RETVAL = matrixSslEncodeRehandshake((ssl_t *)ssl, (sslKeys_t *)keys,
             (SvOK(certValidator) ? appCertValidator : NULL),
             sessionOption, cipherSpecsBuf, cipherCount);
-    
+
     ENTER;
     SAVETMPS;
 
@@ -1645,7 +1645,7 @@ Crypt_MatrixSSL3_HelloExt *helloext_new()
     INIT:
     tlsExtension_t *extension;
     int rc;
-    
+
     CODE:
     add_obj();
     rc = matrixSslNewHelloExtension(&extension, NULL);
@@ -1655,14 +1655,14 @@ Crypt_MatrixSSL3_HelloExt *helloext_new()
     }
 
     RETVAL = (Crypt_MatrixSSL3_HelloExt *)extension;
-    
+
     OUTPUT:
     RETVAL
 
 
 void helloext_DESTROY(extension)
     Crypt_MatrixSSL3_HelloExt *extension;
-    
+
     CODE:
     matrixSslDeleteHelloExtension((tlsExtension_t *)extension);
     del_obj();
@@ -1674,10 +1674,10 @@ int helloext_load(extension, ext, extType)
     int extType;
     unsigned char *extData = NULL;
     STRLEN extLen = 0;
-    
+
     CODE:
     extData = (unsigned char *) SvPV(ext, extLen);
     RETVAL = matrixSslLoadHelloExtension((tlsExtension_t *)extension, extData, extLen, extType);
-    
+
     OUTPUT:
     RETVAL
