@@ -13,7 +13,7 @@ Crypt::MatrixSSL3::Open();
 use constant RFC3546_SERVER_NAME => 0;          # "server_name" extension type
 use constant RFC3546_SERVER_NAME_HOST_NAME => 0;# "host_name" host name type
 
-my $trustedCAbundle     = 'share/ca-certificates.crt';
+my $trustedCAbundle     = $Crypt::MatrixSSL3::CA_CERTIFICATES;
 my $host1               = 'alice.sni.velox.ch';
 my $host2               = 'bob.sni.velox.ch';
 

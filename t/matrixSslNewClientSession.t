@@ -19,7 +19,7 @@ is undef, $ssl,
 #    qr/^${\PS_PROTOCOL_FAIL}\b/,
 #    'empty keys';
 
-is PS_SUCCESS, $keys->load_rsa(undef, undef, undef, 'share/ca-certificates.crt'),
+is PS_SUCCESS, $keys->load_rsa(undef, undef, undef, $Crypt::MatrixSSL3::CA_CERTIFICATES),
     '$keys->load_rsa';
 is MATRIXSSL_SUCCESS, Crypt::MatrixSSL3::set_cipher_suite_enabled_status(TLS_RSA_WITH_AES_128_CBC_SHA, PS_FALSE),
     'disable TLS_RSA_WITH_AES_128_CBC_SHA';

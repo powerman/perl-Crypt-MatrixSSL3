@@ -9,7 +9,7 @@ use Crypt::MatrixSSL3 qw(:all);
 
 Crypt::MatrixSSL3::Open();
 
-my $trustedCAbundle     = 'share/ca-certificates.crt';
+my $trustedCAbundle     = $Crypt::MatrixSSL3::CA_CERTIFICATES;
 my $target              = 'www.google.com:443';
 
 

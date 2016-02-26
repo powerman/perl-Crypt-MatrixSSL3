@@ -28,7 +28,7 @@ my ($ssl, $keys);                               # for MatrixSSL
 
 $appOut = "GET / HTTP/1.0\r\nHost: ${HOST}\r\n\r\n";
 
-my $trustedCA = 'share/ca-certificates.crt';
+my $trustedCA = $Crypt::MatrixSSL3::CA_CERTIFICATES;
 # $trustedCA = 't/cert/testCA.crt';
 
 # Initialize MatrixSSL (as client):

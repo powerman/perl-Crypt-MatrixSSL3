@@ -24,7 +24,7 @@ lives_ok { $keys = Crypt::MatrixSSL3::Keys->new() }
 lives_ok { $ssl = Crypt::MatrixSSL3::Server->new($keys, undef) }
     'empty keys';
 
-is PS_SUCCESS, $keys->load_rsa(undef, undef, undef, 'share/ca-certificates.crt'),
+is PS_SUCCESS, $keys->load_rsa(undef, undef, undef, $Crypt::MatrixSSL3::CA_CERTIFICATES),
     '$keys->load_rsa';
 
 lives_ok { $ssl = Crypt::MatrixSSL3::Server->new($keys, undef) }

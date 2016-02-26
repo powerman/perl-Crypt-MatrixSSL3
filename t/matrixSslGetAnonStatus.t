@@ -9,7 +9,7 @@ Crypt::MatrixSSL3::Open();
 
 my $p12File             = 't/cert/server.p12';
 my $importPass          = 'test';
-my $trustedCAbundle     = 'share/ca-certificates.crt';
+my $trustedCAbundle     = $Crypt::MatrixSSL3::CA_CERTIFICATES;
 my $trustedCAcertFiles  = 't/cert/testCA.crt';
 
 my ($Server_Keys, $Client_Keys);

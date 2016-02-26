@@ -22,7 +22,7 @@ is PS_FAILURE, Crypt::MatrixSSL3::set_cipher_suite_enabled_status(SSL_RSA_WITH_R
 
 lives_ok { $keys = Crypt::MatrixSSL3::Keys->new() }
     'Keys->new';
-is PS_SUCCESS, $keys->load_rsa(undef, undef, undef, 'share/ca-certificates.crt'),
+is PS_SUCCESS, $keys->load_rsa(undef, undef, undef, $Crypt::MatrixSSL3::CA_CERTIFICATES),
     '$keys->load_rsa';
 
 lives_ok { $ssl = Crypt::MatrixSSL3::Server->new($keys, undef) }

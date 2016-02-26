@@ -11,7 +11,7 @@ my $certFile            = 't/cert/server.crt';
 my $privFile            = 't/cert/server.key';
 my $privPass            = undef;
 my $trustedCAcertFiles  = 't/cert/testCA.crt';
-my $trustedCAbundle     = 'share/ca-certificates.crt';
+my $trustedCAbundle     = $Crypt::MatrixSSL3::CA_CERTIFICATES;
 
 my ($Server_Keys, $Client_Keys);
 my ($Server_SSL, $Client_SSL);
