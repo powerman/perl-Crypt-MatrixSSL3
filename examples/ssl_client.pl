@@ -63,7 +63,7 @@ while (!$eof && !$err) {
     }
 }
 
-close $sock;
+close $sock or die "close: $!";
 
 # Process result:
 

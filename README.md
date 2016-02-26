@@ -271,7 +271,7 @@ constants (tag ':RC') will be exported.
 
 - :Bool
 
-    Booleans used in matrixSslSetCipherSuiteEnabledStatus() and {authStatus}:
+    Boolean used in matrixSslSetCipherSuiteEnabledStatus() and {authStatus}:
 
         PS_TRUE
         PS_FALSE

@@ -63,8 +63,8 @@ while (!$eof && !$err && !($processed && !length $out)) {
     }
 }
 
-close $sock;
-close $srvsock;
+close $sock or die "close: $!";
+close $srvsock or die "close: $!";
 
 # Process result:
 

@@ -1,8 +1,8 @@
 package Crypt::MatrixSSL3;
-
 use 5.006;
 use strict;
 use warnings;
+use Carp;
 
 use Scalar::Util qw( dualvar );
 use XSLoader;
@@ -195,7 +195,7 @@ use constant CONST_CAPABILITIES => qw(
 );
 
 BEGIN {
-    eval 'use constant '.$_.' => '.(0+constant($_)) for
+    for (
         CONST_VERSION_INT,
         CONST_CIPHER,
         CONST_SESSION_OPTION,
@@ -207,7 +207,10 @@ BEGIN {
         CONST_VALIDATE,
         CONST_BOOL,
         CONST_CAPABILITIES,
-        ;
+        ) {
+        ## no critic (ProhibitStringyEval, RequireCheckingReturnValueOfEval)
+        eval 'use constant '.$_.' => '.(0+constant($_)).'; 1' or croak $@;
+    }
 }
 # TODO  ExtUtils::Constant fail to generate correct const-*.inc when both
 #       string and integer constants used. So, hardcode these constants
@@ -227,7 +230,7 @@ my %RETURN_CODE = map { 0+constant($_) => $_ } CONST_ERROR, CONST_RC;
 #
 # Usage: use Crypt::MatrixSSL3 qw( :all :DEFAULT :RC :Cipher SSL_MAX_PLAINTEXT_LEN ... )
 #
-my %tags = (
+my %TAGS = (
     Version      => [ CONST_VERSION  ],
     Cipher       => [ CONST_CIPHER   ],
     SessOpts     => [ CONST_SESSION_OPTION ],
@@ -244,22 +247,22 @@ my %tags = (
         get_ssl_error
     )],
 );
-$tags{all}      = [ map { @{$_} } values %tags ];
-$tags{DEFAULT}  = [ 'SSL_MAX_PLAINTEXT_LEN', @{$tags{RC}} ];
-my %known = map { $_ => 1 } @{ $tags{all} };
+$TAGS{all}      = [ map { @{$_} } values %TAGS ];
+$TAGS{DEFAULT}  = [ 'SSL_MAX_PLAINTEXT_LEN', @{$TAGS{RC}} ];
+my %KNOWN = map { $_ => 1 } @{ $TAGS{all} };
 
 sub import {
     my (undef, @p) = @_;
     if (!@p) {
         @p = (':DEFAULT');
     }
-    @p = map { /\A:(\w+)\z/xms ? @{ $tags{$1} || [] } : $_ } @p;
+    @p = map { /\A:(\w+)\z/xms ? @{ $TAGS{$1} || [] } : $_ } @p;
 
     my $pkg = caller;
     no strict 'refs';
 
     for my $func (@p) {
-        next if !$known{$func};
+        next if !$KNOWN{$func};
         *{"${pkg}::$func"} = \&{$func};
     }
 
@@ -268,8 +271,8 @@ sub import {
 
 
 sub get_ssl_alert {
-    my ($ptBuf) = @_;
-    my ($level_code, $descr_code) = map {ord} split //, $ptBuf;
+    my ($pt_buf) = @_;
+    my ($level_code, $descr_code) = map {ord} split //ms, $pt_buf;
     my $level = dualvar $level_code, $ALERT_LEVEL{$level_code};
     my $descr = dualvar $descr_code, $ALERT_DESCR{$descr_code};
     return wantarray ? ($level, $descr) : $descr;
@@ -281,6 +284,8 @@ sub get_ssl_error {
     return $error;
 }
 
+
+## no critic (ProhibitMultiplePackages)
 
 # shift/goto trick used to force correct source line in XS's croak()
 package Crypt::MatrixSSL3::Keys;
@@ -301,6 +306,10 @@ sub new { shift; goto &Crypt::MatrixSSL3::HelloExtPtr::new }
 
 1;
 __END__
+
+=encoding utf8
+
+=for stopwords authStatus SessID HelloExt dualvar SCT ALPN
 
 =head1 NAME
 
@@ -579,7 +588,7 @@ Return code in user validation callback:
 
 =item :Bool
 
-Booleans used in matrixSslSetCipherSuiteEnabledStatus() and {authStatus}:
+Boolean used in matrixSslSetCipherSuiteEnabledStatus() and {authStatus}:
 
     PS_TRUE
     PS_FALSE

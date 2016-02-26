@@ -88,7 +88,7 @@ my @cOptions = (
 
     #******************************************************************************
     #
-    #   These cipher suites are secure, but not in general use. Enable only if 
+    #   These cipher suites are secure, but not in general use. Enable only if
     #   specifically required by application.
     #
     'USE_TLS_DHE_PSK_WITH_AES_256_CBC_SHA',
@@ -112,7 +112,7 @@ my @cOptions = (
     #******************************************************************************
     #
     #   These cipher suites do not combine authentication and encryption and
-    #   are not recommended for use-cases that require strong security or 
+    #   are not recommended for use-cases that require strong security or
     #   Man-in-the-Middle protection.
     #
     #'USE_TLS_DH_anon_WITH_AES_256_CBC_SHA',
@@ -137,7 +137,7 @@ my @cOptions = (
     'USE_SHA512',
     'USE_MD5',
     'USE_HMAC',
-    
+
     # certificates and keys
     'USE_ECC',
     'USE_DH',
@@ -202,7 +202,7 @@ my @cOptions = (
 
     # matrixsslConfig.h - Enable secure rehandshaking as defined in RFC 5746
     'ENABLE_SECURE_REHANDSHAKES',
-    
+
     # matrixsslConfig.h - Enable protocol downgrade check
     'ENABLE_TLS_FALLBACK_SCSV',
 
@@ -214,13 +214,13 @@ my @cOptions = (
 
     # matrixSslConfig.h - Enable certificate transparency handling
     'ENABLE_SIGNED_CERTIFICATE_TIMESTAMP',
-    
+
     # matrixsslApi.h - Enable DH params loading
     'REQUIRE_DH_PARAMS',
 
     # matrixsslConfig.h - enable ALPN
     'USE_ALPN',
-    
+
     # matrixsslConfig.h - Enable legacy renegotiations. NOT RECOMMENDED
     #'ENABLE_INSECURE_REHANDSHAKES',
 
@@ -237,35 +237,35 @@ my @cOptions = (
     # to send an empty CertificateRequest message if no CA files have
     # been loaded
     'SERVER_CAN_SEND_EMPTY_CERT_REQUEST',
-    
+
     # matrixsslConfig.h - A client authentication feature. Allows the server
     # to -downgrade- a client authentication handshake to a standard
     # handshake if client does not provide a certificate
     'SERVER_WILL_ACCEPT_EMPTY_CLIENT_CERT_MSG',
-    
+
     # matrixsslConfig.h - Enable the TLS compression extension negotiation
     #'USE_ZLIB_COMPRESSION',
-    
+
     # cryptoConfig.h - Enables the parsing of password protected private keys
     'USE_PKCS5',
-    
+
     # cryptoConfig.h - Enables the parsing of PKCS#8 formatted private keys
     'USE_PKCS8',
-    
+
     # cryptoConfig.h - Enables the parsing of PKCS#12 formatted certificate and key material
     'USE_PKCS12',
-    
+
     # cryptoConfig.h - Enables fast math for 1024-bit public key operations
     #'USE_1024_KEY_SPEED_OPTIMIZATIONS',
-    
+
     # cryptoConfig.h - RSA and Diffie-Hellman speed vs. runtime memory tradeoff. Default is to optimize for smaller RAM. Choose only one
     #'PS_PUBKEY_OPTIMIZE_FOR_SMALLER_RAM',
     # OSX defines __OPTIMIZE__ and __OPTIMIZE_SIZE__ which triggers matrixSSL to define
     # PS_PUBKEY_OPTIMIZE_FOR_SMALLER_RAM and having both triggers a compilation error
-    ($^O !~ /darwin/ ? 'PS_PUBKEY_OPTIMIZE_FOR_FASTER_SPEED' : ()),
+    ($^O !~ /darwin/ms ? 'PS_PUBKEY_OPTIMIZE_FOR_FASTER_SPEED' : ()),
 
     # cryptoConfig.h - Optionally enable for selected algorithms to improve
-    # performance at the cost of increased binary code size.   
+    # performance at the cost of increased binary code size.
     'PS_AES_IMPROVE_PERF_INCREASE_CODESIZE',
     'PS_3DES_IMPROVE_PERF_INCREASE_CODESIZE',
     'PS_MD5_IMPROVE_PERF_INCREASE_CODESIZE',
@@ -300,45 +300,45 @@ my @cOptions = (
     # troubleshooting connection problems
     #'USE_SSL_HANDSHAKE_MSG_TRACE',
 
-    # matrixsslConfig.h - Enables SSL function level debug trace for    
+    # matrixsslConfig.h - Enables SSL function level debug trace for
     #'USE_SSL_INFORMATIONAL_TRACE',
 
     # ------
     # OS related and other stuff
     # ------
 
-    ($^O =~ /linux/ ? 'LINUX' : ()),
-    ($^O !~ /Win32/ ? 'POSIX' : ()),
-    ($^O !~ /Win32|darwin/ && $Config{myuname} =~ /x86_64|amd64|x64/ ? 'PSTM_64BIT' : ()),
+    ($^O =~ /linux/ms ? 'LINUX' : ()),
+    ($^O !~ /Win32/ms ? 'POSIX' : ()),
+    ($^O !~ /Win32|darwin/ms && $Config{myuname} =~ /x86_64|amd64|x64/ms ? 'PSTM_64BIT' : ()),
 
     # this is needed because on Windows matrixSSL doesn't do certificate date validation
     # and just sets PS_CERT_AUTH_FAIL_DATE_FLAG for every certificate which means they all fail auth
-    ($^O =~ /Win32/ ? 'ALL_CERTS_PASS_DATE_VALIDATION' : ()),
+    ($^O =~ /Win32/ms ? 'ALL_CERTS_PASS_DATE_VALIDATION' : ()),
 );
 
 # Compute the compiler definitions string
-my $define = '';
+my $define = q{};
 my $debug_build = 0;
 foreach my $d (@cOptions) {
-    if ($d =~ /^!(.*)/) {
-        $define .= "-U$1 " unless ($define =~ /\-U$1\s/);
+    if ($d =~ /\A!(.*)\z/ms) {
+        $define .= "-U$1 " if $define !~ /-U\Q$1\E\s/ms;
     } else {
-        $define .= "-D$d " unless ($define =~ /\-D$d\s/);
+        $define .= "-D$d " if $define !~ /-D\Q$d\E\s/ms;
     }
-    $debug_build = 1 if ($d eq 'MATRIX_DEBUG');
+    $debug_build = 1 if $d eq 'MATRIX_DEBUG';
 }
 
 # Prepare for matrixSSL compilation
-my $os_src = ($^O =~ /Win32/) ? 'core/WIN32' : 'core/POSIX';
+my $os_src = ($^O =~ /Win32/ms) ? 'core/WIN32' : 'core/POSIX';
 my $o = $Config{obj_ext};
 my $c = '.c';
 my $mxbase = 'inc/matrixssl-3-7-2b-open';
 my $mxfiles = "$mxbase.files";
-my $mxmodfiles = "modfiles";
+my $mxmodfiles = 'modfiles';
 
 # Extract the MatrixSSL original source if it's not already extracted.
+use Archive::Tar;
 if (!-d $mxbase) {
-    use Archive::Tar;
     my $tar = Archive::Tar->new;
     $tar->setcwd('inc');
     $tar->read("$mxbase.tgz");
@@ -348,17 +348,17 @@ if (!-d $mxbase) {
 # Apply cumulative patch, if any
 if (-d 'inc/patches') {
     # Test for patch
-    my $r = system("patch f.c.orig f.c 2> null");
+    my $r = system 'patch f.c.orig f.c 2> null';
     unlink 'null';
     if ($r == 256) {
-        my $pp = prompt "It looks like the patch tool is not installed on your system!\n" . 
-                        "Do you want to continue (the resulted build might be unstable)?", 'n';
+        my $pp = prompt "It looks like the patch tool is not installed on your system!\n" .
+                        'Do you want to continue (the resulted build might be unstable)?', 'n';
         $pp = lc $pp eq 'y' ? 'y' : 'n';
-        die "Aborting..." unless ($pp eq 'y');
+        die 'Aborting...' if $pp ne 'y';
     } else {
         for my $file (glob 'inc/patches/*.patch') {
             # replacing \n with \n will change \n to \r\n on Win, without this patch.exe will crash
-            system("cd $mxbase && perl -pe \"s/\\n/\\n/\" ../../$file | patch -p1 -N");
+            system "cd $mxbase && perl -pe \"s/\\n/\\n/\" ../../$file | patch -p1 -N" and die 'patch failed';
         }
     }
 }
@@ -377,37 +377,37 @@ if (-d 'inc/patches') {
 
 # Autogenerate list with object files produced by MatrixSSL because it's
 # different between MatrixSSL versions.
-if (! -r $mxfiles) {
-    if ($^O =~ /Win32/) {
+if (!-r $mxfiles) {
+    if ($^O =~ /Win32/ms) {
         # TODO  I don't have windoze with installed perl and C compiler,
         #       so I can't realize this feature for Win32.
         die "$mxfiles autogeneration not supported under Win32 yet.\n";
     }
     else {
-        system("
+        system "
             cd \Q$mxbase\E/ &&
             make all OSDEP=POSIX &&
             cd ../../ &&
             find \Q$mxbase\E -name '*.o' | sed 's/\.o\$//' | sort > \Q$mxfiles\E
-            ") and die "system: $? $!";
+            " and die "system: $? $!";
     }
 }
 
 # Prepare list of object & C MatrixSSL files for usage in Makefile later.
 open my $files, '<', $mxfiles or die "open: $!";
 chomp(my @files = <$files>);
-close $files;
-s{core/POSIX|core/WIN32}{$os_src} for @files;
+close $files or die "close: $!";
+s{core/POSIX|core/WIN32}{$os_src}ms for @files;
 # These are all the object files we need for our release
-my $mxobjs  = join ' ', map { $_.$o } @files;
+my $mxobjs  = join q{ }, map { $_.$o } @files;
 
 # Some Linicies seem to require '-lpthread' - if you're having problems, try removing this:-
-my $libs = ($^O =~ /Win32/) ? '' : '-lpthread';
+my $libs = ($^O =~ /Win32/ms) ? q{} : '-lpthread';
 
 # Additional compiler/linker flags
-my ($ccflags, $lddlflags) = ('', '');
-if ($^O =~ /Win32/) {
-    if ($Config{cc} eq "cl") {  # Microsoft Windows compiler 
+my ($ccflags, $lddlflags) = (q{}, q{});
+if ($^O =~ /Win32/ms) {
+    if ($Config{cc} eq 'cl') {  # Microsoft Windows compiler
         $ccflags =  ' /wd4005 /wd4996';  # disable warnings for macro redefinition and unsafe function usage
     }  else {                   # Other Windows compiler (assuming gcc)
         $ccflags = ' -Os -Wp,-w -m32 -fomit-frame-pointer -fPIC -I./ -I../';
@@ -419,7 +419,7 @@ if ($^O =~ /Win32/) {
     } else {
         $ccflags = ' -Os -Wp,-w -fomit-frame-pointer -fPIC -I./ -I../';
     }
-    $lddlflags = '';
+    $lddlflags = q{};
 }
 
 WriteMakefile(
@@ -439,13 +439,14 @@ WriteMakefile(
 
 if (eval {require ExtUtils::Constant; 1}) {
     open my $f, '<', 'lib/Crypt/MatrixSSL3.pm' or die "open: $!";
-    my %names = map {s/^\s*//;s/\s*$//;$_=>1} grep /^\s+[A-Z][a-zA-Z0-9_]+\s*$/, <$f>;
-    close $f;
+    my %names = map { my $s=$_; $s=~s/\A\s*//ms; $s=~s/\s*\z//ms; $s=>1 }
+         grep {/\A\s+[A-Z][a-zA-Z0-9_]+\s*\z/ms} <$f>;
+    close $f or die "close: $!";
     ExtUtils::Constant::WriteConstants(
         NAME         => 'Crypt::MatrixSSL3',
         DEFAULT_TYPE => 'IV',
         NAMES        => [
-            (grep {!/^MATRIXSSL_VERSION(?:_CODE)?$/} keys %names),
+            (grep {!/\AMATRIXSSL_VERSION(?:_CODE)?\z/ms} keys %names),
 #             (map {{name=>$_,type=>'PV'}} qw( MATRIXSSL_VERSION MATRIXSSL_VERSION_CODE )),
         ],
         C_FILE       => 'inc/const-c.inc',
@@ -454,9 +455,9 @@ if (eval {require ExtUtils::Constant; 1}) {
 }
 
 
-=for currently contained in the patch we apply
+=for comment currently contained in the patch we apply
 
-# fix for matrixSSL DLL compilation/linking warnings
+# fix for MatrixSSL DLL compilation/linking warnings
 if ($^O =~ /Win32/) {
     open my $f, '<', $mxbase.'/core/osdep.h' or die "open: $!";
     my $h = join q{}, <$f>;
@@ -476,11 +477,11 @@ use File::ShareDir::Install qw(postamble);
 
 sub c_o {
     my $inherited = shift->SUPER::c_o(@_);
-    
-    if ($^O =~ /Win32/ && $Config{cc} eq "cl") {  # Microsoft deprecated -o in favor of /Fo
-        $inherited =~ s{\$\*.c\n}{/Fo\$\*.obj \$\*.c\n}mg;
+
+    if ($^O =~ /Win32/ms && $Config{cc} eq 'cl') {  # Microsoft deprecated -o in favor of /Fo
+        $inherited =~ s{\$\*\.c\n}{/Fo\$\*.obj \$\*.c\n}msg;
     } else {
-        $inherited =~ s{\$\*.c\n}{\$\*.c -o \$\*.o\n}mg;
+        $inherited =~ s{\$\*\.c\n}{\$\*.c -o \$\*.o\n}msg;
     }
 
     return $inherited;
@@ -506,7 +507,7 @@ BEGIN {
   ****************************************************************************
 
 EOF
-    $message =~ s/^(.*)$/\t\$(NOECHO) echo "$1";/mg;
+    $message =~ s/^([^\n]*)$/\t\$(NOECHO) echo "$1";/msg;
 }
 
 sub dist_core {
