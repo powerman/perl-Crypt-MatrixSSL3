@@ -14,10 +14,10 @@ This document describes Crypt::MatrixSSL3 version v3.7.3
     use Crypt::MatrixSSL3;
 
     # 1. See the MatrixSSL documentation.
-    # 2. See scripts included in this package:
-    #     sample_ssl_client.pl
-    #     sample_ssl_server.pl
-    #     sample_functions.pl
+    # 2. See example scripts included in this package:
+    #       ssl_client.pl
+    #       ssl_server.pl
+    #       functions.pl
 
 # DESCRIPTION
 
