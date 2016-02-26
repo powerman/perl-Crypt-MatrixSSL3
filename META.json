@@ -105,8 +105,6 @@
    "version" : "v3.7.3",
    "x_contributors" : [
       "Alex Efros <powerman@cpan.org>",
-      "Alex Efros <=powerman@powerman.name>",
-      "Chris Drake <=christopher@pobox.com>",
       "vonydev <vony@teamevolve.ro>"
    ]
 }
