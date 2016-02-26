@@ -434,6 +434,7 @@ WriteMakefile(
     DEFINE              => $define, # e.g., '-DHAVE_SOMETHING'
     INC                 => "-I. -I$mxbase -I$mxbase/crypto", # e.g., '-I. -I/usr/include/other'
     OBJECT              => "$mxobjs \$(O_FILES)", # link all the C files too
+    EXE_FILES           => [ grep {-f && -x} glob 'script/*' ],
 );
 
 
