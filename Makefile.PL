@@ -1,5 +1,5 @@
 use 5.00001;
-use ExtUtils::MakeMaker;
+use ExtUtils::MakeMaker 6.63_03;
 
 use strict;
 use warnings;
@@ -424,20 +424,9 @@ if ($^O =~ /Win32/) {
 WriteMakefile(
     NAME                => 'Crypt::MatrixSSL3',
     VERSION_FROM        => 'MatrixSSL3.pm', # finds $VERSION
-    PREREQ_PM           => {
-        'version'           => 0,
-        'Config'            => 0,
-        'Archive::Tar'      => 0,
-        'Test::More'        => 0,
-        'Test::Exception'   => 0,
-        'IO::Socket'        => 0,
-        'Scalar::Util'      => 0,
-        'Carp'              => 0,
-    },
-    ($] >= 5.005 ?    ## Add these new keywords supported since 5.005
-      (ABSTRACT_FROM    => 'MatrixSSL3.pm', # retrieve abstract from module
-       AUTHOR           => 'C. N. Drake <christopher@pobox.com>')
-    : ()),
+##{ 'VERSION_FROM       => undef,' ##}
+##{ $plugin->get_default(qw(ABSTRACT AUTHOR LICENSE VERSION)) ##}
+##{ $plugin->get_prereqs(1) ##}
     CCFLAGS             => $Config{ccflags} . $ccflags,
     LDDLFLAGS           => $Config{lddlflags} . $lddlflags,
     LIBS                => [$libs], # e.g., '-lm'
@@ -502,3 +491,38 @@ sub clean_subdirs {
     return qq ~clean_subdirs :\n\t\$(MV) "$mxbase" "/tmp/delme-$$-$mxbase"\n~;
     # return qq ~clean_subdirs :\n\t\$(CP) "$mxbase/src/pki/matrixPki.h.ori" "$mxbase/src/pki/matrixPki.h"\n~;
 }
+
+##{ '=pod' ##}
+
+my $message;
+BEGIN {
+    $message = <<'EOF';
+
+  ********************************* ERROR ************************************
+
+  This module uses Dist::Milla for development. This Makefile.PL will let you
+  run the tests, but should not be used for installation or building dists.
+  Building a dist should be done with 'milla build', installation should be
+  done with 'milla install' and releasing should be done with 'milla release'.
+
+  ****************************************************************************
+
+EOF
+    $message =~ s/^(.*)$/\t\$(NOECHO) echo "$1";/mg;
+}
+
+sub install {
+    return <<EOF
+install :
+$message
+EOF
+}
+
+sub dist_core {
+    return <<EOF
+dist :
+$message
+EOF
+}
+
+##{ '=cut' ##}

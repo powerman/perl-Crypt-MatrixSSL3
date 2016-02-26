@@ -21,3 +21,12 @@ env:
     - EXTENDED_TESTING=1
     - TEST_MYSQL_USER=root
     - TEST_MYSQL_PASS=
+
+before_install:
+  - cpanm -nq Devel::Cover::Report::Coveralls
+install:
+  - cpanm -nq --installdeps .
+script:
+  - perl Makefile.PL && cover -test -ignore_re '^matrixssl-|/inline.h$|^const-.*\.inc$'
+after_success:
+  - cover -report coveralls

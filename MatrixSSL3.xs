@@ -1,6 +1,7 @@
 #include "EXTERN.h"
 #include "perl.h"
 #include "XSUB.h"
+#include "ppport.h"
 
 #include "matrixssl-3-7-2b-open/core/coreApi.h"
 #include "matrixssl-3-7-2b-open/crypto/cryptoApi.h"

@@ -8,7 +8,7 @@ use Scalar::Util qw( dualvar );
 use XSLoader;
 
 BEGIN {
-    use version; our $VERSION = qv('3.7.3');
+    use version 0.77 (); our $VERSION = 'v3.7.3';
     XSLoader::load(__PACKAGE__,$VERSION);
 }
 
@@ -301,7 +301,12 @@ __END__
 
 =head1 NAME
 
-Crypt::MatrixSSL3 - Perl extension for SSL and TLS using MatrixSSL.org v3.7.3
+Crypt::MatrixSSL3 - Perl extension for SSL and TLS using MatrixSSL.org v3.7.2b
+
+
+=head1 VERSION
+
+This document describes Crypt::MatrixSSL3 version v3.7.3
 
 
 =head1 SYNOPSIS
@@ -1078,21 +1083,70 @@ http://www.MatrixSSL.org - the download from this site includes
 simple yet comprehensive documentation in PDF format.
 
 
+=head1 SUPPORT
+
+=head2 Bugs / Feature Requests
+
+Please report any bugs or feature requests through the issue tracker
+at L<https://github.com/powerman/perl-Crypt-MatrixSSL3/issues>.
+You will be notified automatically of any progress on your issue.
+
+=head2 Source Code
+
+This is open source software. The code repository is available for
+public review and contribution under the terms of the license.
+Feel free to fork the repository and submit pull requests.
+
+L<https://github.com/powerman/perl-Crypt-MatrixSSL3>
+
+    git clone https://github.com/powerman/perl-Crypt-MatrixSSL3.git
+
+=head2 Resources
+
+=over
+
+=item * MetaCPAN Search
+
+L<https://metacpan.org/search?q=Crypt-MatrixSSL3>
+
+=item * CPAN Ratings
+
+L<http://cpanratings.perl.org/dist/Crypt-MatrixSSL3>
+
+=item * AnnoCPAN: Annotated CPAN documentation
+
+L<http://annocpan.org/dist/Crypt-MatrixSSL3>
+
+=item * CPAN Testers Matrix
+
+L<http://matrix.cpantesters.org/?dist=Crypt-MatrixSSL3>
+
+=item * CPANTS: A CPAN Testing Service (Kwalitee)
+
+L<http://cpants.cpanauthors.org/dist/Crypt-MatrixSSL3>
+
+=back
+
+
 =head1 AUTHORS
 
-    C. N. Drake, <christopher@pobox.com>
-    Alex Efros  <powerman@cpan.org>
+C. N. Drake E<lt>christopher@pobox.comE<gt>
+
+Alex Efros E<lt>powerman@cpan.orgE<gt>
 
 
 =head1 COPYRIGHT AND LICENSE
 
-MatrixSSL is distributed under the GNU General Public License:-
-http://www.gnu.org/copyleft/gpl.html
+This software is Copyright (c) 2005- by C. N. Drake E<lt>christopher@pobox.comE<gt>.
 
-Crypt::MatrixSSL3 uses MatrixSSL, and so inherits the same License.
+This software is Copyright (c) 2012- by Alex Efros E<lt>powerman@cpan.orgE<gt>.
 
-    Copyright (C) 2005,2006,2012,2016 by C. N. Drake.
-    Copyright (C) 2012,2016 by Alex Efros.
+This is free software, licensed under:
+
+  The GNU General Public License version 2
+
+MatrixSSL is distributed under the GNU General Public License,
+Crypt::MatrixSSL3 uses MatrixSSL, and so inherits the same license.
 
 
 =cut

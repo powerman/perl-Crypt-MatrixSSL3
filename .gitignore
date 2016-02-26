@@ -15,4 +15,8 @@ MYMETA.*
 /*.o
 /*.bs
 /const-*.inc
+/cover_db
+/*.gcov
+/*.gcda
+/*.gcno
 *.swp
