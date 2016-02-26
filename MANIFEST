@@ -6,7 +6,6 @@ ca-certificates.crt
 Changes
 const-c.inc
 const-xs.inc
-Crypt-MatrixSSL3.ppd
 Makefile.PL
 MANIFEST			This list of files
 MANIFEST.SKIP
