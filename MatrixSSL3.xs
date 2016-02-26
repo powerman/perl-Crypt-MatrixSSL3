@@ -1,6 +1,7 @@
 #include "EXTERN.h"
 #include "perl.h"
 #include "XSUB.h"
+#define NEED_sv_2pv_flags
 #include "ppport.h"
 
 #include "matrixssl-3-7-2b-open/core/coreApi.h"
@@ -230,21 +231,21 @@ int32 appCertValidator(ssl_t *ssl, psX509Cert_t *certInfo, int32 alert) {
             my_hv_store(sslCertInfo, "notAfter",
                 newSVpv(certInfo->notAfter, 0), 0);
         my_hv_store(sslCertInfo, "subjectAltName",
-            newRV(sv_2mortal((SV *)subjectAltName)), 0);
+            newRV_inc(sv_2mortal((SV *)subjectAltName)), 0);
         my_hv_store(sslCertInfo, "subject",
-            newRV(sv_2mortal((SV *)subject)), 0);
+            newRV_inc(sv_2mortal((SV *)subject)), 0);
         my_hv_store(sslCertInfo, "issuer",
-            newRV(sv_2mortal((SV *)issuer)), 0);
+            newRV_inc(sv_2mortal((SV *)issuer)), 0);
         my_hv_store(sslCertInfo, "authStatus",
             newSViv(certInfo->authStatus), 0);
 
-        // TODO There is a lot more (less useful) fields available…
+        /* TODO There is a lot more (less useful) fields available… */
 
-        av_push(certs, newRV(sv_2mortal((SV *)sslCertInfo)));
+        av_push(certs, newRV_inc(sv_2mortal((SV *)sslCertInfo)));
     }
 
     PUSHMARK(SP);
-    XPUSHs(sv_2mortal(newRV((SV *)certs)));
+    XPUSHs(sv_2mortal(newRV_inc((SV *)certs)));
     XPUSHs(sv_2mortal(newSViv(alert)));
     PUTBACK;
 
@@ -353,7 +354,7 @@ void ALPNCallback(void *ssl, short protoCount, char *proto[MAX_PROTO_EXT], int32
     }
 
     PUSHMARK(SP);
-    XPUSHs(sv_2mortal(newRV((SV *)protos)));
+    XPUSHs(sv_2mortal(newRV_inc((SV *)protos)));
     PUTBACK;
 
     res = call_sv(callback, G_EVAL|G_SCALAR);
@@ -379,7 +380,7 @@ void ALPNCallback(void *ssl, short protoCount, char *proto[MAX_PROTO_EXT], int32
     *index = res;
 }
 
-// Perl callback that will get called when a hostname is successfully matched.
+/* Perl callback that will get called when a hostname is successfully matched. */
 static SV* VHIndexCallback = NULL;
 
 /*
@@ -414,7 +415,7 @@ void SNI_callback(void *ssl, char *hostname, int32 hostnameLen, sslKeys_t **newK
 #endif
     t_SNI_server *ss = (t_SNI_server *) userPtr;
 
-    // TODO: modify matrixSSL so it returns a null terminated hostname so this is no longer necessary
+    /* TODO: modify matrixSSL so it returns a null terminated hostname so this is no longer necessary */
     if (hostnameLen > 254) hostnameLen = 254;
     memcpy(_hostname, hostname, hostnameLen);
     _hostname[hostnameLen] = 0;
@@ -500,7 +501,7 @@ int build_SCT_buffer(SV *ar, unsigned char **buffer, int32 *buffer_size) {
 
     if (SvOK(ar)) {
         if (!SvROK(ar)) {
-            // a single file
+            /* a single file */
             item = SvPV(ar, item_len);
 
             if (item == NULL)
@@ -518,10 +519,10 @@ int build_SCT_buffer(SV *ar, unsigned char **buffer, int32 *buffer_size) {
         croak("build_SCT_buffer: expecting a scalar or array reference as first parameter");
     }
 
-    // get the SCT files array
+    /* get the SCT files array */
     sct_array = (AV *) SvRV(ar);
 
-    // get number of SCT files
+    /* get number of SCT files */
     sct_array_size = (uint16) av_len(sct_array) + 1;
 
 #ifdef MATRIX_DEBUG
@@ -605,7 +606,7 @@ void Close()
     CODE:
     del_obj();
 
-    // release OCSP staples
+    /* release OCSP staples */
 #ifdef MATRIX_DEBUG
     warn("----\nReleasing %d OCSP staples", OCSP_staple_index);
 #endif
@@ -622,7 +623,7 @@ void Close()
         free(OCSP_staples[i]);
     }
 
-    // release SCT buffers
+    /* release SCT buffers */
 #ifdef MATRIX_DEBUG
     warn("----\nReleasing %d SCT buffers", SCT_buffer_index);
 #endif
@@ -639,7 +640,7 @@ void Close()
         free(SCT_buffers[i]);
     }
 
-    // release SNI servers
+    /* release SNI servers */
 #ifdef MATRIX_DEBUG
     warn("----\nReleasing %d SNI servers", SNI_server_index);
 #endif
@@ -725,7 +726,7 @@ int refresh_OCSP_staple(server_index, index, DERfile)
         p_size = &(SNI_servers[server_index]->SNI_entries[index]->OCSP_staple_size);
     }
 
-    // free previous buffer if necessary
+    /* free previous buffer if necessary */
     if (*p_buffer) {
         free(*p_buffer);
         *p_buffer = NULL;
@@ -779,7 +780,7 @@ int refresh_SCT_buffer(server_index, index, SCT_params)
         p_size = &(SNI_servers[server_index]->SNI_entries[index]->SCT_size);
     }
 
-    // free previous buffer if necessary
+    /* free previous buffer if necessary */
     if (*p_buffer) {
         free(*p_buffer);
         *p_buffer = NULL;
@@ -1050,13 +1051,13 @@ Crypt_MatrixSSL3_Sess *sess_new_client(keys, sessionId, cipherSuites, certValida
 
     key = sv_2mortal(newSViv(PTR2IV(ssl)));
 
-    // keep real callback in global hash: $certValidatorArg{ssl}=certValidator
+    /* keep real callback in global hash: $certValidatorArg{ssl}=certValidator */
     if(SvOK(certValidator)) {
         if(certValidatorArg==NULL)
             certValidatorArg = newHV();
         hv_store_ent(certValidatorArg, key, SvREFCNT_inc(SvRV(certValidator)), 0);
     }
-    // keep real callback in global hash: $extensionCbackArg{ssl}=extensionCback
+    /* keep real callback in global hash: $extensionCbackArg{ssl}=extensionCback */
     if(SvOK(extensionCback)) {
         if(extensionCbackArg==NULL)
             extensionCbackArg = newHV();
@@ -1098,7 +1099,7 @@ Crypt_MatrixSSL3_Sess *sess_new_server(keys, certValidator)
 
     key = sv_2mortal(newSViv(PTR2IV(ssl)));
 
-    // keep real callback in global hash: $certValidatorArg{ssl}=certValidator
+    /* keep real callback in global hash: $certValidatorArg{ssl}=certValidator */
     if(SvOK(certValidator)) {
         if(certValidatorArg==NULL)
             certValidatorArg = newHV();
@@ -1144,27 +1145,27 @@ int sess_init_SNI(ssl, index, ssl_id, sni_data = NULL)
 #ifdef MATRIX_DEBUG
     warn("initSNI: index %d", index);
 #endif
-    // check if we have to initialize the SNI server structure or should we just set the callback to an already initialized SNI server structure
+    /* check if we have to initialize the SNI server structure or should we just set the callback to an already initialized SNI server structure */
     if (index == -1) {
-        // new site, check limits
+        /* new site, check limits */
         if (SNI_server_index == MAX_SNI_SERVERS)
             croak("We have already initiazlied the maximum number of %d SNI server", MAX_SNI_SERVERS);
 #ifdef MATRIX_DEBUG
         warn("initSNI: allocating buffer for new SNI server at index %d", SNI_server_index);
 #endif
-        // create new SNI site buffer
+        /* create new SNI site buffer */
         SNI_servers[SNI_server_index] = (t_SNI_server *) malloc(sizeof(t_SNI_server));
         memset(SNI_servers[SNI_server_index], 0, sizeof(t_SNI_server));
 
         index = SNI_server_index;
         SNI_server_index++;
     } else {
-        // already initialized SNI server
-        // check if index points to a valid SNI site structure
+        /* already initialized SNI server */
+        /* check if index points to a valid SNI site structure */
         if (index >= SNI_server_index)
             croak("Requested SNI site index out of range %d > %d", index, SNI_server_index - 1);
 
-        // just set the callback and we're done
+        /* just set the callback and we're done */
 #ifdef MATRIX_DEBUG
         warn("Setting up SNI callback using SNI server %d, %p", index, SNI_servers[index]);
 #endif
@@ -1173,41 +1174,41 @@ int sess_init_SNI(ssl, index, ssl_id, sni_data = NULL)
         XSRETURN_IV(index);
     }
 
-    // set up pointer to the newly SNI site
+    /* set up pointer to the newly SNI site */
     ss = SNI_servers[index];
 
-    // initialize SNI server structure
+    /* initialize SNI server structure */
     if (!(SvROK(sni_data) && SvTYPE(SvRV(sni_data)) == SVt_PVAV))
         croak("Expected SNI data to be an array reference");
 
-    // our array of arrays
+    /* our array of arrays */
     sni_array = (AV *) SvRV(sni_data);
 
-    // get count
+    /* get count */
     ss->SNI_entries_number = (uint16) av_len(sni_array) + 1;
 #ifdef MATRIX_DEBUG
     warn("  Got %d SNI entries", ss->SNI_entries_number);
 #endif
-    // check limits
+    /* check limits */
     if (ss->SNI_entries_number > MAX_SNI_ENTRIES)
         croak("Not enough room to load all SNI entries %d > %d", ss->SNI_entries_number, MAX_SNI_ENTRIES);
 
     for (i = 0; i < ss->SNI_entries_number; i++) {
-        // alocate memory for each SNI structure
+        /* alocate memory for each SNI structure */
         ss->SNI_entries[i] = (t_SNI_entry *) malloc( sizeof(t_SNI_entry));
         memset(ss->SNI_entries[i], 0, sizeof(t_SNI_entry));
 
-        // get one array at the time
+        /* get one array at the time */
         sd_sv = *av_fetch(sni_array, i, 0);
 
-        // make sure we have an array reference
+        /* make sure we have an array reference */
         if (!(SvROK(sd_sv) && SvTYPE(SvRV(sd_sv)) == SVt_PVAV))
             croak("Expected elements of SNI data to be arrays");
 
-        // get per host SNI data
+        /* get per host SNI data */
         sd = (AV *) SvRV(sd_sv);
 
-        // element 0 - hostname - we need to copy this in our structure
+        /* element 0 - hostname - we need to copy this in our structure */
         item_sv = *av_fetch(sd, 0, 0);
         if (!SvOK(item_sv))
             croak("Hostname not specified in SNI entry %d", i);
@@ -1227,7 +1228,7 @@ int sess_init_SNI(ssl, index, ssl_id, sni_data = NULL)
             croak("Error compiling hostname regex %s: %s", item, regex_error);
         }
 #endif
-        // element 1,2 - key & cert for this host
+        /* element 1,2 - key & cert for this host */
         cert_sv = *av_fetch(sd, 1, 0);
         key_sv = *av_fetch(sd, 2, 0);
 
@@ -1249,7 +1250,7 @@ int sess_init_SNI(ssl, index, ssl_id, sni_data = NULL)
                 croak("SNI matrixSslLoadRsaKeys failed %d; %s; %s", rc, cert, key);
         }
 
-        // element 3 - DH param
+        /* element 3 - DH param */
         item_sv = *av_fetch(sd, 3, 0);
 
         if (SvOK(item_sv)) {
@@ -1262,10 +1263,10 @@ int sess_init_SNI(ssl, index, ssl_id, sni_data = NULL)
                 croak("SNI matrixSslLoadDhParams failed %d; %s", rc, item);
         }
 
-        // element 4,5,6 - session tickets id, encryption key, hash key
+        /* element 4,5,6 - session tickets id, encryption key, hash key */
         item_sv = *av_fetch(sd, 4, 0);
 
-        // if the id is undef that means no session ticket support
+        /* if the id is undef that means no session ticket support */
         if (SvOK(item_sv)) {
             item = (unsigned char *) SvPV(item_sv, item_len);
 #ifdef MATRIX_DEBUG
@@ -1274,7 +1275,7 @@ int sess_init_SNI(ssl, index, ssl_id, sni_data = NULL)
             if (item_len > 16) item_len = 16;
             memcpy(stk_id, item, item_len);
 
-            // element 5 - encryption key
+            /* element 5 - encryption key */
             item_sv = *av_fetch(sd, 5, 0);
             if (!SvOK(item_sv))
                 croak("undef encryption key in SNI structure %d", i);
@@ -1288,7 +1289,7 @@ int sess_init_SNI(ssl, index, ssl_id, sni_data = NULL)
             memcpy(stk_ek, item, item_len);
             stk_ek_len = item_len;
 
-            // element 6 - hash key
+            /* element 6 - hash key */
             item_sv = *av_fetch(sd, 6, 0);
             if (!SvOK(item_sv))
                 croak("undef hash key in SNI structure %d", i);
@@ -1307,7 +1308,7 @@ int sess_init_SNI(ssl, index, ssl_id, sni_data = NULL)
                 croak("SNI matrixSslLoadSessionTicketKeys failed %d; %s; %s", rc, cert, key);
         }
 
-        // element 7 - OCSP DER file
+        /* element 7 - OCSP DER file */
         item_sv = *av_fetch(sd, 7, 0);
 
         if (SvOK(item_sv)) {
@@ -1320,7 +1321,7 @@ int sess_init_SNI(ssl, index, ssl_id, sni_data = NULL)
                 croak("SNI psGetFileBuf failed %d; %s", rc, item);
         };
 
-        // element 8 - SCT files
+        /* element 8 - SCT files */
         item_sv = *av_fetch(sd, 8, 0);
 
         if (SvOK(item_sv)) {
@@ -1362,9 +1363,9 @@ int sess_set_OCSP_staple(ssl, index, DERfile = NULL)
 #ifdef MATRIX_DEBUG
     warn("set_OCSP_staple: file %s, index %d", DERfile, index);
 #endif
-    // check if we have to load the DER file or if we should set the pointer/size to an already loaded buffer
+    /* check if we have to load the DER file or if we should set the pointer/size to an already loaded buffer */
     if (index == -1) {
-        // check limits
+        /* check limits */
         if (OCSP_staple_index == MAX_OCSP_STAPLES)
             croak("We have already loaded the maximum number of %d OCSP staples", MAX_OCSP_STAPLES);
 
@@ -1380,7 +1381,7 @@ int sess_set_OCSP_staple(ssl, index, DERfile = NULL)
         OCSP_staple_index++;
     }
 
-    // check if index points to a valid OCSP response buffer
+    /* check if index points to a valid OCSP response buffer */
     if (index >= OCSP_staple_index)
         croak("Requested index out of range %d > %d", index, OCSP_staple_index);
 
@@ -1402,9 +1403,9 @@ int sess_set_SCT_buffer(ssl, index, SCT_params = NULL)
 #ifdef MATRIX_DEBUG
     warn("set_SCT_buffer: index %d", index);
 #endif
-    // check if we have to prepare the buffer or should we just set the pointer/size to an already loaded buffer
+    /* check if we have to prepare the buffer or should we just set the pointer/size to an already loaded buffer */
     if (index == -1) {
-        // check limits
+        /* check limits */
         if (SCT_buffer_index == MAX_SCT_BUFFERS)
             croak("We have already loaded the maximum number of %d SCT buffers", MAX_SCT_BUFFERS);
 
@@ -1420,7 +1421,7 @@ int sess_set_SCT_buffer(ssl, index, SCT_params = NULL)
         SCT_buffer_index++;
     }
 
-    // check if index points to a valid SCT buffer
+    /* check if index points to a valid SCT buffer */
     if (index >= SCT_buffer_index)
         croak("Requested SCT buffer index out of range %d > %d", index, SCT_buffer_index);
 
@@ -1450,7 +1451,7 @@ void sess_set_ALPN_callback(ssl, cb_ALPN)
 
     key = sv_2mortal(newSViv(PTR2IV(ssl)));
 
-    // keep real callback in global hash: $certValidatorArg{ssl}=certValidator
+    /* keep real callback in global hash: $certValidatorArg{ssl}=certValidator */
     if(ALPNCallbackArg==NULL)
         ALPNCallbackArg = newHV();
     hv_store_ent(ALPNCallbackArg, key, SvREFCNT_inc(SvRV(cb_ALPN)), 0);
@@ -1467,7 +1468,7 @@ void sess_DESTROY(ssl)
     ENTER;
     SAVETMPS;
 
-    // delete callback from global hashes
+    /* delete callback from global hashes */
     key = sv_2mortal(newSViv(PTR2IV(ssl)));
     if(hv_exists_ent(certValidatorArg, key, 0))
         hv_delete_ent(certValidatorArg, key, G_DISCARD, 0);
@@ -1647,12 +1648,12 @@ int sess_encode_rehandshake(ssl, keys, certValidator, sessionOption, cipherSpecs
     ENTER;
     SAVETMPS;
 
-    // keep real callback in global hash: $certValidatorArg{ssl}=certValidator
+    /* keep real callback in global hash: $certValidatorArg{ssl}=certValidator */
     key = sv_2mortal(newSViv(PTR2IV(ssl)));
     if(certValidatorArg==NULL)
         certValidatorArg = newHV();
     if(hv_exists_ent(certValidatorArg, key, 0))
-        hv_delete_ent(certValidatorArg, key, G_DISCARD, 0); // delete old callback
+        hv_delete_ent(certValidatorArg, key, G_DISCARD, 0); /* delete old callback */
     if(SvOK(certValidator))
         hv_store_ent(certValidatorArg, key, SvREFCNT_inc(SvRV(certValidator)), 0);
 
