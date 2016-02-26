@@ -2,6 +2,6 @@
 - added support for TLS_FALLBACK_SCSV
 - added partial support for "status_request" TLS extension
 - added support for Certificate Transparency through the "signed_certificate_timestamp" TLS extension
-- implemented browser preffered ciphers - selecting our strongest ciphers
+- implemented browser preferred ciphers - selecting our strongest ciphers
   from the client supported list
 - bug fixes

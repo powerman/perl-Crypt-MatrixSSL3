@@ -22,13 +22,13 @@ This document describes Crypt::MatrixSSL3 version v3.7.3
 # DESCRIPTION
 
 Crypt::MatrixSSL3 lets you use the MatrixSSL crypto library (see
-http://matrixssl.org/) from Perl.  With this module, you will be
+http://matrixssl.org/) from Perl. With this module, you will be
 able to easily write SSL and TLS client and server programs.
 
 MatrixSSL includes everything you need, all in under 50KB.
 
 You will need a "C" compiler to build this, unless you're getting
-the ".ppm" prebuilt Win32 version.  Crypt::MatrixSSL3 builds cleanly
+the ".ppm" prebuilt Win32 version. Crypt::MatrixSSL3 builds cleanly
 on (at least) Windows, Linux, and Macintosh machines.
 
 MatrixSSL is an Open Source (GNU General Public License) product, and is
@@ -36,13 +36,36 @@ also available commercially if you need freedom from GNU rules.
 
 Everything you need is included here, but check the MatrixSSL.org
 web site to make sure you've got the latest version of the
-MatrixSSL "C" code if you like (it's in the directory "./matrixssl"
+MatrixSSL "C" code if you like (it's in the directory "./inc"
 of this package if you want to replace the included version from
-the MatrixSSL.org download site.)
+the MatrixSSL.org download site).
+
+# API BACKWARD COMPATIBILITY AND STATUS
+
+MatrixSSL tends to make incompatible API changes in minor releases, so
+**every next version of Crypt::MatrixSSL3 may have incompatible API changes**!
+
+This version adds several new features which isn't well-tested yet and
+thus considered unstable:
+
+- Support for shared session cache using shared memory
+- Stateless ticket session resuming support
+- Loading the DH param for DH cipher suites
+- Application Layer Protocol Negotiation callback support
+- SNI (virtual hosts)
+- OCSP staple
+- Certificate Transparency
+- Support for TLS\_FALLBACK\_SCSV
+- Partial support for "status\_request" TLS extension
+- Browser preferred ciphers
+
+    Selecting our strongest ciphers from the client supported list.
 
 # TERMINOLOGY
 
-When a client establishes an SSL connection without sending a SNI extension in its CLIENT\_HELLO message we say that the client connects to the **default server**.
+When a client establishes an SSL connection without sending a SNI
+extension in its CLIENT\_HELLO message we say that the client connects to
+the **default server**.
 
 If a SNI extension is present then the client connects to a **virtual host**.
 
@@ -359,31 +382,39 @@ These functions implement optimization which is useless in Perl:
 
 - **refresh\_OCSP\_staple**( $server\_index, $index, $DERfile )
 
-    Used to refresh an already loaded OCSP staple either for a default server or for a virtual host.
+    Used to refresh an already loaded OCSP staple either for a default server
+    or for a virtual host.
 
     Parameters:
 
     - $server\_index
 
-        If you want to update the OCSP staple for a virtual host this parameter must have the returned value of the first $sll->init\_SNI(...) call.
+        If you want to update the OCSP staple for a virtual host this parameter
+        must have the returned value of the first $sll->init\_SNI(...) call.
 
-        If you want to update the OCSP staple for a default server this parameter must be -1 or undef.
+        If you want to update the OCSP staple for a default server this parameter
+        must be -1 or undef.
 
     - $index
 
-        When updating a virtual host ($server\_index > -1) this value specifies the 0-based index of the virtual host for which the OCSP staple should be refreshed.
+        When updating a virtual host ($server\_index > -1) this value specifies the
+        0-based index of the virtual host for which the OCSP staple should be
+        refreshed.
 
-        When updating a default server this value specifies the index returned by the $ssl->set\_OCSP\_staple(...) first call.
+        When updating a default server this value specifies the index returned by
+        the $ssl->set\_OCSP\_staple(...) first call.
 
     - $DERfile
 
-        File containing the new OCSP staple in DER format as it was received from the CA's OCSP responder.
+        File containing the new OCSP staple in DER format as it was received from
+        the CA's OCSP responder.
 
     Returns PS\_SUCCESS if the update was successful.
 
 - **refresh\_SCT\_buffer** ( $server\_index, $index, $SCT\_params )
 
-    Used to refresh an already loaded CT extension data buffer either for a default server or for a virtual host.
+    Used to refresh an already loaded CT extension data buffer either for a
+    default server or for a virtual host.
 
     Parameters:
 
@@ -391,7 +422,8 @@ These functions implement optimization which is useless in Perl:
     - $SCT\_params
 
         Perl scalar contains a file name with prepared extension data.
-        Perl array reference with file names of SCT binary structures that the function will use to create the extension data.
+        Perl array reference with file names of SCT binary structures that the
+        function will use to create the extension data.
 
     Returns the number of files loaded in order to build extension data.
 
@@ -442,7 +474,8 @@ you should convert it back to number:
 
 - $keys->**load\_session\_ticket\_keys**( $name, $symkey, $hashkey ) `server side`
 
-        matrixSslLoadSessionTicketKeys ($keys, $name, $symkey, length $symkey, $haskkey, length $hashkey )
+        matrixSslLoadSessionTicketKeys ($keys, $name, $symkey, length $symkey,
+            $haskkey, length $hashkey )
 
 ## Crypt::MatrixSSL3::SessID
 
@@ -556,25 +589,30 @@ you should convert it back to number:
 
 - $ssl->**init\_SNI**( $sni\_index, $ssl\_id, $sni\_params ) `server side`
 
-    Used to initialize the virtual host configuration for a server (socket). This function can be called in two ways:
+    Used to initialize the virtual host configuration for a server (socket).
+    This function can be called in two ways:
 
         1) $sni_index = $ssl->init_SNI( -1, $ssl_id, $sni_params ) - one time, after the first client was accepted and the server SSL session created
 
-    When $sni\_index is -1 or undef the XS module will allocate and initialize a SNI server structure using the
-    parameters present in $sni\_params. After that, it will register the MatrixSSL SNI callback to an internal XS
+    When $sni\_index is -1 or undef the XS module will allocate and initialize
+    a SNI server structure using the parameters present in $sni\_params. After
+    that, it will register the MatrixSSL SNI callback to an internal XS
     function using the newly created SNI server structure as parameter.
-    This MUST be called only once per server socket and the result $sni\_index value must be cached for subsequent calls.
+    This MUST be called only once per server socket and the result $sni\_index
+    value must be cached for subsequent calls.
 
         2) $ssl->init_SNI( $sni_index, $ssl_id ) - many times, after clients are accepted and server SSL sessions created
 
-    This will skip the SNI server initialization part and just register the MatrixSSL SNI callback to an internal XS
-    function using the SNI server structure specified by $sni\_index as parameter.
+    This will skip the SNI server initialization part and just register the
+    MatrixSSL SNI callback to an internal XS function using the SNI server
+    structure specified by $sni\_index as parameter.
 
     Parameters:
 
     - $sni\_index int >= 0 or -1|undef
 
-        For the first call this parameter MUST be -1. Subsequent calls MUST use the returned value of the first call.
+        For the first call this parameter MUST be -1. Subsequent calls MUST use
+        the returned value of the first call.
 
     - $sni\_params \[\[...\],...\] or undef
 
@@ -609,41 +647,57 @@ you should convert it back to number:
 
     - $ssl\_id
 
-        A 32 bit integer that uniquely identifies this session. This parameter will be sent back when MatrixSSL calls the SNI callback defined in the XS module when a client sends a SNI extension.
-        If the XS module is able to match the requested client hostname it will call the Perl callback set with set\_VHIndex\_callback.
+        A 32 bit integer that uniquely identifies this session. This parameter
+        will be sent back when MatrixSSL calls the SNI callback defined in the XS
+        module when a client sends a SNI extension.
+        If the XS module is able to match the requested client hostname it will
+        call the Perl callback set with set\_VHIndex\_callback.
 
-    Returns the index of the internal SNI server structure used for registering the MatrixSSL SNI callback. This MUST be saved after the first call.
+    Returns the index of the internal SNI server structure used for
+    registering the MatrixSSL SNI callback. This MUST be saved after the first
+    call.
 
 - $ssl->**set\_OCSP\_staple**( $ocsp\_index, $DERfile ) `server side`
 
-    Used to set the OCSP staple to be returned if the client sends the "status\_request" TLS extension. Note that this function call
-    only affects the **default server**. Virtual hosts are managed by using the $ssl->init\_SNI(...)
+    Used to set the OCSP staple to be returned if the client sends the
+    "status\_request" TLS extension. Note that this function call only affects
+    the **default server**. Virtual hosts are managed by using the
+    $ssl->init\_SNI(...).
 
     See $ssl->init\_SNI(...) for usage.
 
-    The $DERfile parameter specifies the file containing the OCSP staple in DER format.
+    The $DERfile parameter specifies the file containing the OCSP staple in
+    DER format.
 
 - $ssl->**load\_OCSP\_staple**( $DERfile ) `server side`
 
-    Loads an OCSP staple to be returned if the client sends the "status\_request" TLS extension.
+    Loads an OCSP staple to be returned if the client sends the
+    "status\_request" TLS extension.
 
-    Note that this function is very inefficient because the loaded data is bound to the specified session and it will be freed when the session is destroyed.
-    It has the advantage that the session will contain the latest OCSP data if the OCSP DER file is refreshed in the meantime.
+    Note that this function is very inefficient because the loaded data is
+    bound to the specified session and it will be freed when the session is
+    destroyed.
+    It has the advantage that the session will contain the latest OCSP data if
+    the OCSP DER file is refreshed in the meantime.
 
     Don't be lazy and use $ssl->set\_OCSP\_staple and refresh\_OCSP\_staple instead.
 
 - $ssl->**set\_SCT\_buffer**( $sct\_index, $SCT\_params ) `server side`
 
-    Used to set the extension data to be returned if the client sends the "signed\_certificate\_timestamp" TLS extension. Note that this function call
-    only affects the **default server**. Virtual hosts are managed by using the $ssl->init\_SNI(...)
+    Used to set the extension data to be returned if the client sends the
+    "signed\_certificate\_timestamp" TLS extension. Note that this function call
+    only affects the **default server**. Virtual hosts are managed by using the
+    $ssl->init\_SNI(...).
 
     See $ssl->init\_SNI(...) for usage.
 
-    The $SCT\_params has the same structure as the one used in the $ssl->init\_SNI(...) function.
+    The $SCT\_params has the same structure as the one used in the
+    $ssl->init\_SNI(...) function.
 
 - $ssl->**set\_ALPN\_callback**( \\&ALPNcb ) `server side`
 
-    Sets a callback that will receive as parameter data sent by the client in the ALPN TLS extension.
+    Sets a callback that will receive as parameter data sent by the client in
+    the ALPN TLS extension.
 
     More information about callback &ALPNcb in next section.
 
@@ -721,8 +775,9 @@ you should convert it back to number:
 
 - &VHIndexCallback
 
-    Will be called whenever we have a successful match against the hostname specified by the client in its SNI extension.
-    This will inform the Perl code which virtual host the current SSL session belongs to.
+    Will be called whenever we have a successful match against the hostname
+    specified by the client in its SNI extension. This will inform the Perl
+    code which virtual host the current SSL session belongs to.
 
     Will be called with 2 parameters:
 
