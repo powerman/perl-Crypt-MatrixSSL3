@@ -11,6 +11,7 @@ on configure => sub {
     requires 'Archive::Tar';
     requires 'ExtUtils::Constant';
     requires 'ExtUtils::MakeMaker', '6.63_03';
+    requires 'File::ShareDir::Install';
 };
 
 on test => sub {
@@ -22,4 +23,5 @@ on test => sub {
 on develop => sub {
     requires 'Test::Distribution';
     requires 'Test::Perl::Critic';
+    requires 'Test::Pod', '1.41';
 };

@@ -10,7 +10,7 @@ use Crypt::MatrixSSL3 qw( :DEFAULT :Validate :Alert get_ssl_alert get_ssl_error 
 
 Crypt::MatrixSSL3::Open();
 
-my $trustedCAbundle     = 'ca-certificates.crt';
+my $trustedCAbundle     = 'share/ca-certificates.crt';
 my $trustedCAcertFiles  = 't/cert/testCA.crt';
 my $certFile            = 't/cert/server.crt';
 my $privFile            = 't/cert/server.key';

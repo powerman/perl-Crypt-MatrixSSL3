@@ -5,6 +5,10 @@ use strict;
 use warnings;
 
 use Config;
+use File::ShareDir::Install;
+$File::ShareDir::Install::INCLUDE_DOTFILES = 1;
+$File::ShareDir::Install::INCLUDE_DOTDIRS = 1;
+install_share dist => 'share';
 
 #
 #  WARNING: Do not try to "make dist" under Windows; it destroys the Upper/lower CaSe of some files.
@@ -328,7 +332,7 @@ foreach my $d (@cOptions) {
 my $os_src = ($^O =~ /Win32/) ? 'core/WIN32' : 'core/POSIX';
 my $o = $Config{obj_ext};
 my $c = '.c';
-my $mxbase = 'matrixssl-3-7-2b-open';
+my $mxbase = 'inc/matrixssl-3-7-2b-open';
 my $mxfiles = "$mxbase.files";
 my $mxmodfiles = "modfiles";
 
@@ -336,12 +340,13 @@ my $mxmodfiles = "modfiles";
 if (!-d $mxbase) {
     use Archive::Tar;
     my $tar = Archive::Tar->new;
+    $tar->setcwd('inc');
     $tar->read("$mxbase.tgz");
     $tar->extract();
 }
 
 # Apply cumulative patch, if any
-if (-r "./patches") {
+if (-d 'inc/patches') {
     # Test for patch
     my $r = system("patch f.c.orig f.c 2> null");
     unlink 'null';
@@ -351,14 +356,10 @@ if (-r "./patches") {
         $pp = lc $pp eq 'y' ? 'y' : 'n';
         die "Aborting..." unless ($pp eq 'y');
     } else {
-        opendir (DIR, "./patches") or die $!;
-        while (my $file = readdir(DIR)) {
-            next if (($file eq '.') || ($file eq '..'));
-            # apply patch
+        for my $file (glob 'inc/patches/*.patch') {
             # replacing \n with \n will change \n to \r\n on Win, without this patch.exe will crash
-            system("cd $mxbase && perl -pe \"s/\\n/\\n/\" ../patches/$file | patch -p1 -N");
+            system("cd $mxbase && perl -pe \"s/\\n/\\n/\" ../../$file | patch -p1 -N");
         }
-        closedir(DIR);
     }
 }
 
@@ -385,9 +386,9 @@ if (! -r $mxfiles) {
     else {
         system("
             cd \Q$mxbase\E/ &&
-            make all &&
-            cd ../ &&
-            find \Q$mxbase\E -name '*.o' | sed 's/\.o\$//' > \Q$mxfiles\E
+            make all OSDEP=POSIX &&
+            cd ../../ &&
+            find \Q$mxbase\E -name '*.o' | sed 's/\.o\$//' | sort > \Q$mxfiles\E
             ") and die "system: $? $!";
     }
 }
@@ -423,7 +424,7 @@ if ($^O =~ /Win32/) {
 
 WriteMakefile(
     NAME                => 'Crypt::MatrixSSL3',
-    VERSION_FROM        => 'MatrixSSL3.pm', # finds $VERSION
+    VERSION_FROM        => 'lib/Crypt/MatrixSSL3.pm', # finds $VERSION
 ##{ 'VERSION_FROM       => undef,' ##}
 ##{ $plugin->get_default(qw(ABSTRACT AUTHOR LICENSE VERSION)) ##}
 ##{ $plugin->get_prereqs(1) ##}
@@ -432,13 +433,12 @@ WriteMakefile(
     LIBS                => [$libs], # e.g., '-lm'
     DEFINE              => $define, # e.g., '-DHAVE_SOMETHING'
     INC                 => "-I. -I$mxbase -I$mxbase/crypto", # e.g., '-I. -I/usr/include/other'
-    OBJECT              => "$mxobjs MatrixSSL3$o", # link all the C files too
-    clean               => {FILES => "$mxobjs Matrixssl$o"},
+    OBJECT              => "$mxobjs \$(O_FILES)", # link all the C files too
 );
 
 
 if (eval {require ExtUtils::Constant; 1}) {
-    open my $f, '<', 'MatrixSSL3.pm' or die "open: $!";
+    open my $f, '<', 'lib/Crypt/MatrixSSL3.pm' or die "open: $!";
     my %names = map {s/^\s*//;s/\s*$//;$_=>1} grep /^\s+[A-Z][a-zA-Z0-9_]+\s*$/, <$f>;
     close $f;
     ExtUtils::Constant::WriteConstants(
@@ -448,8 +448,8 @@ if (eval {require ExtUtils::Constant; 1}) {
             (grep {!/^MATRIXSSL_VERSION(?:_CODE)?$/} keys %names),
 #             (map {{name=>$_,type=>'PV'}} qw( MATRIXSSL_VERSION MATRIXSSL_VERSION_CODE )),
         ],
-        C_FILE       => 'const-c.inc',
-        XS_FILE      => 'const-xs.inc',
+        C_FILE       => 'inc/const-c.inc',
+        XS_FILE      => 'inc/const-xs.inc',
     );
 }
 
@@ -472,6 +472,7 @@ if ($^O =~ /Win32/) {
 package MY;
 
 use Config;
+use File::ShareDir::Install qw(postamble);
 
 sub c_o {
     my $inherited = shift->SUPER::c_o(@_);
@@ -485,11 +486,8 @@ sub c_o {
     return $inherited;
 }
 
-# Here, we fudge the replacement of the original MatrixSSL source code for the clean
 sub clean_subdirs {
-#Was:  return "clean_subdirs :\t$(NOECHO) $(NOOP)\n";
-    return qq ~clean_subdirs :\n\t\$(MV) "$mxbase" "/tmp/delme-$$-$mxbase"\n~;
-    # return qq ~clean_subdirs :\n\t\$(CP) "$mxbase/src/pki/matrixPki.h.ori" "$mxbase/src/pki/matrixPki.h"\n~;
+    return qq ~clean_subdirs :\n\t\$(RM_RF) "$mxbase"\n~;
 }
 
 ##{ '=pod' ##}

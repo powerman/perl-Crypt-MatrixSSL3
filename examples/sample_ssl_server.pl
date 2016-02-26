@@ -4,7 +4,7 @@ use strict;
 use blib;
 use IO::Socket;
 use Crypt::MatrixSSL3;
-require 'sample_functions.pl';
+require 'examples/sample_functions.pl';
 
 # Process arguments:
 

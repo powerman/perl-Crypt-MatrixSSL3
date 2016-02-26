@@ -28,7 +28,8 @@
          "requires" : {
             "Archive::Tar" : "0",
             "ExtUtils::Constant" : "0",
-            "ExtUtils::MakeMaker" : "6.63_03"
+            "ExtUtils::MakeMaker" : "6.63_03",
+            "File::ShareDir::Install" : "0.06"
          }
       },
       "develop" : {
@@ -60,7 +61,32 @@
          }
       }
    },
-   "provides" : {},
+   "provides" : {
+      "Crypt::MatrixSSL3" : {
+         "file" : "lib/Crypt/MatrixSSL3.pm",
+         "version" : "v3.7.3"
+      },
+      "Crypt::MatrixSSL3::Client" : {
+         "file" : "lib/Crypt/MatrixSSL3.pm",
+         "version" : "v3.7.3"
+      },
+      "Crypt::MatrixSSL3::HelloExt" : {
+         "file" : "lib/Crypt/MatrixSSL3.pm",
+         "version" : "v3.7.3"
+      },
+      "Crypt::MatrixSSL3::Keys" : {
+         "file" : "lib/Crypt/MatrixSSL3.pm",
+         "version" : "v3.7.3"
+      },
+      "Crypt::MatrixSSL3::Server" : {
+         "file" : "lib/Crypt/MatrixSSL3.pm",
+         "version" : "v3.7.3"
+      },
+      "Crypt::MatrixSSL3::SessID" : {
+         "file" : "lib/Crypt/MatrixSSL3.pm",
+         "version" : "v3.7.3"
+      }
+   },
    "release_status" : "stable",
    "resources" : {
       "bugtracker" : {

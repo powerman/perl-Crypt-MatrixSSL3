@@ -6,7 +6,8 @@ MYMETA.*
 !META.json
 !META.yml
 /.prove
-/matrixssl-*/
+/inc/matrixssl-*/
+/inc/const-*.inc
 /Makefile
 /Makefile.old
 /pm_to_blib
@@ -14,7 +15,6 @@ MYMETA.*
 /*.c
 /*.o
 /*.bs
-/const-*.inc
 /cover_db
 /*.gcov
 /*.gcda

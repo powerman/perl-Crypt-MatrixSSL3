@@ -4,18 +4,18 @@
 #define NEED_sv_2pv_flags
 #include "ppport.h"
 
-#include "matrixssl-3-7-2b-open/core/coreApi.h"
-#include "matrixssl-3-7-2b-open/crypto/cryptoApi.h"
-#include "matrixssl-3-7-2b-open/matrixssl/matrixssllib.h"
-#include "matrixssl-3-7-2b-open/matrixssl/matrixsslApi.h"
-#include "matrixssl-3-7-2b-open/matrixssl/version.h"
+#include "core/coreApi.h"
+#include "crypto/cryptoApi.h"
+#include "matrixssl/matrixssllib.h"
+#include "matrixssl/matrixsslApi.h"
+#include "matrixssl/version.h"
 #include "MatrixSSL3.h"
 
 #ifndef WIN32
 #include "regex.h"
 #endif
 
-#include "const-c.inc"
+#include "inc/const-c.inc"
 
 /******************************************************************************/
 
@@ -569,7 +569,7 @@ int build_SCT_buffer(SV *ar, unsigned char **buffer, int32 *buffer_size) {
 
 MODULE = Crypt::MatrixSSL3      PACKAGE = Crypt::MatrixSSL3     
 
-INCLUDE: const-xs.inc
+INCLUDE: inc/const-xs.inc
 
 PROTOTYPES: ENABLE
 

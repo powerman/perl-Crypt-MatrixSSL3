@@ -4,7 +4,7 @@ use strict;
 use blib;
 use IO::Socket;
 use Crypt::MatrixSSL3 qw(:all);
-require 'sample_functions.pl';
+require 'examples/sample_functions.pl';
 
 # Process arguments:
 
@@ -28,7 +28,7 @@ my ($ssl, $keys);                               # for MatrixSSL
 
 $appOut = "GET / HTTP/1.0\r\nHost: ${HOST}\r\n\r\n";
 
-my $trustedCA = 'ca-certificates.crt';
+my $trustedCA = 'share/ca-certificates.crt';
 # $trustedCA = 't/cert/testCA.crt';
 
 # Initialize MatrixSSL (as client):
