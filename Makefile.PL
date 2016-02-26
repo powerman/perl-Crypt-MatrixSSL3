@@ -500,22 +500,15 @@ BEGIN {
 
   ********************************* ERROR ************************************
 
-  This module uses Dist::Milla for development. This Makefile.PL will let you
-  run the tests, but should not be used for installation or building dists.
-  Building a dist should be done with 'milla build', installation should be
-  done with 'milla install' and releasing should be done with 'milla release'.
+  This module uses Dist::Milla for development.
+  This Makefile.PL should not be used for building dists.
+  Building a dist should be done with 'milla build'.
+  Releasing should be done with 'milla release'.
 
   ****************************************************************************
 
 EOF
     $message =~ s/^(.*)$/\t\$(NOECHO) echo "$1";/mg;
-}
-
-sub install {
-    return <<EOF
-install :
-$message
-EOF
 }
 
 sub dist_core {
