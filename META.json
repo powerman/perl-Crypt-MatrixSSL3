@@ -43,12 +43,15 @@
       },
       "runtime" : {
          "requires" : {
+            "File::ShareDir" : "0",
             "Getopt::Long" : "0",
             "JSON" : "0",
             "LWP::UserAgent" : "0",
+            "List::Util" : "0",
             "MIME::Base64" : "0",
             "Pod::Usage" : "0",
             "Scalar::Util" : "0",
+            "Text::Wrap" : "0",
             "perl" : "5.006",
             "version" : "0.77"
          }

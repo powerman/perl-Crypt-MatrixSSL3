@@ -1,10 +1,14 @@
+requires 'perl', '5.006';
+
+requires 'File::ShareDir';
 requires 'Getopt::Long';
 requires 'JSON';
 requires 'LWP::UserAgent';
+requires 'List::Util';
 requires 'MIME::Base64';
 requires 'Pod::Usage';
 requires 'Scalar::Util';
-requires 'perl', '5.006';
+requires 'Text::Wrap';
 requires 'version', '0.77';
 
 on configure => sub {
