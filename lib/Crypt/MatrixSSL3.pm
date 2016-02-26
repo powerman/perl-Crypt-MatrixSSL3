@@ -309,7 +309,7 @@ __END__
 
 =encoding utf8
 
-=for stopwords authStatus SessID HelloExt dualvar SCT ALPN
+=for stopwords authStatus SessID HelloExt dualvar SCT ALPN SCTs
 
 =head1 NAME
 
@@ -447,7 +447,7 @@ Used in matrixSslSetCipherSuiteEnabledStatus().
 
     #******************************************************************************
     #
-    #   These cipher suites are secure, but not in general use. Enable only if 
+    #   These cipher suites are secure, but not in general use. Enable only if
     #   specifically required by application.
     #
     TLS_DHE_PSK_WITH_AES_256_CBC_SHA
@@ -473,7 +473,7 @@ Used in matrixSslSetCipherSuiteEnabledStatus().
     #******************************************************************************
     #
     #   These cipher suites do not combine authentication and encryption and
-    #   are not recommended for use-cases that require strong security or 
+    #   are not recommended for use-cases that require strong security or
     #   Man-in-the-Middle protection.
     #
     TLS_DH_anon_WITH_AES_256_CBC_SHA
@@ -1098,6 +1098,228 @@ Will be called with 2 parameters:
 Doesn't return anything.
 
 =back
+
+
+=head1 HOWTO: Certificate Transparency
+
+=head2 PREREQUISITES
+
+For generating Certificate Transparency files you will need the following:
+
+=head3 Certificates
+
+=over
+
+=item *
+
+Server certificate (server.crt)
+
+=item *
+
+Issuer certificate (issuer.crt)
+
+=item *
+
+Certificate Authority chain (server-CA.crt) - this includes any number of
+intermediate certificate and optionally ends with the root certificate.
+
+=back
+
+=head2 USING THE ct-submit.pl TOOL
+
+=head3 Generate one file containing SCTs from all CT log servers
+
+    ct-submit.pl --pem server.crt --pem issuer.crt --pem server-CA.pem \
+        --extbuf /path/to/CT.sct
+
+The resulted file can be used in your script like:
+
+    # set CT response for a SSL session
+    $sct_index = $ssl->set_SCT_buffer( $sct_index, '/path/to/CT.sct' );
+
+    # refresh the CT response
+    Crypt::MatrixSSL3::refresh_SCT_buffer( undef, $sct_index, '/path/to/CT.sct' );
+
+=head3 Generate multiple SCT files containing binary representation of the responses received from the log servers
+
+    ct-submit.pl --pem server.crt --pem issuer.crt --pem server-CA.pem \
+        --individual /path/to/sct/
+
+This will create in the /path/to/stc/ folder the following files
+(considering that the requests to the log servers were successful):
+
+    aviator.sct		# https://ct.googleapis.com/aviator
+    certly.sct		# https://log.certly.io
+    pilot.sct		# https://ct.googleapis.com/pilot
+    rocketeer.sct	# https://ct.googleapis.com/rocketeer
+    digicert.sct	# https://ct1.digicert-ct.com/log - disabled by default -
+                        # accepts certificates only from select CAs
+    izenpe.sct		# https://ct.izenpe.com - disabled by default -
+                        # accepts certificates only from select CAs
+
+One or more files can be used in your script like:
+
+    # set CT response for a SSL session
+    # note that even if you're using a single file (which will be wrong
+    # according to the RFC because at least 2 SCTs from different server logs
+    # must be sent), you still need to provide an array reference with one element
+    $sct_index = $ssl->set_SCT_buffer( $sct_index, [
+	'/path/to/sct/aviator.sct',
+	'/path/to/sct/certly.sct',
+    ]);
+
+    # refresh CT response
+    Crypt::MatrixSSL3::refresh_SCT_buffer ( undef, $sct_index, [
+	'/path/to/sct/aviator.sct',
+	'/path/to/sct/certly.sct',
+    ]);
+
+
+=head1 HOWTO: OCSP staple
+
+=head2 PREREQUISITES
+
+For generating an OCSP staple you will need to following:
+
+=head3 OpenSSL
+
+OpenSSL with OCSP application installed.
+
+=head3 Certificates
+
+=over
+
+=item *
+
+Server certificate (server.crt)
+
+=item *
+
+Issuer certificate (issuer.crt)
+
+=item *
+
+Full Certificate Authority chain (full-CA.crt) - this includes the issuer
+certificate, any number of intermediate certificate and ends with the root
+certificate.
+
+=back
+
+=head2 GETTING AN OCSP STAPLE
+
+=head3 Get the OCSP responder URI
+
+    openssl x509 -noout -ocsp_uri -in server.crt
+
+=head3 Query the OCSP responder
+
+    openssl ocsp -no_nonce -issuer -cert server.crt issuer.crt \
+        -CAfile full-CA.crt -url OCSP_responder_URI \
+        -header "HOST" OCSP_response_host -respout /path/to/OCSP_staple.der
+
+=head3 Inspecting an OCSP staple
+
+    openssl ocsp -respin /path/to/OCSP_staple.der -text -CAfile full-CA.crt
+
+=head2 USAGE
+
+=head3 Set an OCSP staple to be used within a SSL session
+
+    $ocsp_index = $ssl->set_OCSP_staple( $ocsp_index, '/path/to/OCSP_staple.der' );
+
+=head3 Refreshing an already allocated OCSP staple buffer
+
+    Crypt::MatrixSSL3::refresh_OCSP_staple( undef, $ocsp_index, '/path/to/OCSP_staple.der' );
+
+
+=head1 HOWTO: Virtual hosts
+
+=head2 TERMINOLOGY
+
+=head3 Default server
+
+Describes a set of properties (certificate, private key, OCSP staple, etc.)
+to be used when the client connects but doesn't send a SNI TLS extension
+in its CLIENT_HELLO message.
+
+=head3 Virtual host (SNI entry)
+
+Describes also a set of properties (like above) but these will be used
+when the client sends a SNI extension and we have a successful match on
+the virtual host's hostname and the client specified hostname.
+
+=head3 SNI server
+
+All the virtual hosts (SNI entries) declared for one server.
+
+=head2 IMPLEMENTATION
+
+Here is some Perl pseudo code on how these are used:
+
+    my $sni_index = -1;
+    my $ocsp_index = -1;
+    my $sct_index = -1;
+
+    # define a listening socket
+    $server_sock = ...
+
+    # initialize default server keys - these will be shared by all server sessions
+    my $sv_keys = Crypt::MatrixSSL3::Keys->new();
+
+    # load key material (certificate, private key, etc)
+    $sv_keys->load_rsa(...)
+
+    Crypt::MatrixSSL3::set_VHIndex_callback(sub {
+	my ($ssl_id, $index);
+	warn "Client connected through SSL session ID $ssl_id has selected virtual host $index";
+    });
+    ...
+
+    # we assume when a client connects an accept_client sub will be called
+    sub accept_client {
+	# accept client socket
+	my $client_sock = accept($server_sock, ...);
+
+	# create server session reusing the keys
+	my $cssl =  Crypt::MatrixSSL3::Server->new($sv_keys, undef);
+
+	# set OCSP staple for default server
+	# this will be initialized only once and then reused when $ocsp_index != -1
+	$ocsp_index = $ssl->set_OCSP_staple($ocsp_index, $DERfile);
+
+	# set SCT buffer for default server
+	# this will be initialized only once and then reused when $sct_index != -1
+	$sct_index = $ssl->set_SCT_buffer($sct_index, $SCT_params);
+
+	# create a unique SSL session ID
+	# for example this can be the fileno of the client socket
+	my $ssl_id = fileno($client_sock);
+
+	# initialize virtual hosts
+	# when first called init_SNI will take as first parameter $sni_index which is -1
+	# behind the scene the XS module does this (pretty much like what we're doing above)
+	#   - allocates a SNI_server structure that will hold one or more SNI_entries (virtual hosts)
+	#   - allocates a SNI_entry structure for each virtual host and:
+	#     - creates new server keys
+	#     - sets up OCSP staple buffer (if needed)
+	#     - sets up SCT buffer (if needed)
+	#   - sets up the matrixSSL SNI callback that will get called if the client sends a SNI TLS extension
+	#     in its CLIENT_HELLO message. When the CS SNI callback is called if any of the hostnames define
+	#     for each virtual host matches againt the client requested hostname, the &VHIndexCallback setup
+	#     above will be called with the $ssl_id of the session and the 0-based index of the virtual host
+	#     the client sent its request to
+	# returns the index of the newly created SNI_server structure for future use
+	# this will be initialized only once and then reused when $sni_index != -1
+	$sni_index = $ssl->init_SNI($sni_index, [
+	    # see MatrixSSL.pm - init_SNI function
+	], $ssl_id);
+
+	# further initialization stuff after accepting the client
+	...
+    }
+
+    # secure communication with the client
+    ...
 
 
 =head1 SEE ALSO
