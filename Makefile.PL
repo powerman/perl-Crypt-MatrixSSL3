@@ -231,7 +231,7 @@ my @cOptions = (
     'USE_BEAST_WORKAROUND',
 
     # matrixsslConfig.h - Enables two-way(mutual) authentication
-    #'USE_CLIENT_AUTH',
+    'USE_CLIENT_AUTH',
 
     # matrixsslConfig.h - A client authentication feature. Allows the server
     # to send an empty CertificateRequest message if no CA files have
