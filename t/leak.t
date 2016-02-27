@@ -250,6 +250,7 @@ sub error {
     my $rc = get_ssl_error($_[0]);
     return sprintf "MatrixSSL error %d: %s\n", $rc, $rc;
 }
+
 sub alert {
     my ($level, $descr) = get_ssl_alert($_[0]);
 #     diag sprintf "MatrixSSL alert: level %d: %s, desc %d: %s\n", $level, $level, $descr, $descr;
@@ -264,18 +265,19 @@ sub leaktest {
     my %arg  = (init=>10, test=>100, max_mem_diff=>256, diag=>0, @_);
     my $tmp = 'x' x 1000000; undef $tmp;
     my $code = sub { no strict 'refs'; \&$test(); };
-    for (1 .. $arg{init}) { $code->(); };
+    $code->() for 1 .. $arg{init};
     my $mem = MEM_used();
     my $fd  = FD_used();
-    for (1 .. $arg{test}) { $code->(); };
+    $code->() for 1 .. $arg{test};
     diag sprintf("---- MEM $test\nWAS: %d\nNOW: %d\n", $mem, MEM_used()) if $arg{diag};
-    cmp_ok(MEM_used() - $mem, '<=', $arg{max_mem_diff}, "MEM: $test" );
-    is(FD_used(), $fd,                                  " FD: $test" );
+    cmp_ok(abs(MEM_used() - $mem), '<=', $arg{max_mem_diff}, "MEM: $test" );
+    is(FD_used(), $fd, " FD: $test" );
 }
 
 #########################
 # General-purpose utils #
 #########################
+
 sub Cat {
     croak 'usage: Cat( FILENAME )' if @_ != 1;
     my ($filename) = @_;
@@ -283,6 +285,7 @@ sub Cat {
     local $/ if !wantarray;
     return <$f>;
 }
+
 sub MEM_used {
     if ($^O =~ /linux/) {
         return (Cat('/proc/self/status') =~ /VmRSS:\s*(\d*)/)[0];
@@ -297,6 +300,7 @@ sub MEM_used {
         return (`ps -o'rss' -p $$` =~ /(\d+)/);
     }
 }
+
 sub FD_used {
     if ($^O =~ /linux/) {
         opendir my $fd, '/proc/self/fd' or croak "opendir: $!";
