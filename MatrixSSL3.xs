@@ -1492,6 +1492,8 @@ int sess_get_outdata(ssl, outBuf)
 
     CODE:
     RETVAL = matrixSslGetOutdata((ssl_t *)ssl, &buf);
+    if (RETVAL < 0)
+        croak("matrixSslGetOutdata returns %d", RETVAL);
     /* append answer to the output */
     if (RETVAL > 0)
         sv_catpvn_mg(outBuf, (const char *) buf, RETVAL);

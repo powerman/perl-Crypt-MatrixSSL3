@@ -710,6 +710,8 @@ but instead it append buffer returned by C API to the end of $outBuf.
     matrixSslGetOutdata( $ssl, $tmpBuf )
     $outBuf .= $tmpBuf
 
+Throw exception if matrixSslGetOutdata() returns < 0.
+
 ### sent\_data
 
     $rc = $ssl->sent_data( $bytes );
@@ -735,6 +737,8 @@ received alert or application data.
 
 It is safe to call it with empty $inBuf, but this isn't a good idea
 performance-wise.
+
+Throw exception if matrixSslGetReadbuf() returns <= 0.
 
 ### processed\_data
 

@@ -158,11 +158,6 @@ SEND:
     # - $ssl->encode_to_outdata()
     # - $ssl->encode_closure_alert()
     while (my $n = $ssl->get_outdata($out)) {
-        # MatrixSSL internal error while allocating the buffer.
-        if ($n < 0) {
-            $err = error($n);
-            last;
-        }
         # "After sending the returned $out to the peer, the user must
         # always follow with a call to $ssl->sent_data() to update the
         # number of bytes that have been sent from the returned buf.

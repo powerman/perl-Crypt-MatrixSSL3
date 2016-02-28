@@ -103,7 +103,6 @@ RC:
         goto RC;
     }
     while (my $n = $ssl->get_outdata($_[2])) {
-        die error($n) if $n < 0;
         my $rc = $ssl->sent_data($n);
         if    ($rc == MATRIXSSL_REQUEST_SEND)       { next          }
         elsif ($rc == MATRIXSSL_SUCCESS)            { last          }
