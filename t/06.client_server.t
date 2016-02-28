@@ -126,9 +126,8 @@ ok 1, 'matrixSslClose';
 
 sub _decode {
     my ($ssl) = @_; # other 3 params must be modified in place
-    while (my $n = $ssl->get_readbuf($_[1])) {
-        die error($n) if $n < 0;
-        my $rc = $ssl->received_data($n, my $buf);
+    while (length $_[1]) {
+        my $rc = $ssl->received_data($_[1], my $buf);
 RC:
         if    ($rc == MATRIXSSL_REQUEST_SEND)       { last          }
         elsif ($rc == MATRIXSSL_REQUEST_RECV)       { next          }

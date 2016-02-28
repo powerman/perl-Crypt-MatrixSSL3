@@ -716,27 +716,25 @@ but instead it append buffer returned by C API to the end of $outBuf.
 
     matrixSslSentData( $ssl, $bytes )
 
-### get\_readbuf
+### received\_data
 
-    $rc = $ssl->get_readbuf( $inBuf );
-
-Unlike C API, it doesn't set $inBuf to memory location inside MatrixSSL,
-but instead it copy data from beginning of $inBuf into buffer returned by
-C API and cut copied data from beginning of $inBuf (it may copy less bytes
-than $inBuf contain if size of buffer provided by MatrixSSL will be smaller).
+    $rc = $ssl->received_data( $inBuf, $ptBuf );
 
     $n = matrixSslGetReadbuf( $ssl, $buf )
     $n = min($n, length $inBuf)
     $buf = substr($inBuf, 0, $n, q{})
+    matrixSslReceivedData( $ssl, $n, $ptBuf, $ptLen )
+
+Combines two calls: matrixSslGetReadbuf() and matrixSslReceivedData().
+It copy data from beginning of $inBuf into buffer returned by
+matrixSslGetReadbuf() and cut copied data from beginning of $inBuf (it may
+copy less bytes than $inBuf contain if size of buffer provided by
+MatrixSSL will be smaller).
+Then it calls matrixSslReceivedData() to get $rc and may fill $ptBuf with
+received alert or application data.
 
 It is safe to call it with empty $inBuf, but this isn't a good idea
 performance-wise.
-
-### received\_data
-
-    $rc = $ssl->received_data( $bytes, $ptBuf );
-
-    matrixSslReceivedData( $ssl, $bytes, $ptBuf, $ptLen )
 
 ### processed\_data
 

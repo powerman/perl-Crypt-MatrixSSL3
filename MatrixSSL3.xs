@@ -1511,38 +1511,31 @@ int sess_sent_data(ssl, bytes)
     RETVAL
 
 
-int sess_get_readbuf(ssl, inBuf);
+int sess_received_data(ssl, inBuf, ptBuf)
     Crypt_MatrixSSL3_Sess *ssl;
     SV *inBuf;
-    STRLEN bufsz = 0;
-    unsigned char *buf = NULL;
+    SV *ptBuf;
     unsigned char *readbuf = NULL;
+    unsigned char *buf = NULL;
+    STRLEN inbufsz = 0;
+    unsigned int bufsz = 0;
+    int32 readbufsz = 0;
 
     CODE:
-    RETVAL = matrixSslGetReadbuf((ssl_t *)ssl, &readbuf);
-
-    if (RETVAL > 0) {
-        buf = (unsigned char *) SvPV(inBuf, bufsz);
-        if((unsigned int) RETVAL > bufsz)
-            RETVAL = bufsz;
-        memcpy(readbuf, buf, RETVAL);
-        /* remove from the input whatever got processed */
-        sv_setpvn_mg(inBuf, (const char *) buf+RETVAL,  bufsz-RETVAL);
+    readbufsz = matrixSslGetReadbuf((ssl_t *)ssl, &readbuf);
+    if (readbufsz <= 0) { /* 0 isn't an error, but shouldn't happens anyway */
+        croak("matrixSslGetReadbuf returns %d", readbufsz);
     }
 
-    OUTPUT:
-    RETVAL
+    buf = (unsigned char *) SvPV(inBuf, inbufsz);
+    if((STRLEN) readbufsz > inbufsz)
+        readbufsz = inbufsz;
+    memcpy(readbuf, buf, readbufsz);
+    /* remove from the input whatever got processed */
+    sv_setpvn_mg(inBuf, (const char *) buf+readbufsz,  inbufsz-readbufsz);
+    buf = NULL;
 
-
-int sess_received_data(ssl, bytes, ptBuf)
-    Crypt_MatrixSSL3_Sess *ssl;
-    unsigned int  bytes;
-    SV *ptBuf;
-    unsigned char *buf = NULL;
-    unsigned int bufsz = 0;
-
-    CODE:
-    RETVAL = matrixSslReceivedData((ssl_t *)ssl, bytes, &buf, (uint32 *) &bufsz);
+    RETVAL = matrixSslReceivedData((ssl_t *)ssl, readbufsz, &buf, (uint32 *) &bufsz);
     sv_setpvn_mg(ptBuf, (const char *) buf, (buf==NULL ? 0 : bufsz));
 
     OUTPUT:

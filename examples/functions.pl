@@ -48,14 +48,9 @@ sub ssl_io {
 RECV:
     # Fill MatrixSSL's read buffer with received data. Repeat until all
     # received data will be moved from our buffer to MatrixSSL.
-    while (my $n = $ssl->get_readbuf($in)) {
-        # MatrixSSL internal error while allocating the buffer.
-        if ($n < 0) {
-            $err = error($n);
-            last;
-        }
-        # Process (part of) received data in MatrixSSL's read buffer:
-        my $rc = $ssl->received_data($n, my $buf);
+    while (length $in) {
+        # Process (part of) received data:
+        my $rc = $ssl->received_data($in, my $buf);
 RC:
         # - "Success. This return code will be returned if $n is 0 and
         #   there is no remaining internal data to process. This could
