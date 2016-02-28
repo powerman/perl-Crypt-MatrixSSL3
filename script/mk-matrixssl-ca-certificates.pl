@@ -9,7 +9,7 @@ use version 0.77 (); our $VERSION = 'v3.7.3';
 ## no critic (Capitalization, RequireCarping)
 
 (my $path = $0) =~ s{[^/]*\z}{}ms;
-system "\Q$path\Emk-ca-bundle.pl -u" and die "mk-ca-bundle.pl failed\n";
+system "\Q$path\Emk-ca-bundle.pl -u -f -p ALL:TRUSTED_DELEGATOR" and die "mk-ca-bundle.pl failed\n";
 open my $f, '<', 'ca-bundle.crt' or die "open: $!";
 undef $/;
 my $bundle = <$f>;
