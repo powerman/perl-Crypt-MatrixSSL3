@@ -1,4 +1,3 @@
-//#define PERL_NO_GET_CONTEXT /* we want efficiency */
 #include "EXTERN.h"
 #include "perl.h"
 #include "XSUB.h"
@@ -552,7 +551,7 @@ int build_SCT_buffer(SV *ar, unsigned char **buffer, int32 *buffer_size) {
     sct_total_size += sct_array_size * 2;
     *buffer_size = sct_total_size;
 
-    c = *buffer = (unsigned char *) malloc(sct_total_size);
+    c = *buffer = (unsigned char *) psMallocBuffer(sct_total_size);
 
     for (i = 0; i < sct_array_size; i++) {
         item_sv = *av_fetch(sct_array, i, 0);
@@ -560,7 +559,7 @@ int build_SCT_buffer(SV *ar, unsigned char **buffer, int32 *buffer_size) {
 
         if ((rc = psGetFileBuf(NULL, item, &sct, &sct_size)) != PS_SUCCESS) {
             warn("Error %d trying to read file %s", rc, item);
-            free(*buffer);
+            psFreeBuffer(*buffer);
             *buffer = NULL;
             *buffer_size = 0;
             return rc;
@@ -571,7 +570,7 @@ int build_SCT_buffer(SV *ar, unsigned char **buffer, int32 *buffer_size) {
         memcpy(c, sct, sct_size);
         c+= sct_size;
 
-        free(sct);
+        psFreeBuffer(sct);
     }
 
     return sct_array_size;
@@ -623,15 +622,16 @@ void Close()
     for (i = 0; i < OCSP_staple_index; i++) {
         if (OCSP_staples[i]->OCSP_staple != NULL) {
 #ifdef MATRIX_DEBUG
-            warn("Releasing OCSP staple buffer %d, size = %d", i, OCSP_staples[i]->OCSP_staple_size);
+            warn("Releasing OCSP staple buffer %d, %p, size = %d", i, OCSP_staples[i]->OCSP_staple, OCSP_staples[i]->OCSP_staple_size);
 #endif
-            free(OCSP_staples[i]->OCSP_staple);
+            psFreeBuffer(OCSP_staples[i]->OCSP_staple);
         }
 #ifdef MATRIX_DEBUG
         warn("Releasing OCSP staple %d", i);
 #endif
         free(OCSP_staples[i]);
     }
+    OCSP_staple_index = 0;
 
     /* release SCT buffers */
 #ifdef MATRIX_DEBUG
@@ -642,13 +642,14 @@ void Close()
 #ifdef MATRIX_DEBUG
             warn("Releasing SCT extension buffer %d, size = %d", i, SCT_buffers[i]->SCT_size);
 #endif
-            free(SCT_buffers[i]->SCT);
+            psFreeBuffer(SCT_buffers[i]->SCT);
         }
 #ifdef MATRIX_DEBUG
         warn("Releasing SCT buffer %d", i);
 #endif
         free(SCT_buffers[i]);
     }
+    SCT_buffer_index = 0;
 
     /* release SNI servers */
 #ifdef MATRIX_DEBUG
@@ -677,14 +678,14 @@ void Close()
 #ifdef MATRIX_DEBUG
                 warn("  Releasing OCSP staple buffer for SNI entry %d, size = %d", i, ss->SNI_entries[i]->OCSP_staple_size);
 #endif
-                free(ss->SNI_entries[i]->OCSP_staple);
+                psFreeBuffer(ss->SNI_entries[i]->OCSP_staple);
             }
 
             if (ss->SNI_entries[i]->SCT != NULL) {
 #ifdef MATRIX_DEBUG
                 warn("  Releasing SCT extension buffer for SNI entry %d, size = %d", i, ss->SNI_entries[i]->SCT_size);
 #endif
-                free(ss->SNI_entries[i]->SCT);
+                psFreeBuffer(ss->SNI_entries[i]->SCT);
             }
 #ifdef MATRIX_DEBUG
             warn("  Releasing SNI entry %d", i);
@@ -696,6 +697,7 @@ void Close()
 #endif
         free(ss);
     }
+    SNI_server_index = 0;
 #ifdef MATRIX_DEBUG
     warn("Calling matrixSslClose()");
 #endif
@@ -738,7 +740,7 @@ int refresh_OCSP_staple(server_index, index, DERfile)
 
     /* free previous buffer if necessary */
     if (*p_buffer) {
-        free(*p_buffer);
+        psFreeBuffer(*p_buffer);
         *p_buffer = NULL;
     }
     *p_size = 0;
@@ -794,7 +796,7 @@ int refresh_SCT_buffer(server_index, index, SCT_params)
 
     /* free previous buffer if necessary */
     if (*p_buffer) {
-        free(*p_buffer);
+        psFreeBuffer(*p_buffer);
         *p_buffer = NULL;
     }
     *p_size = 0;
@@ -1367,10 +1369,10 @@ int sess_load_OCSP_staple(ssl, DERfile)
     RETVAL
 
 
-int sess_set_OCSP_staple(ssl, index, DERfile = NULL)
+int sess_set_OCSP_staple(ssl, index, DERfile)
     Crypt_MatrixSSL3_Sess *ssl;
     int index = SvOK(ST(1)) ? SvIV(ST(1)) : -1;
-    char *DERfile;
+    char *DERfile = SvOK(ST(2)) ? SvPV_nolen(ST(2)) : NULL;
     int rc = PS_SUCCESS;
 
     CODE:
@@ -1379,21 +1381,27 @@ int sess_set_OCSP_staple(ssl, index, DERfile = NULL)
 #endif
     /* check if we have to load the DER file or if we should set the pointer/size to an already loaded buffer */
     if (index == -1) {
+        /* check valid filename */
+        if (DERfile == NULL)
+            croak("If index is -1 you must specify a valid file name");
+
         /* check limits */
         if (OCSP_staple_index == MAX_OCSP_STAPLES)
             croak("We have already loaded the maximum number of %d OCSP staples", MAX_OCSP_STAPLES);
 
-        OCSP_staples[OCSP_staple_index] = (t_OCSP_staple *) malloc(sizeof(t_OCSP_staple));
-        memset(OCSP_staples[OCSP_staple_index], 0, sizeof(t_OCSP_staple));
+        index = OCSP_staple_index;
 
-        rc = psGetFileBuf(NULL, DERfile, &(OCSP_staples[OCSP_staple_index]->OCSP_staple), &(OCSP_staples[OCSP_staple_index]->OCSP_staple_size));
+        OCSP_staples[index] = (t_OCSP_staple *) malloc(sizeof(t_OCSP_staple));
+        memset(OCSP_staples[index], 0, sizeof(t_OCSP_staple));
+
+        rc = psGetFileBuf(NULL, DERfile, &(OCSP_staples[index]->OCSP_staple), &(OCSP_staples[index]->OCSP_staple_size));
 
         if (rc != PS_SUCCESS) {
             warn("Failed to load DER response %s; %d", DERfile, rc);
+            free(OCSP_staples[index]);
             XSRETURN_IV(rc);
         }
 
-        index = OCSP_staple_index;
         OCSP_staple_index++;
     }
 
@@ -1421,6 +1429,10 @@ int sess_set_SCT_buffer(ssl, index, SCT_params = NULL)
 #endif
     /* check if we have to prepare the buffer or should we just set the pointer/size to an already loaded buffer */
     if (index == -1) {
+        /* check valid params */
+        if (SCT_params == NULL)
+            croak("If index is -1 you must specify valid SCT params");
+
         /* check limits */
         if (SCT_buffer_index == MAX_SCT_BUFFERS)
             croak("We have already loaded the maximum number of %d SCT buffers", MAX_SCT_BUFFERS);
