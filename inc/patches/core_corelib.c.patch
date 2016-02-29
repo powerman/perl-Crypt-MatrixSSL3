@@ -1,5 +1,5 @@
 --- matrixssl-3-7-2b-open-original/core/corelib.c	2015-03-18 20:57:05.000000000 +0000
-+++ matrixssl-3-7-2b-open/core/corelib.c	2016-02-29 16:08:41.000000000 +0000
++++ matrixssl-3-7-2b-open/core/corelib.c	2016-02-29 16:16:07.000000000 +0000
 @@ -311,4 +311,21 @@ void psBurnStack(uint32 len)
  }
  
@@ -8,7 +8,7 @@
 +	Support for memory allocation in order to avoid applications that redefine
 +	malloc/free (see Perl)
 +*/
-+void psMallocBuffer(size_t size)
++void *psMallocBuffer(size_t size)
 +{
 +	return malloc(size);
 +}

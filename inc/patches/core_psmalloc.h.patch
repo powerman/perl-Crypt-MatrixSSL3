@@ -1,10 +1,10 @@
 --- matrixssl-3-7-2b-open-original/core/psmalloc.h	2015-03-18 20:57:05.000000000 +0000
-+++ matrixssl-3-7-2b-open/core/psmalloc.h	2016-02-29 16:06:48.000000000 +0000
++++ matrixssl-3-7-2b-open/core/psmalloc.h	2016-02-29 16:15:52.000000000 +0000
 @@ -65,6 +65,8 @@
  #define psMallocNoPool		malloc
  #define psRealloc(A, B, C)	realloc(A, B)
  #define psFree(A, B)		free(A)
-+void psMallocBuffer(size_t size);
++void *psMallocBuffer(size_t size);
 +void psFreeBuffer(void *ptr);
  #define psMemset			memset
  #define psMemcpy			memcpy
