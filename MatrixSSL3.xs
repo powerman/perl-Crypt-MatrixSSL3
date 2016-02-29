@@ -1,4 +1,4 @@
-#define PERL_NO_GET_CONTEXT /* we want efficiency */
+//#define PERL_NO_GET_CONTEXT /* we want efficiency */
 #include "EXTERN.h"
 #include "perl.h"
 #include "XSUB.h"
@@ -508,8 +508,10 @@ int build_SCT_buffer(SV *ar, unsigned char **buffer, int32 *buffer_size) {
             if (item == NULL)
                 croak("build_SCT_buffer: expecting a scalar or array reference as first parameter");
 
-            if ((rc = psGetFileBuf(NULL, item, buffer, buffer_size)) != PS_SUCCESS)
-                croak("Error %d trying to read file %s", rc, item);
+            if ((rc = psGetFileBuf(NULL, item, buffer, buffer_size)) != PS_SUCCESS) {
+                warn("Error %d trying to read file %s", rc, item);
+                return rc;
+            }
 
             return 1;
         } else {
@@ -534,11 +536,13 @@ int build_SCT_buffer(SV *ar, unsigned char **buffer, int32 *buffer_size) {
         item = SvPV(item_sv, item_len);
 
 #ifdef WIN32
-        if (_stat(item, &fstat) != 0)
+        if (_stat(item, &fstat) != 0) {
 #else
-        if (stat(item, &fstat) != 0)
+        if (stat(item, &fstat) != 0) {
 #endif
-            croak("Error reading stats for SCT file %s", item);
+            warn("Error reading stats for SCT file %s", item);
+            return -1;
+        }
 #ifdef MATRIX_DEBUG
         warn("Reading SCT file %d - %s; size: %d", i, item, fstat.st_size);
 #endif
@@ -554,8 +558,13 @@ int build_SCT_buffer(SV *ar, unsigned char **buffer, int32 *buffer_size) {
         item_sv = *av_fetch(sct_array, i, 0);
         item = SvPV(item_sv, item_len);
 
-        if ((rc = psGetFileBuf(NULL, item, &sct, &sct_size)) != PS_SUCCESS)
-            croak("Error %d trying to read file %s", rc, item);
+        if ((rc = psGetFileBuf(NULL, item, &sct, &sct_size)) != PS_SUCCESS) {
+            warn("Error %d trying to read file %s", rc, item);
+            free(*buffer);
+            *buffer = NULL;
+            *buffer_size = 0;
+            return rc;
+        }
 
         *c = (sct_size & 0xFF00) >> 8; c++;
         *c = (sct_size & 0xFF); c++;
@@ -736,8 +745,10 @@ int refresh_OCSP_staple(server_index, index, DERfile)
 
     rc = psGetFileBuf(NULL, DERfile, p_buffer, p_size);
 
-    if (rc != PS_SUCCESS)
-        croak("Failed to load OCSP staple %s; %d", DERfile, rc);
+    if (rc != PS_SUCCESS) {
+        warn("Failed to load OCSP staple %s; %d", DERfile, rc);
+        XSRETURN_IV(rc);
+    }
 #ifdef MATRIX_DEBUG
     warn("Refreshed OCSP staple: %p %d", *p_buffer, *p_size);
 #endif
@@ -1219,7 +1230,9 @@ int sess_init_SNI(ssl, index, ssl_id, sni_data = NULL)
         warn("  SNI entry %d Hostname = %s\n", i, item);
 #endif
 #ifdef WIN32
-        memcpy(ss->SNI_entries[i]->hostname, item, (item_len > 255 ? 255 : item_len));
+        if (item_len > 254) item_len = 254;
+        memcpy(ss->SNI_entries[i]->hostname, item, item_len);
+        ss->SNI_entries[i]->hostname[item_len] = 0;
         ss->SNI_entries[i]->hostnameLen = item_len;
 #else
         regex_res = regcomp(&(ss->SNI_entries[i]->regex_hostname), item, REG_EXTENDED | REG_ICASE | REG_NOSUB);
@@ -1375,8 +1388,10 @@ int sess_set_OCSP_staple(ssl, index, DERfile = NULL)
 
         rc = psGetFileBuf(NULL, DERfile, &(OCSP_staples[OCSP_staple_index]->OCSP_staple), &(OCSP_staples[OCSP_staple_index]->OCSP_staple_size));
 
-        if (rc != PS_SUCCESS)
-            croak("Failed to load DER response %s; %d", DERfile, rc);
+        if (rc != PS_SUCCESS) {
+            warn("Failed to load DER response %s; %d", DERfile, rc);
+            XSRETURN_IV(rc);
+        }
 
         index = OCSP_staple_index;
         OCSP_staple_index++;
@@ -1418,6 +1433,10 @@ int sess_set_SCT_buffer(ssl, index, SCT_params = NULL)
 #ifdef MATRIX_DEBUG
         warn("Read %d SCT files for SCT buffer %d; Total SCT buffer size = %d", ars, index, SCT_buffers[index]->SCT_size);
 #endif
+        if (ars < 1) {
+            free(SCT_buffers[index]);
+            XSRETURN_IV(-1);
+        }
 
         SCT_buffer_index++;
     }
