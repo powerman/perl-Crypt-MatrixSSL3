@@ -4,7 +4,7 @@ use warnings;
 use strict;
 use Crypt::MatrixSSL3;
 
-use version 0.77 (); our $VERSION = 'v3.7.3';
+use version 0.77 (); our $VERSION = 'v3.7.4';
 
 ## no critic (Capitalization, RequireCarping)
 

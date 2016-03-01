@@ -2,7 +2,7 @@
 use warnings;
 use strict;
 
-use version 0.77 (); our $VERSION = 'v3.7.3';
+use version 0.77 (); our $VERSION = 'v3.7.4';
 
 use Getopt::Long;
 use Pod::Usage;
