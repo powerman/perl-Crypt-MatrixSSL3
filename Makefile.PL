@@ -346,20 +346,18 @@ if (!-d $mxbase) {
 }
 
 # Apply cumulative patch, if any
+use File::Which;
 if (-d 'inc/patches') {
-    # Test for patch
-    my $r = system 'patch f.c.orig f.c 2> null';
-    unlink 'null';
-    if ($r == 256) {
-        my $pp = prompt "It looks like the patch tool is not installed on your system!\n" .
-                        'Do you want to continue (the resulted build might be unstable)?', 'n';
-        $pp = lc $pp eq 'y' ? 'y' : 'n';
-        die 'Aborting...' if $pp ne 'y';
-    } else {
+    if (which('patch')) {
         for my $file (glob 'inc/patches/*.patch') {
             # replacing \n with \n will change \n to \r\n on Win, without this patch.exe will crash
-            system "cd $mxbase && perl -pe \"s/\\n/\\n/\" ../../$file | patch -p1 -N";
+            system "cd \Q$mxbase\E && perl -pe \"s/\\n/\\n/\" ../../\Q$file\E | patch -p1 -N";
         }
+    }
+    else {
+        my $pp = prompt "It looks like the patch tool is not installed on your system!\n" .
+                        'Do you want to continue (the resulted build might be unstable)?', 'n';
+        die 'Aborting...' if 'y' ne lc $pp;
     }
 }
 

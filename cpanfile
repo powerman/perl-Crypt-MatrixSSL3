@@ -16,6 +16,7 @@ on configure => sub {
     requires 'ExtUtils::Constant';
     requires 'ExtUtils::MakeMaker', '6.63_03';
     requires 'File::ShareDir::Install';
+    requires 'File::Which';
 };
 
 on test => sub {
