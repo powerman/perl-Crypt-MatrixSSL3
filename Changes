@@ -1,6 +1,8 @@
 Revision history for Perl extension Crypt::MatrixSSL3.
 
 {{$NEXT}}
+
+v3.7.4  2016-03-01 05:29:25 EET
 	- Migrate to Dist::Milla.
 	- Use ppport.h.
 	- Improve sample scripts.

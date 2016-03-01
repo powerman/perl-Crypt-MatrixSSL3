@@ -7,7 +7,7 @@ Crypt::MatrixSSL3 - Perl extension for SSL and TLS using MatrixSSL.org v3.7.2b
 
 # VERSION
 
-This document describes Crypt::MatrixSSL3 version v3.7.3
+This document describes Crypt::MatrixSSL3 version v3.7.4
 
 # SYNOPSIS
 
