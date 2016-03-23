@@ -1,5 +1,5 @@
 --- matrixssl-3-7-2b-open-original/matrixssl/sslDecode.c	2015-03-18 20:57:06.000000000 +0000
-+++ matrixssl-3-7-2b-open/matrixssl/sslDecode.c	2016-02-25 11:12:50.000000000 +0000
++++ matrixssl-3-7-2b-open/matrixssl/sslDecode.c	2016-03-23 22:34:29.000000000 +0000
 @@ -1322,9 +1322,16 @@ static int32 parseSSLHandshake(ssl_t *ss
  {
  	unsigned char	*c, *end;
@@ -60,7 +60,7 @@
  				return MATRIXSSL_ERROR;
  			}
 -#ifdef ENABLE_SECURE_REHANDSHAKES
-+#ifdef ENABLE_SECURE_REHANDSHAKES || ENABLE_TLS_FALLBACK_SCSV
++#if defined(ENABLE_SECURE_REHANDSHAKES) || defined(ENABLE_TLS_FALLBACK_SCSV)
  /*
  			Below we stop looking after the first cipher we match but we need
  			to search for SCSV if secure rehandshakes are on and first conn
@@ -153,7 +153,7 @@
  				ssl->err = SSL_ALERT_HANDSHAKE_FAILURE;
  				return MATRIXSSL_ERROR;
  			}
-@@ -2496,6 +2566,43 @@ SKIP_HSHEADER_PARSE:
+@@ -2496,6 +2566,36 @@ SKIP_HSHEADER_PARSE:
  						}
  					}
  #endif
@@ -187,17 +187,10 @@
 +							ssl->SCT_request = 1;
 +					}
 +#endif
-+
-+/*
-+psTraceIntInfo("extType = %d ", extType);
-+psTraceIntInfo("extLen = %d\n", extLen);
-+psTraceBytes(NULL, c, extLen);
-+*/
-+
  					c += extLen;
  				}
  			}
-@@ -2652,18 +2759,30 @@ SKIP_HSHEADER_PARSE:
+@@ -2652,18 +2752,30 @@ SKIP_HSHEADER_PARSE:
  			need to worry about matching resumed cipher suite.
  */
  			p = c + suiteLen;
@@ -232,7 +225,7 @@
  				ssl->err = SSL_ALERT_HANDSHAKE_FAILURE;
  				psTraceInfo("No matching cipher for SSL handshake\n");
  				return MATRIXSSL_ERROR;
-@@ -3471,7 +3590,7 @@ PROTOCOL_DETERMINED:
+@@ -3471,7 +3583,7 @@ PROTOCOL_DETERMINED:
  				if (memcmp(ssl->sessionId, c, sessionIdLen) == 0) {
  					ssl->flags |= SSL_FLAGS_RESUMED;
  				} else {
@@ -241,7 +234,7 @@
  #ifndef USE_PKCS11_TLS_ALGS
  					memset(ssl->sec.masterSecret, 0x0, SSL_HS_MASTER_SIZE);
  #endif
-@@ -3489,7 +3608,7 @@ PROTOCOL_DETERMINED:
+@@ -3489,7 +3601,7 @@ PROTOCOL_DETERMINED:
  			c += sessionIdLen;
  		} else {
  			if (ssl->sessionIdLen > 0) {
@@ -250,7 +243,7 @@
  #ifndef USE_PKCS11_TLS_ALGS
  				memset(ssl->sec.masterSecret, 0x0, SSL_HS_MASTER_SIZE);
  #endif
-@@ -3524,7 +3643,7 @@ PROTOCOL_DETERMINED:
+@@ -3524,7 +3636,7 @@ PROTOCOL_DETERMINED:
  				return MATRIXSSL_ERROR;
  			}
  		} else {
@@ -259,3 +252,12 @@
  				ssl->err = SSL_ALERT_HANDSHAKE_FAILURE;
  				psTraceIntInfo("Can't support requested cipher: %d\n", cipher);
  				return MATRIXSSL_ERROR;
+@@ -5258,7 +5370,7 @@ static int32 dealWithAlpnExt(ssl_t *ssl,
+ 	userChoice = MAX_PROTO_EXT;
+ 
+ 	/* Already tested if callback exists */
+-	(*ssl->srv_alpn_cb)((void*)ssl, (short)i, proto, protoLen, &userChoice);
++	(*ssl->srv_alpn_cb)((void*)ssl, (short)i, proto, protoLen, &userChoice, ssl->srv_alpn_cb_userPtr, ssl->srv_alpn_cb_ssl_id);
+ 
+ 	if (userChoice == MAX_PROTO_EXT) {
+ 		/* User chose to completely ignore. No reply extension will be sent */

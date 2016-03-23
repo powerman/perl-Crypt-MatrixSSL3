@@ -1,5 +1,5 @@
 --- matrixssl-3-7-2b-open-original/matrixssl/matrixsslApi.c	2015-03-18 20:57:06.000000000 +0000
-+++ matrixssl-3-7-2b-open/matrixssl/matrixsslApi.c	2016-02-25 11:15:33.000000000 +0000
++++ matrixssl-3-7-2b-open/matrixssl/matrixsslApi.c	2016-03-23 22:32:46.000000000 +0000
 @@ -215,6 +215,98 @@ void matrixSslDeleteSessionId(sslSession
  #endif /* USE_CLIENT_SIDE_SSL */
  
@@ -99,7 +99,7 @@
  /******************************************************************************/
  /*
  	Create a new server SSL session
-@@ -288,9 +380,11 @@ NEW_SVR_ERROR:
+@@ -288,18 +380,22 @@ NEW_SVR_ERROR:
  }
  
  void matrixSslRegisterSNICallback(ssl_t *ssl, void (*sni_cb)(void *ssl,
@@ -112,3 +112,15 @@
  }
  
  #ifdef USE_ALPN
+ void matrixSslRegisterALPNCallback(ssl_t *ssl,
+ 			void (*srv_alpn_cb)(void *ssl, short protoCount,
+ 			char *proto[MAX_PROTO_EXT],	int32 protoLen[MAX_PROTO_EXT],
+-			int32 *index))
++			int32 *index, void *userPtr, int32 ssl_id), void *srv_alpn_cb_userPtr, int32 srv_alpn_cb_ssl_id)
+ {
+ 	ssl->srv_alpn_cb = srv_alpn_cb;
++	ssl->srv_alpn_cb_userPtr = srv_alpn_cb_userPtr;
++	ssl->srv_alpn_cb_ssl_id = srv_alpn_cb_ssl_id;
+ }
+ #endif
+ 

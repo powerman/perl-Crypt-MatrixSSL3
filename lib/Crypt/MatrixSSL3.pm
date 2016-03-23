@@ -739,7 +739,7 @@ If you want to update the OCSP staple for a virtual host this parameter
 must have the returned value of the first $sll->init_SNI(...) call.
 
 If you want to update the OCSP staple for a default server this parameter
-must be -1 or undef.
+must have the returned value of the first $ssl->set_server_params(...) call
 
 =item $index
 
@@ -747,8 +747,7 @@ When updating a virtual host ($server_index > -1) this value specifies the
 0-based index of the virtual host for which the OCSP staple should be
 refreshed.
 
-When updating a default server this value specifies the index returned by
-the $ssl->set_OCSP_staple(...) first call.
+When updating a default server this value must be -1 or undef
 
 =item $DERfile
 
@@ -772,12 +771,12 @@ Parameters:
 
 =item $server_index and $index
 
-Are the same as refresh_OCSP_staple above, but $index take the return
-value of the first $ssl->set_SCT_buffer(...) call.
+Are the same as refresh_OCSP_staple above.
 
 =item $SCT_params
 
 Perl scalar contains a file name with prepared extension data.
+or
 Perl array reference with file names of SCT binary structures that the
 function will use to create the extension data.
 
@@ -790,6 +789,12 @@ Returns the number of files loaded in order to build extension data.
     set_VHIndex_callback( \&VHIndexCallback );
 
 More information about L</VHIndexCallback> in the L</CALLBACKS> section.
+
+=head2 set_ALPN_callback
+
+    set_VHIndex_callback( \&ALPNCallback );
+
+More information about L</ALPNCallback> in the L</CALLBACKS> section.
 
 
 =head1 CLASSES
@@ -952,37 +957,6 @@ Parameters:
 For the first call this parameter MUST be -1. Subsequent calls MUST use
 the returned value of the first call.
 
-=item $sni_params [[...],...] or undef
-
-This is a reference to an array that contains one or more array references:
-
-    $sni_params = [                                      # virtual hosts support - when a client sends a TLS SNI extension, the settings below will apply
-                                                         #                         based on the requested hostname
-        # virtual host 0 (also referred in the code as SNI entry 0)
-        [
-            'hostname',                                  # regular expression for matching the hostname
-            '/path/to/certificate;/path/to/CA-chain',    # KEY - certificate (the CA-chain is optional)
-            '/path/to/private_key',                      # KEY - private key
-            '/path/to/DH_params',                        # KEY - file containing the DH parameter used with DH ciphers
-            '1234567890123456',                          # KEY - TLS session tickets - 16 bytes unique identifier
-            '12345678901234567890123456789012',          # KEY - TLS session tickets - 128/256 bit encryption key
-            '12345678901234567890123456789012',          # KEY - TLS session tickets - 256 bit hash key
-            '/path/to/OCSP_staple.der',                  # SESSION - file containing a OCSP staple that gets sent when a client
-                                                         #           send a TLS status request extension
-            [                                            # SESSION - Certificate Transparency SCT files used to build the 'signed_certificate_timestamp' TLS extension data buffer
-                '/path/to/SCT1.sct',
-                '/path/to/SCT2.sct',
-                ...
-            ]
-            # instead of the Certificate Transparency SCT files you can specify a scalar with a single file that contains multiple SCT files
-            # note that this file is not just a concatenation of the SCT files, but a ready-to-use 'signed_certificate_timestamp' TLS extension data buffer
-            # see ct-submit.pl for more info
-            #'/path/to/CT_extension_data_buffer
-        ],
-        # virtual host 1
-        ...
-    ]
-
 =item $ssl_id
 
 A 32 bit integer that uniquely identifies this session. This parameter
@@ -991,25 +965,87 @@ module when a client sends a SNI extension.
 If the XS module is able to match the requested client hostname it will
 call the Perl callback set with set_VHIndex_callback.
 
+=item $sni_params [{...},...] or undef
+
+This is a reference to an array that contains one or more array references:
+
+    $sni_params = [                                                     # virtual hosts support - when a client sends a TLS SNI extension, the settings below will apply
+                                                                        #                         based on the requested hostname
+        # virtual host 0 (also referred in the code as SNI entry 0)
+        {
+            'hostname' => 'hostname',                                   # regular expression for matching the hostname
+            'cert' => '/path/to/certificate;/path/to/CA-chain',         # KEY - certificate (the CA-chain is optional)
+            'key' => '/path/to/private_key',                            # KEY - private key
+            'DH_param' => /path/to/DH_params',                          # KEY - file containing the DH parameter used with DH ciphers
+            'session_ticket_keys' => {                                  # session tickets setup
+                'id' => '1234567890123456',                             # KEY - TLS session tickets - 16 bytes unique identifier
+                'encrypt_key' => '12345678901234567890123456789012',    # KEY - TLS session tickets - 128/256 bit encryption key
+                'hash_key' => '12345678901234567890123456789012',       # KEY - TLS session tickets - 256 bit hash key
+            },
+            'OCSP_staple' => '/path/to/OCSP_staple.der',                # SESSION - file containing a OCSP staple that gets sent when a client
+                                                                        #           send a TLS status request extension
+            'SCT_params' => [                                           # SESSION - Certificate Transparency SCT files used to build the
+                                                                        #           'signed_certificate_timestamp' TLS extension data buffer
+                '/path/to/SCT1.sct',
+                '/path/to/SCT2.sct',
+                ...
+            ],
+            # instead of the Certificate Transparency SCT files you can specify a scalar with a single file that contains multiple SCT files
+            # note that this file is not just a concatenation of the SCT files, but a ready-to-use 'signed_certificate_timestamp' TLS extension data buffer
+            # see ct-submit.pl for more info
+            #'SCT_params' => '/path/to/CT_extension_data_buffer',
+            'ALPN' => ['protocol1', 'protocol2']                        # SESSION - server supported protocols
+        },
+        # virtual host 1
+        ...
+    ]
+
 =back
 
 Returns the index of the internal SNI server structure used for
 registering the MatrixSSL SNI callback. This MUST be saved after the first
 call.
 
-=head3 set_OCSP_staple
+=head3 set_server_params
 
-    $index = $ssl->set_OCSP_staple( $ocsp_index, $DERfile );
+    $sv_index = $ssl->set_server_params( $sv_index, $ssl_id, $sv_params );
 
 Used to set the OCSP staple to be returned if the client sends the
-"status_request" TLS extension. Note that this function call only affects
-the B<default server>. Virtual hosts are managed by using the
-$ssl->init_SNI(...).
+"status_request" TLS extension, the extension data to be returned if the
+client sends the "signed_certificate_timestamp" TLS extension and the
+server supported protocols used when a client send a TLS ALPN extension.
+
+Note that this function call only affects the B<default server>. Virtual
+hosts are managed by using the $ssl->init_SNI(...).
 
 See $ssl->init_SNI(...) for usage.
 
-The $DERfile parameter specifies the file containing the OCSP staple in
-DER format.
+Parameters:
+
+=over
+
+=item $sv_index and $ssl_id
+
+The same as $sni_index and $ssl_id for $ssl->init_SNI(...)
+
+=item $sv_params {...} or undef
+
+This is a reference to a hash with the following structure (all keys are optional):
+
+    $sv_params = {
+        'OCSP_staple' => '/path/to/OCSP_staple.der',
+        'SCT_params' => ['/path/to/SCT1.sct', '/path/to/SCT2.sct'] or '/path/to/CT_extension_data_buffer'
+        'ALPN' => ['protocol1', 'protocol2']
+    }
+
+If you specify the 'ALPN' parameter, you should also provide
+an ALPN callback. More information about callback L</ALPNCallback>
+in the L</CALLBACKS> section.
+
+
+Returns the index of the internal default server structure used for
+registering the parameters. This MUST be saved after the first
+call.
 
 =head3 load_OCSP_staple
 
@@ -1024,31 +1060,8 @@ destroyed.
 It has the advantage that the session will contain the latest OCSP data if
 the OCSP DER file is refreshed in the meantime.
 
-Don't be lazy and use $ssl->set_OCSP_staple() and
+Don't be lazy and use $ssl->set_server_params({'OCSP_staple' => '...'}) and
 $ssl->refresh_OCSP_staple() instead.
-
-=head3 set_SCT_buffer
-
-    $index = $ssl->set_SCT_buffer( $sct_index, $SCT_params );
-
-Used to set the extension data to be returned if the client sends the
-"signed_certificate_timestamp" TLS extension. Note that this function call
-only affects the B<default server>. Virtual hosts are managed by using the
-$ssl->init_SNI(...).
-
-See $ssl->init_SNI(...) for usage.
-
-The $SCT_params has the same structure as the one used in the
-$ssl->init_SNI(...) function.
-
-=head3 set_ALPN_callback
-
-    $ssl->set_ALPN_callback( \&ALPNcb );
-
-Sets a callback that will receive as parameter data sent by the client in
-the ALPN TLS extension.
-
-More information about callback L</ALPNcb> in the L</CALLBACKS> section.
 
 
 =head2 Crypt::MatrixSSL3::Client and Crypt::MatrixSSL3::Server
@@ -1210,13 +1223,18 @@ This callback must return single scalar with integer value (as described in
 MatrixSSL documentation). If callback die(), then warning will be printed,
 and execution will continue assuming callback returned -1.
 
-=head2 ALPNcb
+=head2 ALPNCallback
 
-Will be called with an array reference containing strings with the protocols
-the client supports.
+Will be called when a client sends an ALPN extension and a successful
+application protocol has been negociated. If the server doesn't implement
+any of the client's protocols the XS module will send an appropiate
+response and the client will receive a SSL_ALERT_NO_APP_PROTOCOL alert.
 
-The callback must return the 0-based index of a supported protocol or
--1 if none of the client supplied protocols is supported.
+Will be called with 2 parameters:
+
+    $ssl_id - this is the $ssl_id used in the $ssl->init_SNI(...) or
+              $ssl->set_server_params(...) function call
+    $app_proto - scalar with the negociated protocol name
 
 =head2 VHIndexCallback
 
@@ -1266,11 +1284,13 @@ intermediate certificate and optionally ends with the root certificate.
 
 The resulted file can be used in your script like:
 
-    # set CT response for a SSL session
-    $sct_index = $ssl->set_SCT_buffer( $sct_index, '/path/to/CT.sct' );
+    # set CT response for a SSL session (default server)
+    $sv_index = $ssl->set_server_params( $sv_index, $ssl_id, {
+        'SCT_params' => '/path/to/CT.sct'
+    });
 
     # refresh the CT response
-    Crypt::MatrixSSL3::refresh_SCT_buffer( undef, $sct_index, '/path/to/CT.sct' );
+    Crypt::MatrixSSL3::refresh_SCT_buffer( $sv_index, undef, '/path/to/CT.sct' );
 
 =head3 Generate multiple SCT files containing binary representation of the responses received from the log servers
 
@@ -1280,30 +1300,32 @@ The resulted file can be used in your script like:
 This will create in the /path/to/stc/ folder the following files
 (considering that the requests to the log servers were successful):
 
-    aviator.sct		# https://ct.googleapis.com/aviator
-    certly.sct		# https://log.certly.io
-    pilot.sct		# https://ct.googleapis.com/pilot
-    rocketeer.sct	# https://ct.googleapis.com/rocketeer
-    digicert.sct	# https://ct1.digicert-ct.com/log - disabled by default -
-                        # accepts certificates only from select CAs
-    izenpe.sct		# https://ct.izenpe.com - disabled by default -
-                        # accepts certificates only from select CAs
+    aviator.sct          # https://ct.googleapis.com/aviator
+    certly.sct           # https://log.certly.io
+    pilot.sct            # https://ct.googleapis.com/pilot
+    rocketeer.sct        # https://ct.googleapis.com/rocketeer
+    digicert.sct         # https://ct1.digicert-ct.com/log - disabled by default -
+                         # accepts certificates only from select CAs
+    izenpe.sct           # https://ct.izenpe.com - disabled by default -
+                         # accepts certificates only from select CAs
 
 One or more files can be used in your script like:
 
-    # set CT response for a SSL session
+    # set CT response for a SSL session (default server)
     # note that even if you're using a single file (which will be wrong
     # according to the RFC because at least 2 SCTs from different server logs
     # must be sent), you still need to provide an array reference with one element
-    $sct_index = $ssl->set_SCT_buffer( $sct_index, [
-	'/path/to/sct/aviator.sct',
-	'/path/to/sct/certly.sct',
-    ]);
+    $sv_index = $ssl->set_server_params( $sct_index, $ssl_id, {
+        'SCT_params' => [
+            '/path/to/sct/aviator.sct',
+            '/path/to/sct/certly.sct'
+        ]
+    });
 
     # refresh CT response
-    Crypt::MatrixSSL3::refresh_SCT_buffer ( undef, $sct_index, [
-	'/path/to/sct/aviator.sct',
-	'/path/to/sct/certly.sct',
+    Crypt::MatrixSSL3::refresh_SCT_buffer( $sv_index, undef, [
+        '/path/to/sct/aviator.sct',
+        '/path/to/sct/certly.sct',
     ]);
 
 
@@ -1345,7 +1367,7 @@ certificate.
 
 =head3 Query the OCSP responder
 
-    openssl ocsp -no_nonce -issuer -cert server.crt issuer.crt \
+    openssl ocsp -no_nonce -issuer issuer.crt -cert server.crt \
         -CAfile full-CA.crt -url OCSP_responder_URI \
         -header "HOST" OCSP_response_host -respout /path/to/OCSP_staple.der
 
@@ -1355,13 +1377,15 @@ certificate.
 
 =head2 USAGE
 
-=head3 Set an OCSP staple to be used within a SSL session
+=head3 Set an OCSP staple to be used within a SSL session (default server)
 
-    $ocsp_index = $ssl->set_OCSP_staple( $ocsp_index, '/path/to/OCSP_staple.der' );
+    $sv_index = $ssl->set_server_params( $sv_index, $ssl_id, {
+        'OCSP_staple' => '/path/to/OCSP_staple.der'
+    });
 
 =head3 Refreshing an already allocated OCSP staple buffer
 
-    Crypt::MatrixSSL3::refresh_OCSP_staple( undef, $ocsp_index, '/path/to/OCSP_staple.der' );
+    Crypt::MatrixSSL3::refresh_OCSP_staple( $sv_index, undef, '/path/to/OCSP_staple.der' );
 
 
 =head1 HOWTO: Virtual hosts
@@ -1388,9 +1412,18 @@ All the virtual hosts (SNI entries) declared for one server.
 
 Here is some Perl pseudo code on how these are used:
 
+    Crypt::MatrixSSL3::set_VHIndex_callback(sub {
+        my ($id, $index) = @_;
+        print("Virtual host $index was selected for SSL session $ssl_id");
+    });
+
+    Crypt::MatrixSSL3::set_ALPN_callback(sub {
+        my ($id, $app_proto) = @_;
+        print("Application protocol $app_proto was negociated for SSL session $ssl_id");
+    });
+
     my $sni_index = -1;
-    my $ocsp_index = -1;
-    my $sct_index = -1;
+    my $sv_index = -1;
 
     # define a listening socket
     $server_sock = ...
@@ -1401,53 +1434,51 @@ Here is some Perl pseudo code on how these are used:
     # load key material (certificate, private key, etc)
     $sv_keys->load_rsa(...)
 
-    Crypt::MatrixSSL3::set_VHIndex_callback(sub {
-	my ($ssl_id, $index);
-	warn "Client connected through SSL session ID $ssl_id has selected virtual host $index";
-    });
     ...
 
     # we assume when a client connects an accept_client sub will be called
     sub accept_client {
-	# accept client socket
-	my $client_sock = accept($server_sock, ...);
+        # accept client socket
+        my $client_sock = accept($server_sock, ...);
 
-	# create server session reusing the keys
-	my $cssl =  Crypt::MatrixSSL3::Server->new($sv_keys, undef);
+        # create server session reusing the keys
+        my $cssl =  Crypt::MatrixSSL3::Server->new($sv_keys, undef);
 
-	# set OCSP staple for default server
-	# this will be initialized only once and then reused when $ocsp_index != -1
-	$ocsp_index = $ssl->set_OCSP_staple($ocsp_index, $DERfile);
+        # create a unique SSL session ID
+        # for example this can be the fileno of the client socket
+        my $ssl_id = fileno($client_sock);
 
-	# set SCT buffer for default server
-	# this will be initialized only once and then reused when $sct_index != -1
-	$sct_index = $ssl->set_SCT_buffer($sct_index, $SCT_params);
+        # set OCSP staple, Certificate Transparecy data (SCT) and supported protocols
+        # for the default server. These will be initialized only once and then reused
+        # when $sv_index != -1
+        $sv_index = $ssl->set_server_params($sv_index, $ssl_id, {
+            'OCSP_staple' => '...',
+            'SCT_params' => '...',
+            'ALPN' => [...]
+        });
 
-	# create a unique SSL session ID
-	# for example this can be the fileno of the client socket
-	my $ssl_id = fileno($client_sock);
+        # initialize virtual hosts
+        # when first called init_SNI will take as first parameter $sni_index which is -1
+        # behind the scene the XS module does this (pretty much like what we're doing above)
+        #   - allocates a SNI_server structure that will hold one or more SNI_entries (virtual hosts)
+        #   - allocates a SNI_entry structure for each virtual host and:
+        #     - creates new server keys
+        #     - sets up OCSP staple buffer (if needed)
+        #     - sets up SCT buffer (if needed)
+        #     - stores server implemented protocols if provided
+        #   - sets up the matrixSSL SNI callback that will get called if the client sends a SNI TLS extension
+        #     in its CLIENT_HELLO message. When the CS SNI callback is called if any of the hostnames define
+        #     for each virtual host matches againt the client requested hostname, the &VHIndexCallback setup
+        #     above will be called with the $ssl_id of the session and the 0-based index of the virtual host
+        #     the client sent its request to
+        # returns the index of the newly created SNI_server structure for future use
+        # this will be initialized only once and then reused when $sni_index != -1
+        $sni_index = $ssl->init_SNI($sni_index, [
+            # see MatrixSSL.pm - init_SNI function
+        ], $ssl_id);
 
-	# initialize virtual hosts
-	# when first called init_SNI will take as first parameter $sni_index which is -1
-	# behind the scene the XS module does this (pretty much like what we're doing above)
-	#   - allocates a SNI_server structure that will hold one or more SNI_entries (virtual hosts)
-	#   - allocates a SNI_entry structure for each virtual host and:
-	#     - creates new server keys
-	#     - sets up OCSP staple buffer (if needed)
-	#     - sets up SCT buffer (if needed)
-	#   - sets up the matrixSSL SNI callback that will get called if the client sends a SNI TLS extension
-	#     in its CLIENT_HELLO message. When the CS SNI callback is called if any of the hostnames define
-	#     for each virtual host matches againt the client requested hostname, the &VHIndexCallback setup
-	#     above will be called with the $ssl_id of the session and the 0-based index of the virtual host
-	#     the client sent its request to
-	# returns the index of the newly created SNI_server structure for future use
-	# this will be initialized only once and then reused when $sni_index != -1
-	$sni_index = $ssl->init_SNI($sni_index, [
-	    # see MatrixSSL.pm - init_SNI function
-	], $ssl_id);
-
-	# further initialization stuff after accepting the client
-	...
+        # further initialization stuff after accepting the client
+        ...
     }
 
     # secure communication with the client
