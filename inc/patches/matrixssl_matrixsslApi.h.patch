@@ -1,5 +1,5 @@
 --- matrixssl-3-7-2b-open-original/matrixssl/matrixsslApi.h	2015-03-18 20:57:06.000000000 +0000
-+++ matrixssl-3-7-2b-open/matrixssl/matrixsslApi.h	2016-02-25 11:14:29.000000000 +0000
++++ matrixssl-3-7-2b-open/matrixssl/matrixsslApi.h	2016-03-23 22:32:46.000000000 +0000
 @@ -182,6 +182,13 @@ PSPUBLIC int32 matrixSslCreateALPNext(ps
  /*
  	Server side APIs
@@ -14,7 +14,7 @@
  PSPUBLIC int32 matrixSslNewServerSession(ssl_t **ssl, const sslKeys_t *keys,
  				int32 (*certCb)(ssl_t *ssl, psX509Cert_t *cert, int32 alert),
  				sslSessOpts_t *options);
-@@ -189,7 +196,7 @@ PSPUBLIC int32 matrixSslSetCipherSuiteEn
+@@ -189,13 +196,13 @@ PSPUBLIC int32 matrixSslSetCipherSuiteEn
  				uint32 status);
  PSPUBLIC void matrixSslRegisterSNICallback(ssl_t *ssl,
  				void (*sni_cb)(void *ssl, char *hostname, int32 hostnameLen,
@@ -23,3 +23,10 @@
  
  #ifdef USE_ALPN
  PSPUBLIC void matrixSslRegisterALPNCallback(ssl_t *ssl,
+ 			void (*srv_alpn_cb)(void *ssl, short protoCount,
+ 			char *proto[MAX_PROTO_EXT],	int32 protoLen[MAX_PROTO_EXT],
+-			int32 *index));
++			int32 *index, void *userPtr, int32 ssl_id), void *srv_alpn_cb_userPtr, int32 srv_alpn_cb_ssl_id);
+ #endif
+ 
+ #ifdef USE_STATELESS_SESSION_TICKETS

@@ -1,5 +1,5 @@
 --- matrixssl-3-7-2b-open-original/matrixssl/sslEncode.c	2015-07-07 00:03:28.000000000 +0000
-+++ matrixssl-3-7-2b-open/matrixssl/sslEncode.c	2016-02-24 21:04:19.000000000 +0000
++++ matrixssl-3-7-2b-open/matrixssl/sslEncode.c	2016-03-23 22:32:46.000000000 +0000
 @@ -39,6 +39,10 @@
  #ifndef USE_ONLY_PSK_CIPHER_SUITE
  static int32 writeCertificate(ssl_t *ssl, sslBuf_t *out, int32 notEmpty);
@@ -150,7 +150,7 @@
  	messageSize += extLen;
  
  /*
-@@ -2936,6 +3014,31 @@ static int32 writeServerHello(ssl_t *ssl
+@@ -2936,6 +3014,29 @@ static int32 writeServerHello(ssl_t *ssl
  		}
  #endif
  
@@ -165,8 +165,6 @@
 +#endif ENABLE_CERTIFICATE_STATUS_REQUEST
 +
 +#ifdef ENABLE_SIGNED_CERTIFICATE_TIMESTAMP
-+psTraceIntInfo("Send SCT size %d\n", ssl->SCT_size);
-+
 +		if (ssl->SCT_request) {
 +			*c = (EXT_SIGNED_CERTIFICATE_TIMESTAMP & 0xFF00) >> 8; c++;
 +			*c = EXT_SIGNED_CERTIFICATE_TIMESTAMP & 0xFF; c++;
@@ -182,7 +180,7 @@
  #ifdef ENABLE_SECURE_REHANDSHAKES
  		if (ssl->secureRenegotiationFlag == PS_TRUE) {
  			/* RenegotiationInfo*/
-@@ -3757,6 +3860,7 @@ static int32 writeMultiRecordCertificate
+@@ -3757,6 +3858,7 @@ static int32 writeMultiRecordCertificate
  }
  #endif /* USE_SERVER_SIDE_SSL || USE_CLIENT_AUTH */
  
@@ -190,7 +188,7 @@
  /******************************************************************************/
  /*
  	Write a Certificate message.
-@@ -3881,6 +3985,218 @@ static int32 writeCertificate(ssl_t *ssl
+@@ -3881,6 +3983,218 @@ static int32 writeCertificate(ssl_t *ssl
  	}
  	return MATRIXSSL_SUCCESS;
  }
@@ -409,7 +407,7 @@
  #endif /* USE_ONLY_PSK_CIPHER_SUITE */
  
  /******************************************************************************/
-@@ -4097,7 +4413,7 @@ int32 matrixSslEncodeClientHello(ssl_t *
+@@ -4097,7 +4411,7 @@ int32 matrixSslEncodeClientHello(ssl_t *
  		/* If ciphers are specified it is two bytes length and two bytes data */
  		cipherLen = 2;
  		for (i = 0; i < cipherSpecLen; i++) {

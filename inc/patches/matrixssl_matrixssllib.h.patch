@@ -1,5 +1,5 @@
 --- matrixssl-3-7-2b-open-original/matrixssl/matrixssllib.h	2015-03-18 20:57:06.000000000 +0000
-+++ matrixssl-3-7-2b-open/matrixssl/matrixssllib.h	2016-02-25 11:17:10.000000000 +0000
++++ matrixssl-3-7-2b-open/matrixssl/matrixssllib.h	2016-03-23 22:32:46.000000000 +0000
 @@ -1164,6 +1164,7 @@ typedef int32 psX509Cert_t;
  #define SSL_ALERT_PROTOCOL_VERSION			70
  #define SSL_ALERT_INSUFFICIENT_SECURITY		71
@@ -45,7 +45,7 @@
  #define EXT_SESSION_TICKET				35
  #define EXT_RENEGOTIATION_INFO			0xFF01
  
-@@ -1744,7 +1750,10 @@ typedef struct ssl {
+@@ -1744,13 +1750,18 @@ typedef struct ssl {
  #ifdef USE_SERVER_SIDE_SSL
  	uint16			disabledCiphers[SSL_MAX_DISABLED_CIPHERS];
  	void			(*sni_cb)(void *ssl, char *hostname, int32 hostnameLen,
@@ -57,7 +57,16 @@
  #ifdef USE_ALPN
  	void			(*srv_alpn_cb)(void *ssl, short protoCount,
  						char *proto[MAX_PROTO_EXT],
-@@ -1874,6 +1883,20 @@ typedef struct ssl {
+-						int32 protoLen[MAX_PROTO_EXT], int32 *index);
++						int32 protoLen[MAX_PROTO_EXT], int32 *index, void *userPtr, int32 ssl_id);
+ 	char			*alpn; /* proto user has agreed to use */
+ 	int32			alpnLen;
++	void			*srv_alpn_cb_userPtr;
++	int32			srv_alpn_cb_ssl_id;
+ #endif /* USE_ALPN */
+ #endif /* USE_SERVER_SIDE_SSL */
+ #ifdef USE_CLIENT_SIDE_SSL
+@@ -1874,6 +1885,20 @@ typedef struct ssl {
  	void *memAllocPtr; /* Will be passed to psOpenPool for each call
  							related to this session */
  	void *userPtr;
@@ -78,7 +87,7 @@
  } ssl_t;
  
  /* Type to pass optional features to NewSession calls */
-@@ -1994,7 +2017,7 @@ extern int32 matrixSessionTicketLen(void
+@@ -1994,7 +2019,7 @@ extern int32 matrixSessionTicketLen(void
  /*
  	cipherSuite.c
  */

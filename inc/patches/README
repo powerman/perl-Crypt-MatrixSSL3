@@ -1,7 +1,12 @@
-- added support for shared session cache using shared memory
-- added support for TLS_FALLBACK_SCSV
-- added partial support for "status_request" TLS extension
-- added support for Certificate Transparency through the "signed_certificate_timestamp" TLS extension
-- implemented browser preferred ciphers - selecting our strongest ciphers
-  from the client supported list
-- bug fixes
+1) Added support for shared session cache using shared memory between multiple
+   processes - this is available only on Linux and requires the multithreading
+   synchronization mechanism already present in matrixSSL
+2) Added support for TLS_FALLBACK_SCSV
+3) Added partial support for "status_request" TLS extension - this is only
+   partially implemented because it doesn't handle responder IDs or OCSP
+   extensions received with the "status_request" TLS extension
+4) Added support for Certificate Transparency through the
+   "signed_certificate_timestamp" TLS extension
+5) Implemented server preferred ciphers - selecting matrixSSL strongest
+   ciphers from the client supported list
+6) Bug fixes
