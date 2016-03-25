@@ -775,10 +775,18 @@ Are the same as refresh_OCSP_staple above.
 
 =item $SCT_params
 
+=over
+
+=item *
+
 Perl scalar contains a file name with prepared extension data.
-or
+
+=item *
+
 Perl array reference with file names of SCT binary structures that the
 function will use to create the extension data.
+
+=back
 
 =back
 
