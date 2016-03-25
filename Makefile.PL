@@ -351,7 +351,7 @@ if (-d 'inc/patches') {
     if (which('patch')) {
         for my $file (glob 'inc/patches/*.patch') {
             # replacing \n with \n will change \n to \r\n on Win, without this patch.exe will crash
-            system "cd $mxbase && perl -pe \"s/\\n/\\n/\" ../../$file | patch -p1 -N";
+            system "cd \Q$mxbase\E && perl -pe \"s/\\n/\\n/\" ../../\Q$file\E | patch -p1 -N";
         }
     }
     else {
