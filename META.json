@@ -29,7 +29,8 @@
             "Archive::Tar" : "0",
             "ExtUtils::Constant" : "0",
             "ExtUtils::MakeMaker" : "6.63_03",
-            "File::ShareDir::Install" : "0.06"
+            "File::ShareDir::Install" : "0.06",
+            "File::Which" : "0"
          }
       },
       "develop" : {
@@ -67,27 +68,27 @@
    "provides" : {
       "Crypt::MatrixSSL3" : {
          "file" : "lib/Crypt/MatrixSSL3.pm",
-         "version" : "v3.7.4"
+         "version" : "v3.7.5"
       },
       "Crypt::MatrixSSL3::Client" : {
          "file" : "lib/Crypt/MatrixSSL3.pm",
-         "version" : "v3.7.4"
+         "version" : "v3.7.5"
       },
       "Crypt::MatrixSSL3::HelloExt" : {
          "file" : "lib/Crypt/MatrixSSL3.pm",
-         "version" : "v3.7.4"
+         "version" : "v3.7.5"
       },
       "Crypt::MatrixSSL3::Keys" : {
          "file" : "lib/Crypt/MatrixSSL3.pm",
-         "version" : "v3.7.4"
+         "version" : "v3.7.5"
       },
       "Crypt::MatrixSSL3::Server" : {
          "file" : "lib/Crypt/MatrixSSL3.pm",
-         "version" : "v3.7.4"
+         "version" : "v3.7.5"
       },
       "Crypt::MatrixSSL3::SessID" : {
          "file" : "lib/Crypt/MatrixSSL3.pm",
-         "version" : "v3.7.4"
+         "version" : "v3.7.5"
       }
    },
    "release_status" : "stable",
@@ -102,7 +103,7 @@
          "web" : "https://github.com/powerman/perl-Crypt-MatrixSSL3"
       }
    },
-   "version" : "v3.7.4",
+   "version" : "v3.7.5",
    "x_contributors" : [
       "Alex Efros <powerman@cpan.org>",
       "vonydev <vony@teamevolve.ro>"
