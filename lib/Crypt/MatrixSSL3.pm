@@ -309,7 +309,7 @@ __END__
 
 =encoding utf8
 
-=for stopwords authStatus SessID HelloExt dualvar SCT ALPN SCTs certValidator extensionCback ALPNcb VHIndexCallback
+=for stopwords authStatus SessID HelloExt dualvar SCT ALPN SCTs certValidator extensionCback ALPNcb VHIndexCallback ALPNCallback
 
 =head1 NAME
 
@@ -1055,6 +1055,8 @@ Returns the index of the internal default server structure used for
 registering the parameters. This MUST be saved after the first
 call.
 
+=back
+
 =head3 load_OCSP_staple
 
     $rc = $ssl->load_OCSP_staple( $DERfile );
@@ -1234,8 +1236,8 @@ and execution will continue assuming callback returned -1.
 =head2 ALPNCallback
 
 Will be called when a client sends an ALPN extension and a successful
-application protocol has been negociated. If the server doesn't implement
-any of the client's protocols the XS module will send an appropiate
+application protocol has been negotiated. If the server doesn't implement
+any of the client's protocols the XS module will send an appropriate
 response and the client will receive a SSL_ALERT_NO_APP_PROTOCOL alert.
 
 Will be called with 2 parameters:
