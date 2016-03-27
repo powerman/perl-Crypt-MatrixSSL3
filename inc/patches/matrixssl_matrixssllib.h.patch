@@ -1,5 +1,5 @@
 --- matrixssl-3-7-2b-open-original/matrixssl/matrixssllib.h	2015-03-18 20:57:06.000000000 +0000
-+++ matrixssl-3-7-2b-open/matrixssl/matrixssllib.h	2016-03-23 22:32:46.000000000 +0000
++++ matrixssl-3-7-2b-open/matrixssl/matrixssllib.h	2016-03-27 16:07:02.000000000 +0000
 @@ -1164,6 +1164,7 @@ typedef int32 psX509Cert_t;
  #define SSL_ALERT_PROTOCOL_VERSION			70
  #define SSL_ALERT_INSUFFICIENT_SECURITY		71
@@ -66,7 +66,17 @@
  #endif /* USE_ALPN */
  #endif /* USE_SERVER_SIDE_SSL */
  #ifdef USE_CLIENT_SIDE_SSL
-@@ -1874,6 +1885,20 @@ typedef struct ssl {
+@@ -1774,6 +1785,9 @@ typedef struct ssl {
+ 	uint32			fragIndex;	/* How much data has been written to msg */
+ 	uint32			fragTotal;	/* Total length of fragmented message */
+ 
++	/* Pointer to the supported cipher suites */
++	sslCipherSpec_t *supportedCiphers;
++
+ 	/* Pointer to the negotiated cipher information */
+ 	sslCipherSpec_t	*cipher;
+ 
+@@ -1874,6 +1888,20 @@ typedef struct ssl {
  	void *memAllocPtr; /* Will be passed to psOpenPool for each call
  							related to this session */
  	void *userPtr;
@@ -87,11 +97,13 @@
  } ssl_t;
  
  /* Type to pass optional features to NewSession calls */
-@@ -1994,7 +2019,7 @@ extern int32 matrixSessionTicketLen(void
+@@ -1994,7 +2022,9 @@ extern int32 matrixSessionTicketLen(void
  /*
  	cipherSuite.c
  */
 -extern sslCipherSpec_t *sslGetCipherSpec(ssl_t *ssl, uint32 cid);
++extern sslCipherSpec_t *supportedCiphers_all;
++extern sslCipherSpec_t *supportedCiphers_http2;
 +extern sslCipherSpec_t *sslGetCipherSpec(ssl_t *ssl, uint32 cid, int16 *index);
  extern int32 sslGetCipherSpecListLen(ssl_t *ssl);
  extern int32 sslGetCipherSpecList(ssl_t *ssl, unsigned char *c, int32 len,

@@ -9,4 +9,21 @@
    "signed_certificate_timestamp" TLS extension
 5) Implemented server preferred ciphers - selecting matrixSSL strongest
    ciphers from the client supported list
-6) Bug fixes
+6) Changed the way CLIENT_HELLO message is processed to enforce HTTP/2
+   security restrictions.
+
+   Was:
+     - select cipher
+     - process extensions
+
+   Current:
+     - process SNI extension (if provided)
+     - process ALPN extension (if provided)
+       - if application protocol is HTTP/2 (h2)
+         - make sure TLS 1.2 is used - return SSL_ALERT_INSUFFICIENT_SECURITY otherwise
+         - replace the list of supported ciphers with the one approved by HTTP/2 specs
+           https://http2.github.io/http2-spec/#BadCipherSuites
+     - select cipher (from the HTTP/2 approved list)
+     - process other extensions
+
+7) Bug fixes

@@ -32,6 +32,14 @@ my @cOptions = (
 
     # matrixsslConfig.h Cipher Suites
 
+    # ** WARNING **
+    # If you enable DHE cipher suites you *must*:
+    # - enable USE_DH in the options below (enabled by default)
+    # - load DH params for the session keys by using $keys->load_DH_params( $DH_params_file )
+    #
+    # If you plan to support HTTP/2 you are require by specification to suuport the following cipher
+    #   TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+
     #******************************************************************************
     #
     #   Recommended cipher suites:
@@ -59,16 +67,16 @@ my @cOptions = (
     #'USE_TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA',
     #'USE_TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256', # TLS 1.2
     #'USE_TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384', # TLS 1.2
-    #'USE_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256', # TLS 1.2
-    #'USE_TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384', # TLS 1.2
+    #'USE_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256', # TLS 1.2 - HTTP/2 approved
+    #'USE_TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384', # TLS 1.2 - HTTP/2 approved
 
     # Ephemeral ECC DH keys, RSA certificates
-    'USE_TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA', #x
+    'USE_TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA',
     'USE_TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA',
     'USE_TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384', # TLS 1.2
     'USE_TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256', # TLS 1.2
-    'USE_TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384', # TLS 1.2
-    'USE_TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256', # TLS 1.2
+    'USE_TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384', # TLS 1.2 - HTTP/2 approved
+    'USE_TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256', # TLS 1.2 - HTTP/2 approved and *required*
 
     # Non-Ephemeral ECC DH keys, ECC DSA certificates
     #'USE_TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA',
@@ -214,9 +222,6 @@ my @cOptions = (
 
     # matrixSslConfig.h - Enable certificate transparency handling
     'ENABLE_SIGNED_CERTIFICATE_TIMESTAMP',
-
-    # matrixsslApi.h - Enable DH params loading
-    'REQUIRE_DH_PARAMS',
 
     # matrixsslConfig.h - enable ALPN
     'USE_ALPN',
