@@ -1,5 +1,5 @@
 --- matrixssl-3-7-2b-open-original/matrixssl/matrixssl.c	2015-03-18 20:57:06.000000000 +0000
-+++ matrixssl-3-7-2b-open/matrixssl/matrixssl.c	2016-02-25 11:16:22.000000000 +0000
++++ matrixssl-3-7-2b-open/matrixssl/matrixssl.c	2016-03-27 16:07:02.000000000 +0000
 @@ -56,7 +56,12 @@ static psMutex_t			g_sessTicketLock;
  #endif
  #endif /* USE_MULTITHREADING */
@@ -46,7 +46,22 @@
  #ifdef USE_MULTITHREADING
  	psUnlockMutex(&sessionTableLock);
  	psDestroyMutex(&sessionTableLock);
-@@ -1117,7 +1138,7 @@ int32 matrixSslNewSession(ssl_t **ssl, c
+@@ -1092,6 +1113,14 @@ int32 matrixSslNewSession(ssl_t **ssl, c
+ 	lssl->nonceCtrLen = TLS_GCM_NONCE_LEN;
+ #endif
+ 
++	
++/*	By default the session has access to all ciphers.
++	If we process an ALPN extension and the negociated application protocol if HTTP/2
++	the session will have access only to the ciphers not blacklisted in HTTP/2 specs.
++	https://http2.github.io/http2-spec/#BadCipherSuites
++*/
++	lssl->supportedCiphers = supportedCiphers_all;
++
+ /*
+ 	Data buffers
+ */
+@@ -1117,7 +1146,7 @@ int32 matrixSslNewSession(ssl_t **ssl, c
  
  	lssl->sPool = pool;
  	lssl->keys = (sslKeys_t*)keys;
@@ -55,7 +70,7 @@
  	sslActivateReadCipher(lssl);
  	sslActivateWriteCipher(lssl);
  
-@@ -1298,7 +1319,7 @@ int32 matrixSslNewSession(ssl_t **ssl, c
+@@ -1298,7 +1327,7 @@ int32 matrixSslNewSession(ssl_t **ssl, c
  
  		lssl->hsState = SSL_HS_SERVER_HELLO;
  		if (session != NULL && session->cipherId != SSL_NULL_WITH_NULL_NULL) {
@@ -64,7 +79,7 @@
  			if (lssl->cipher == NULL) {
  				psTraceInfo("Invalid session id to matrixSslNewSession\n");
  			} else {
-@@ -1551,6 +1572,12 @@ void matrixSslDeleteSession(ssl_t *ssl)
+@@ -1551,6 +1580,12 @@ void matrixSslDeleteSession(ssl_t *ssl)
  		psFree(ssl->alpn, ssl->sPool); ssl->alpn = NULL;
  	}
  #endif
@@ -77,7 +92,7 @@
  /*
  	The cipher and mac contexts are inline in the ssl structure, so
  	clearing the structure clears those states as well.
-@@ -2107,7 +2134,7 @@ int32 matrixServerSetKeysSNI(ssl_t *ssl,
+@@ -2107,7 +2142,7 @@ int32 matrixServerSetKeysSNI(ssl_t *ssl,
  	if (ssl->sni_cb) {
  		ssl->extFlags.sni = 1; /* extension was actually handled */
  		keys = NULL;
@@ -86,7 +101,7 @@
  		if (keys) {
  			ssl->keys = keys;
  			return 0;
-@@ -2495,7 +2522,7 @@ int32 matrixUnlockSessionTicket(ssl_t *s
+@@ -2495,7 +2530,7 @@ int32 matrixUnlockSessionTicket(ssl_t *s
  	cipherSuite += *enc; enc++;
  
  	/* Force cipher suite */

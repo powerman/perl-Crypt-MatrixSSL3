@@ -1,17 +1,21 @@
 --- matrixssl-3-7-2b-open-original/matrixssl/sslDecode.c	2015-03-18 20:57:06.000000000 +0000
-+++ matrixssl-3-7-2b-open/matrixssl/sslDecode.c	2016-03-23 22:34:29.000000000 +0000
-@@ -1322,9 +1322,16 @@ static int32 parseSSLHandshake(ssl_t *ss
++++ matrixssl-3-7-2b-open/matrixssl/sslDecode.c	2016-03-27 19:43:06.000000000 +0000
+@@ -1320,11 +1320,18 @@ static int32 addCompressCount(ssl_t *ssl
+ */
+ static int32 parseSSLHandshake(ssl_t *ssl, char *inbuf, uint32 len)
  {
- 	unsigned char	*c, *end;
+-	unsigned char	*c, *end;
++	unsigned char	*c, *tmp_c, *end;
  	unsigned char	hsType;
+-	int32			rc, i = 0;
 +	// variables used when walking through client provided cipher list
 +	// all indexes are relative to our supportedCiphers list (see cipherSuite.c)
 +	//   cipherIndex is the current tested cipher
 +	//   bestCipherIndex is the strongest cipher according to our list
 +	//   firstCipherIndex is the first cipher in the client's list
-+	int16	 cipherIndex, bestCipherIndex, firstCipherIndex;
- 	int32			rc, i = 0;
-+	sslCipherSpec_t	*foundCipher;
++	int16			cipherIndex, bestCipherIndex, firstCipherIndex;
++	int32			rc, i = 0, resumedCipher = 0, isResumedCipher = 0;
++	sslCipherSpec_t	*foundCipher, *bestFoundCipher;
  	short			renegotiationExt;
 -	uint32			hsLen, extLen, extType, cipher = 0;
 +	uint32			hsLen, extLen, extType, cipher = 0, bestCipher = 0;
@@ -70,7 +74,7 @@
  */
  			if (ssl->myVerifyDataLen == 0) {
  				extLen = 0; /* just overloading existing var */
-@@ -1923,10 +1946,44 @@ SKIP_HSHEADER_PARSE:
+@@ -1923,30 +1946,251 @@ SKIP_HSHEADER_PARSE:
  					if (cipher == TLS_EMPTY_RENEGOTIATION_INFO_SCSV) {
  						ssl->secureRenegotiationFlag = PS_TRUE;
  					}
@@ -107,44 +111,230 @@
  				}
  			}
  #endif
++
++/*			Save current progress because before doing anything else we need to look
++			for SNI and ALPN extensions.
++			We look for SNI because virtual hosts may implement different protocols
++			and this will affect how the ALPN extension is handled.
++			We look for ALPN because if the selected protocol is HTTP/2 we will only
++			be able to use ciphers that are not blacklisted.
++*/
++			tmp_c = c;
++
++			c+= suiteLen;
++
++/*
++			Compression parameters
++			Overloading extLen in this section
++*/
++			if (end - c < 1) {
++				ssl->err = SSL_ALERT_DECODE_ERROR;
++				psTraceInfo("Invalid compression header length\n");
++				return MATRIXSSL_ERROR;
++			}
++			extLen = *c++;
++			if ((uint32)(end - c) < extLen) {
++				ssl->err = SSL_ALERT_DECODE_ERROR;
++				psTraceInfo("Invalid compression header length\n");
++				return MATRIXSSL_ERROR;
++			}
++			c += extLen;
++
++			if (c != end) {
++				if (end - c < 2) {
++					ssl->err = SSL_ALERT_DECODE_ERROR;
++					psTraceInfo("Invalid extension header len\n");
++					return MATRIXSSL_ERROR;
++				}
++				extLen = *c << 8; c++; /* Total length of list */
++				extLen += *c; c++;
++				/* extLen must be minimum 2 b type 2 b len and 0 b value */
++				if ((uint32)(end - c) < extLen || extLen < 4) {
++					ssl->err = SSL_ALERT_DECODE_ERROR;
++					psTraceInfo("Invalid extension header len\n");
++					return MATRIXSSL_ERROR;
++				}
++				while (c != end) {
++					extType = *c << 8; c++; /* Individual hello ext */
++					extType += *c; c++;
++					if (end - c < 2) {
++						ssl->err = SSL_ALERT_DECODE_ERROR;
++						psTraceInfo("Invalid extension header len\n");
++						return MATRIXSSL_ERROR;
++					}
++					extLen = *c << 8; c++; /* length of one extension */
++					extLen += *c; c++;
++					/* Minimum extension value len is 0 bytes */
++					if ((uint32)(end - c) < extLen) {
++						ssl->err = SSL_ALERT_DECODE_ERROR;
++						psTraceInfo("Invalid extension header len\n");
++						return MATRIXSSL_ERROR;
++					}
++#ifdef MATRIX_DEBUG
++					psTraceIntInfo("Ext type before cipher selection = %d\n", extType);
++#endif
++
++					if (extType == EXT_SNI) {
++#ifdef MATRIX_DEBUG
++						psTraceInfo("Handling SNI extension before selecting cipher");
++#endif
++						/* Must hold 2 b len 1 b zero 2 b len */
++						if (extLen < 3 + 2) {
++							psTraceInfo("Invalid server name ext len\n");
++							ssl->err = SSL_ALERT_ILLEGAL_PARAMETER;
++							return MATRIXSSL_ERROR;
++						}
++						/* Two length bytes.  May seem odd to ignore but
++							the inner length is repeated right below after
++							the expected 0x0 bytes */
++						i = *c << 8; c++;
++						i += *c; c++;
++						if (*c++ != 0x0) {
++							psTraceInfo("Expected host_name in SNI ext\n");
++							ssl->err = SSL_ALERT_ILLEGAL_PARAMETER;
++							return MATRIXSSL_ERROR;
++
++						}
++						extLen -= 3;
++						i = *c << 8; c++;
++						i += *c; c++;
++						extLen -= 2;	/* Length check covered above */
++						/* Arbitrary length cap between 1 and min(extlen,255) */
++						if ((int32)extLen < i || i > 255 || i <= 0) {
++							psTraceInfo("Invalid host name ext len\n");
++							ssl->err = SSL_ALERT_ILLEGAL_PARAMETER;
++							return MATRIXSSL_ERROR;
++						}
++						extLen -= i;
++						if (matrixServerSetKeysSNI(ssl, (char*)c, i) < 0) {
++							psTraceInfo("Server didn't load SNI keys\n");
++							ssl->err = SSL_ALERT_UNRECOGNIZED_NAME;
++							return MATRIXSSL_ERROR;
++						}
++						c += i;
++					}
++#ifdef USE_ALPN
++					if (extType == EXT_ALPN) {
++#ifdef MATRIX_DEBUG
++						psTraceInfo("Handling ALPN before selecting cipher\n");
++#endif
++						/* Must hold 2 b len 1 b zero 2 b len */
++						if (extLen < 2) {
++							psTraceInfo("Invalid ALPN ext len\n");
++							ssl->err = SSL_ALERT_ILLEGAL_PARAMETER;
++							return MATRIXSSL_ERROR;
++						}
++						/* Skip extension if server didn't register callback */
++						if (ssl->srv_alpn_cb) {
++							if ((rc = dealWithAlpnExt(ssl, c, extLen)) < 0) {
++								if (rc == PS_PROTOCOL_FAIL) {
++									/* This is a user space rejection */
++									psTraceInfo("User rejects ALPN ext\n");
++									ssl->err = SSL_ALERT_NO_APP_PROTOCOL;
++									return MATRIXSSL_ERROR;
++								} else if (rc == PS_ARG_FAIL) {
++									/* HTTP/2 selection with TLS < 1.2 */
++									psTraceInfo("HTTP/2 selection with TLS < 1.2\n");
++									ssl->err = SSL_ALERT_INSUFFICIENT_SECURITY;
++									return MATRIXSSL_ERROR;
++								}
++								psTraceInfo("Invalid ALPN ext\n");
++								ssl->err = SSL_ALERT_ILLEGAL_PARAMETER;
++								return MATRIXSSL_ERROR;
++							}
++						}
++					}
++#endif
++					c += extLen;
++				}
++			}
++
++/*			Now that we handled SNI and ALPN extensions we resume where we left */
++			c = tmp_c;
++
++/*          Select best cipher (if HTTP/2 was selected the ciphers list is replaced)
++			with supportedCiphers_http2
++*/
++
  			p = c + suiteLen;
 +
 +			// Setup to find the stronget cipher the client supports
-+			cipherIndex = -1; bestCipherIndex = 32767; firstCipherIndex = -1;
++			resumedCipher = 0; isResumedCipher = 0; cipherIndex = -1; bestCipherIndex = 32767; firstCipherIndex = -1;
 +
  			while (c < p) {
  				cipher = *c << 8; c++;
  				cipher += *c; c++;
-@@ -1941,12 +1998,25 @@ SKIP_HSHEADER_PARSE:
- 						break;
+ /*
+ 				A resumed session can only match the cipher originally
+-				negotiated. Otherwise, match the first cipher that we support
++				negotiated. Otherwise, match the best cipher we can support
+ */
+-				if (ssl->flags & SSL_FLAGS_RESUMED) {
++				if ((ssl->flags & SSL_FLAGS_RESUMED) && (isResumedCipher == 0)) {
++#ifdef MATRIX_DEBUG
+ 					psAssert(ssl->cipher != NULL);
++#endif
+ 					if (ssl->cipher->ident == cipher) {
+-						c = p;
+-						break;
++/*
++						Make sure the cipher we resume with is still supported
++*/						
++						if ((foundCipher = sslGetCipherSpec(ssl, cipher, &cipherIndex)) != NULL) {
++							resumedCipher = cipher;
++							isResumedCipher = 1;
++						}
  					}
- 				} else {
+-				} else {
 -					if ((ssl->cipher = sslGetCipherSpec(ssl, cipher)) != NULL) {
 -						c = p;
 -						break;
-+					if ((foundCipher = sslGetCipherSpec(ssl, cipher, &cipherIndex)) != NULL) {
-+						// Save the first cipher found - debuggin only
-+						if (firstCipherIndex == -1) firstCipherIndex = cipherIndex;
++				}
 +
-+						// Check if the current supported cipher index is lower than the best cipher index
-+						// this means that we found a stroner cipher and we must save it
-+						if (cipherIndex < bestCipherIndex) {
-+							bestCipherIndex = cipherIndex;
-+							ssl->cipher = foundCipher;
-+							bestCipher = cipher;
-+						}
++/*
++				Always walk through the entire list of cipher we support and select the best
++				cipher. If the resuming fails we will use the best cipher we found
++*/
++				if ((foundCipher = sslGetCipherSpec(ssl, cipher, &cipherIndex)) != NULL) {
++/*
++					Save the first cipher found - debuggin only
++*/
++					if (firstCipherIndex == -1) firstCipherIndex = cipherIndex;
++/*
++					Check if the current supported cipher index is lower than the best cipher index
++					this means that we found a stroner cipher and we must save it
++*/
++					if (cipherIndex < bestCipherIndex) {
++						bestCipherIndex = cipherIndex;
++						bestFoundCipher = foundCipher;
++						bestCipher = cipher;
  					}
  				}
  			}
 +			
-+			//if (firstCipherIndex != bestCipherIndex) psTraceInfo("Overriding client cipher preferences");
++#ifdef MATRIX_DEBUG
++			if (bestCipherIndex != 32767) {
++				if (firstCipherIndex != bestCipherIndex) psTraceInfo("Overriding client cipher preferences\n");
++				psTraceIntInfo("firstCipherIndex = %d\n", firstCipherIndex);
++				psTraceIntInfo("bestCipherIndex = %d\n", bestCipherIndex);
++			}
++#endif
 +
-+			// Use the best cipher we found
-+			if (cipherIndex > -1) cipher = bestCipher;
++/*
++			Use the best cipher we found
++*/
++			if (isResumedCipher) {
++				cipher = resumedCipher;
++			} else {
++				if (cipherIndex > -1) {
++					cipher = bestCipher;
++					ssl->cipher = bestFoundCipher;
++				}
++			}
  /*
  			If we fell to the default cipher suite, we didn't have
  			any in common with the client, or the client is being bad
-@@ -1955,7 +2025,7 @@ SKIP_HSHEADER_PARSE:
+@@ -1955,7 +2199,7 @@ SKIP_HSHEADER_PARSE:
  			if (ssl->cipher == NULL || ssl->cipher->ident != cipher ||
  					cipher == SSL_NULL_WITH_NULL_NULL) {
  				psTraceIntInfo("Can't support requested cipher: %d\n", cipher);
@@ -153,19 +343,97 @@
  				ssl->err = SSL_ALERT_HANDSHAKE_FAILURE;
  				return MATRIXSSL_ERROR;
  			}
-@@ -2496,6 +2566,36 @@ SKIP_HSHEADER_PARSE:
- 						}
+@@ -2051,6 +2295,10 @@ SKIP_HSHEADER_PARSE:
+ 						psTraceInfo("Invalid extension header len\n");
+ 						return MATRIXSSL_ERROR;
  					}
- #endif
++#ifdef MATRIX_DEBUG
++					psTraceIntInfo("Ext type = %d\n", extType);
++#endif
 +
+ #ifdef ENABLE_SECURE_REHANDSHAKES
+ /*
+ 					Handle incoming client extensions we support.
+@@ -2315,6 +2563,14 @@ SKIP_HSHEADER_PARSE:
+ 								matrixsslUpdateStat(ssl, RESUMPTIONS_STAT, 1);
+ #endif
+ 							} else {
++								/* If ssl->cipher is NULL that means the cipher found in the
++									ticket is no longer supported. Use the best cipher we have
++									available */
++								if (ssl->cipher == NULL) {
++									ssl->cipher = bestFoundCipher;
++									cipher = bestCipher;
++								}
++
+ 								/* If client sent a sessionId in the hello,
+ 									we can ignore that here now */
+ 								if (ssl->sessionIdLen > 0) {
+@@ -2436,66 +2692,36 @@ SKIP_HSHEADER_PARSE:
+ 						}
+ 						c++; extLen--;
+ 					}
+-					if (extType == EXT_SNI) {
+-						/* Must hold 2 b len 1 b zero 2 b len */
+-						if (extLen < 3 + 2) {
+-							psTraceInfo("Invalid server name ext len\n");
+-							ssl->err = SSL_ALERT_ILLEGAL_PARAMETER;
+-							return MATRIXSSL_ERROR;
+-						}
+-						/* Two length bytes.  May seem odd to ignore but
+-							the inner length is repeated right below after
+-							the expected 0x0 bytes */
+-						i = *c << 8; c++;
+-						i += *c; c++;
+-						if (*c++ != 0x0) {
+-							psTraceInfo("Expected host_name in SNI ext\n");
+-							ssl->err = SSL_ALERT_ILLEGAL_PARAMETER;
+-							return MATRIXSSL_ERROR;
+ 
+-						}
+-						extLen -= 3;
+-						i = *c << 8; c++;
+-						i += *c; c++;
+-						extLen -= 2;	/* Length check covered above */
+-						/* Arbitrary length cap between 1 and min(extlen,255) */
+-						if ((int32)extLen < i || i > 255 || i <= 0) {
+-							psTraceInfo("Invalid host name ext len\n");
+-							ssl->err = SSL_ALERT_ILLEGAL_PARAMETER;
+-							return MATRIXSSL_ERROR;
+-						}
+-						extLen -= i;
+-						if (matrixServerSetKeysSNI(ssl, (char*)c, i) < 0) {
+-							psTraceInfo("Server didn't load SNI keys\n");
+-							ssl->err = SSL_ALERT_UNRECOGNIZED_NAME;
+-							return MATRIXSSL_ERROR;
+-						}
+-						c += i;
+-					}
+-#ifdef USE_ALPN
+-					if (extType == EXT_ALPN) {
+-						/* Must hold 2 b len 1 b zero 2 b len */
+-						if (extLen < 2) {
+-							psTraceInfo("Invalid ALPN ext len\n");
 +#ifdef ENABLE_CERTIFICATE_STATUS_REQUEST
 +					if (extType == EXT_STATUS_REQUEST) {
 +						/* Must hold 1 b status type, 2 b list len, 2 b list len */
 +						if (extLen < 1 + 2 + 2) {
 +							psTraceInfo("Invalid status request ext len\n");
-+							ssl->err = SSL_ALERT_ILLEGAL_PARAMETER;
-+							return MATRIXSSL_ERROR;
-+						}
+ 							ssl->err = SSL_ALERT_ILLEGAL_PARAMETER;
+ 							return MATRIXSSL_ERROR;
+ 						}
+-						/* Skip extension if server didn't register callback */
+-						if (ssl->srv_alpn_cb) {
+-							if ((rc = dealWithAlpnExt(ssl, c, extLen)) < 0) {
+-								if (rc == PS_PROTOCOL_FAIL) {
+-									/* This is a user space rejection */
+-									psTraceInfo("User rejects ALPN ext\n");
+-									ssl->err = SSL_ALERT_NO_APP_PROTOCOL;
+-									return MATRIXSSL_ERROR;
+-								}
+-								psTraceInfo("Invalid ALPN ext\n");
+-								ssl->err = SSL_ALERT_ILLEGAL_PARAMETER;
+-								return MATRIXSSL_ERROR;
 +
 +						if (*c == CERTIFICATE_STATUS_OCSP) {
 +/*							For now OCSP staples are supported only if the client
@@ -175,10 +443,10 @@
 +								/* Only respond if we have something to send */
 +								if (ssl->status_request_DER_size > 0)
 +									ssl->status_request = 1;
-+							}
-+						}
-+					}
-+#endif
+ 							}
+ 						}
+ 					}
+ #endif
 +
 +#ifdef ENABLE_SIGNED_CERTIFICATE_TIMESTAMP
 +					if (extType == EXT_SIGNED_CERTIFICATE_TIMESTAMP) {
@@ -190,7 +458,7 @@
  					c += extLen;
  				}
  			}
-@@ -2652,18 +2752,30 @@ SKIP_HSHEADER_PARSE:
+@@ -2652,18 +2878,30 @@ SKIP_HSHEADER_PARSE:
  			need to worry about matching resumed cipher suite.
  */
  			p = c + suiteLen;
@@ -225,7 +493,7 @@
  				ssl->err = SSL_ALERT_HANDSHAKE_FAILURE;
  				psTraceInfo("No matching cipher for SSL handshake\n");
  				return MATRIXSSL_ERROR;
-@@ -3471,7 +3583,7 @@ PROTOCOL_DETERMINED:
+@@ -3471,7 +3709,7 @@ PROTOCOL_DETERMINED:
  				if (memcmp(ssl->sessionId, c, sessionIdLen) == 0) {
  					ssl->flags |= SSL_FLAGS_RESUMED;
  				} else {
@@ -234,7 +502,7 @@
  #ifndef USE_PKCS11_TLS_ALGS
  					memset(ssl->sec.masterSecret, 0x0, SSL_HS_MASTER_SIZE);
  #endif
-@@ -3489,7 +3601,7 @@ PROTOCOL_DETERMINED:
+@@ -3489,7 +3727,7 @@ PROTOCOL_DETERMINED:
  			c += sessionIdLen;
  		} else {
  			if (ssl->sessionIdLen > 0) {
@@ -243,7 +511,7 @@
  #ifndef USE_PKCS11_TLS_ALGS
  				memset(ssl->sec.masterSecret, 0x0, SSL_HS_MASTER_SIZE);
  #endif
-@@ -3524,7 +3636,7 @@ PROTOCOL_DETERMINED:
+@@ -3524,7 +3762,7 @@ PROTOCOL_DETERMINED:
  				return MATRIXSSL_ERROR;
  			}
  		} else {
@@ -252,7 +520,7 @@
  				ssl->err = SSL_ALERT_HANDSHAKE_FAILURE;
  				psTraceIntInfo("Can't support requested cipher: %d\n", cipher);
  				return MATRIXSSL_ERROR;
-@@ -5258,7 +5370,7 @@ static int32 dealWithAlpnExt(ssl_t *ssl,
+@@ -5258,7 +5496,7 @@ static int32 dealWithAlpnExt(ssl_t *ssl,
  	userChoice = MAX_PROTO_EXT;
  
  	/* Already tested if callback exists */
@@ -261,3 +529,38 @@
  
  	if (userChoice == MAX_PROTO_EXT) {
  		/* User chose to completely ignore. No reply extension will be sent */
+@@ -5292,6 +5530,10 @@ static int32 dealWithAlpnExt(ssl_t *ssl,
+ 	ssl->alpn = proto[userChoice];
+ 	ssl->alpnLen = protoLen[userChoice];
+ 
++#ifdef MATRIX_DEBUG
++	_psTraceStr("ALPN: Protocol selected: %.*s\n", ssl->alpnLen, ssl->alpn);
++#endif
++
+ 	while (i > 0) {
+ 		if (i - 1 != userChoice) {
+ 			psFree(proto[i - 1], ssl->sPool);
+@@ -5299,6 +5541,23 @@ static int32 dealWithAlpnExt(ssl_t *ssl,
+ 		i--;
+ 	}
+ 
++	if ((ssl->alpnLen == 2) && !strncmp(ssl->alpn, "h2", 2)) {
++#ifdef MATRIX_DEBUG
++		psTraceInfo("ALPN: For protocol HTTP/2 we must enforce TLS 1.2 and use approved cipher suites\n");
++		psTraceIntInfo("ssl->minVer: %d\n", ssl->minVer);
++		psTraceIntInfo("ssl->majVer: %d\n", ssl->majVer);
++		psTraceIntInfo("ssl->reqMinVer: %d\n", ssl->reqMinVer);
++		psTraceIntInfo("ssl->reqMajVer: %d\n", ssl->reqMajVer);
++#endif
++
++		if (ssl->minVer < TLS_1_2_MIN_VER) {
++			return PS_ARG_FAIL;
++		}
++
++		// only using HTTP/2 approved ciphers
++		ssl->supportedCiphers = supportedCiphers_http2;
++	}
++
+ 	return PS_SUCCESS;
+ }
+ #endif /* USE_ALPN && USE_SERVER_SIDE_SSL */
