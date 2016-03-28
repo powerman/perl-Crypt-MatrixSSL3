@@ -2,6 +2,11 @@ Revision history for Perl extension Crypt::MatrixSSL3.
 
 {{$NEXT}}
 
+v3.7.6  2016-03-28 11:29:21 EEST
+	- Added security requirements for HTTP/2 application protocols
+	- Better cipher handling for resumed sessions
+	- Bugfix: correctly setting cipher for resumed sessions
+
 v3.7.5  2016-03-25 10:14:59 EET
 	- virtual hosts (SNI)/default server initialization now uses
 	  hashes instead of arrays making it easier to use and add
