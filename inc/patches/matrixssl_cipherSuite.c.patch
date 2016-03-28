@@ -1,5 +1,5 @@
 --- matrixssl-3-7-2b-open-original/matrixssl/cipherSuite.c	2015-03-18 20:57:06.000000000 +0000
-+++ matrixssl-3-7-2b-open/matrixssl/cipherSuite.c	2016-03-27 16:07:02.000000000 +0000
++++ matrixssl-3-7-2b-open/matrixssl/cipherSuite.c	2016-03-28 06:53:07.000000000 +0000
 @@ -569,7 +569,7 @@ int32 csRsaDecryptPriv(psPool_t *pool, p
  /******************************************************************************/
  
@@ -108,15 +108,52 @@
  #ifdef USE_SERVER_SIDE_SSL
  /******************************************************************************/
  /*
-@@ -1445,6 +1537,7 @@ int32 matrixSslSetCipherSuiteEnabledStat
- 			uint32 flags)
- {
- 	uint16	i, j;
-+	sslCipherSpec_t *supportedCiphers = ssl->supportedCiphers;
- 
- 	if (ssl && !(ssl->flags & SSL_FLAGS_SERVER)) {
- 		return PS_UNSUPPORTED_FAIL;
-@@ -1777,33 +1870,33 @@ int32 eccSuitesSupported(ssl_t *ssl, uin
+@@ -1452,17 +1544,40 @@ int32 matrixSslSetCipherSuiteEnabledStat
+ 	if (flags != PS_TRUE && flags != PS_FALSE) {
+ 		return PS_ARG_FAIL;
+ 	}
+-	for (i = 0; supportedCiphers[i].ident != SSL_NULL_WITH_NULL_NULL; i++) {
+-		if (supportedCiphers[i].ident == cipherId) {
++/*
++	Disable/enable cipher from the HTTP/2 approved list first. We only handle here
++	the global case. Per session cipher enabling/disabling is done in the next
++	loop
++*/
++	if (ssl == NULL) {
++		for (i = 0; _supportedCiphers_http2[i].ident != SSL_NULL_WITH_NULL_NULL; i++) {
++			if (_supportedCiphers_http2[i].ident == cipherId) {
++/*
++				Global status of cipher suite.  Disabled status takes
++				precident over session setting
++*/
++				if (flags == PS_TRUE) {
++					_supportedCiphers_http2[i].flags &= ~CRYPTO_FLAGS_DISABLED;
++				} else {
++					_supportedCiphers_http2[i].flags |= CRYPTO_FLAGS_DISABLED;
++				}
++
++				break;
++			}
++		}
++	}
++
++	for (i = 0; _supportedCiphers_all[i].ident != SSL_NULL_WITH_NULL_NULL; i++) {
++		if (_supportedCiphers_all[i].ident == cipherId) {
+ 			if (ssl == NULL) {
+ /*
+ 				Global status of cipher suite.  Disabled status takes
+ 				precident over session setting
+ */
+ 				if (flags == PS_TRUE) {
+-					supportedCiphers[i].flags &= ~CRYPTO_FLAGS_DISABLED;
++					_supportedCiphers_all[i].flags &= ~CRYPTO_FLAGS_DISABLED;
+ 				} else {
+-					supportedCiphers[i].flags |= CRYPTO_FLAGS_DISABLED;
++					_supportedCiphers_all[i].flags |= CRYPTO_FLAGS_DISABLED;
+ 				}
+ 				return PS_SUCCESS;
+ 			} else {
+@@ -1777,33 +1892,33 @@ int32 eccSuitesSupported(ssl_t *ssl, uin
  	int32	i = 0;
  
  	if (cipherSpecLen == 0) {
@@ -175,7 +212,7 @@
  			return 1;
  		}
  	} else {
-@@ -1874,10 +1967,15 @@ int32 csCheckCertAgainstCipherSuite(int3
+@@ -1874,10 +1989,15 @@ int32 csCheckCertAgainstCipherSuite(int3
  	Lookup the given cipher spec ID and return a pointer to the structure
  	if found.  This is used when negotiating security, to find out what suites
  	we support.
@@ -192,7 +229,7 @@
  #ifdef USE_SERVER_SIDE_SSL
  	int16	j;
  #endif /* USE_SERVER_SIDE_SSL */
-@@ -1953,11 +2051,13 @@ sslCipherSpec_t *sslGetCipherSpec(ssl_t 
+@@ -1953,11 +2073,13 @@ sslCipherSpec_t *sslGetCipherSpec(ssl_t 
  			/*	Unusable due to key material not available? */
  #ifdef VALIDATE_KEY_MATERIAL
  			if (haveKeyMaterial(ssl, supportedCiphers[i].type, 0) == PS_SUCCESS) {
@@ -206,7 +243,7 @@
  			return &supportedCiphers[i];
  #endif /* VALIDATE_KEY_MATERIAL */
  		}
-@@ -1979,6 +2079,7 @@ int32 sslGetCipherSpecList(ssl_t *ssl, u
+@@ -1979,6 +2101,7 @@ int32 sslGetCipherSpecList(ssl_t *ssl, u
  	unsigned char	*end, *p;
  	unsigned short	i;
  	int32			ignored;
@@ -214,7 +251,7 @@
  
  	if (len < 4) {
  		return -1;
-@@ -2014,6 +2115,7 @@ int32 sslGetCipherSpecList(ssl_t *ssl, u
+@@ -2014,6 +2137,7 @@ int32 sslGetCipherSpecList(ssl_t *ssl, u
  	}
  	i *= 2;
  	i -= (unsigned short)ignored;
@@ -222,7 +259,7 @@
  #ifdef ENABLE_SECURE_REHANDSHAKES
  	if (addScsv == 1) {
  #ifdef USE_CLIENT_SIDE_SSL
-@@ -2037,6 +2139,7 @@ int32 sslGetCipherSpecList(ssl_t *ssl, u
+@@ -2037,6 +2161,7 @@ int32 sslGetCipherSpecList(ssl_t *ssl, u
  int32 sslGetCipherSpecListLen(ssl_t *ssl)
  {
  	int32	i, ignored;
