@@ -259,7 +259,7 @@ sub alert {
 
 sub leaktest {
     my $test = shift;
-    my %arg  = (init=>10, test=>100, max_mem_diff=>256, diag=>0, @_);
+    my %arg  = (init=>10, test=>100, max_mem_diff=>288, diag=>0, @_);
     my $tmp = 'x' x 1000000; undef $tmp;
     my $code = sub { no strict 'refs'; \&$test(); };
     $code->() for 1 .. $arg{init};
