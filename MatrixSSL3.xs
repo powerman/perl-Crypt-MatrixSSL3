@@ -1189,6 +1189,14 @@ Crypt_MatrixSSL3_Sess *sess_new_server(keys, certValidator)
     OUTPUT:
     RETVAL
 
+SV *get_master_secret(ssl)
+    Crypt_MatrixSSL3_Sess *ssl;
+
+    CODE:
+    RETVAL = newSVpv(matrixSslGetMasterSecret(ssl), SSL_HS_MASTER_SIZE);
+
+    OUTPUT:
+    RETVAL
 
 int sess_init_SNI(ssl, index, ssl_id, sni_data = NULL)
     Crypt_MatrixSSL3_Sess *ssl;

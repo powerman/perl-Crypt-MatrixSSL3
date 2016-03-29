@@ -1,6 +1,21 @@
 --- matrixssl-3-7-2b-open-original/matrixssl/matrixsslApi.c	2015-03-18 20:57:06.000000000 +0000
-+++ matrixssl-3-7-2b-open/matrixssl/matrixsslApi.c	2016-03-23 22:32:46.000000000 +0000
-@@ -215,6 +215,98 @@ void matrixSslDeleteSessionId(sslSession
++++ matrixssl-3-7-2b-open/matrixssl/matrixsslApi.c	2016-03-29 22:44:59.000000000 +0000
+@@ -36,6 +36,14 @@
+ 
+ /******************************************************************************/
+ /*
++	Return SSL session master secret
++*/
++unsigned char *matrixSslGetMasterSecret(ssl_t *ssl) {
++	return ssl->sec.masterSecret;
++}
++
++/******************************************************************************/
++/*
+ 	Create a new client SSL session
+ 	This creates internal SSL buffers and cipher structures
+ 	Clients initiate the connection with a 'HelloRequest', and this data
+@@ -215,6 +223,98 @@ void matrixSslDeleteSessionId(sslSession
  #endif /* USE_CLIENT_SIDE_SSL */
  
  #ifdef USE_SERVER_SIDE_SSL
@@ -99,7 +114,7 @@
  /******************************************************************************/
  /*
  	Create a new server SSL session
-@@ -288,18 +380,22 @@ NEW_SVR_ERROR:
+@@ -288,18 +388,22 @@ NEW_SVR_ERROR:
  }
  
  void matrixSslRegisterSNICallback(ssl_t *ssl, void (*sni_cb)(void *ssl,
