@@ -1,5 +1,5 @@
 --- matrixssl-3-7-2b-open-original/matrixssl/sslDecode.c	2015-03-18 20:57:06.000000000 +0000
-+++ matrixssl-3-7-2b-open/matrixssl/sslDecode.c	2016-03-27 19:43:06.000000000 +0000
++++ matrixssl-3-7-2b-open/matrixssl/sslDecode.c	2016-03-30 16:42:25.000000000 +0000
 @@ -1320,11 +1320,18 @@ static int32 addCompressCount(ssl_t *ssl
  */
  static int32 parseSSLHandshake(ssl_t *ssl, char *inbuf, uint32 len)
@@ -74,7 +74,7 @@
  */
  			if (ssl->myVerifyDataLen == 0) {
  				extLen = 0; /* just overloading existing var */
-@@ -1923,30 +1946,251 @@ SKIP_HSHEADER_PARSE:
+@@ -1923,30 +1946,257 @@ SKIP_HSHEADER_PARSE:
  					if (cipher == TLS_EMPTY_RENEGOTIATION_INFO_SCSV) {
  						ssl->secureRenegotiationFlag = PS_TRUE;
  					}
@@ -176,7 +176,7 @@
 +
 +					if (extType == EXT_SNI) {
 +#ifdef MATRIX_DEBUG
-+						psTraceInfo("Handling SNI extension before selecting cipher");
++						psTraceInfo("Handling SNI extension before selecting cipher\n");
 +#endif
 +						/* Must hold 2 b len 1 b zero 2 b len */
 +						if (extLen < 3 + 2) {
@@ -315,9 +315,15 @@
 +#ifdef MATRIX_DEBUG
 +			if (bestCipherIndex != 32767) {
 +				if (firstCipherIndex != bestCipherIndex) psTraceInfo("Overriding client cipher preferences\n");
-+				psTraceIntInfo("firstCipherIndex = %d\n", firstCipherIndex);
-+				psTraceIntInfo("bestCipherIndex = %d\n", bestCipherIndex);
++				psTraceIntInfo("firstCipherIndex = %d", firstCipherIndex);
++				psTraceIntInfo("  bestCipherIndex = %d", bestCipherIndex);
++				psTraceIntInfo("  bestCipher = %d\n", bestCipher);
++			} else {
++				psTraceInfo("No common cipher found\n");
 +			}
++
++			psTraceIntInfo("Should we use a resumed cipher? %d  ", isResumedCipher);
++			psTraceIntInfo("Resumed cipher: %d\n", resumedCipher);
 +#endif
 +
 +/*
@@ -334,7 +340,7 @@
  /*
  			If we fell to the default cipher suite, we didn't have
  			any in common with the client, or the client is being bad
-@@ -1955,7 +2199,7 @@ SKIP_HSHEADER_PARSE:
+@@ -1955,7 +2205,7 @@ SKIP_HSHEADER_PARSE:
  			if (ssl->cipher == NULL || ssl->cipher->ident != cipher ||
  					cipher == SSL_NULL_WITH_NULL_NULL) {
  				psTraceIntInfo("Can't support requested cipher: %d\n", cipher);
@@ -343,7 +349,7 @@
  				ssl->err = SSL_ALERT_HANDSHAKE_FAILURE;
  				return MATRIXSSL_ERROR;
  			}
-@@ -2051,6 +2295,10 @@ SKIP_HSHEADER_PARSE:
+@@ -2051,6 +2301,10 @@ SKIP_HSHEADER_PARSE:
  						psTraceInfo("Invalid extension header len\n");
  						return MATRIXSSL_ERROR;
  					}
@@ -354,7 +360,24 @@
  #ifdef ENABLE_SECURE_REHANDSHAKES
  /*
  					Handle incoming client extensions we support.
-@@ -2315,6 +2563,14 @@ SKIP_HSHEADER_PARSE:
+@@ -2285,6 +2539,7 @@ SKIP_HSHEADER_PARSE:
+ #ifdef USE_STATELESS_SESSION_TICKETS
+ 					/* Server side parsing */
+ 					if (extType == EXT_SESSION_TICKET) {
++						psTraceInfo("Session ticket extension received\n");
+ 						/* Have a handy place to store this info.  Tickets are
+ 							the	only way a server will make use of 'sid'.
+ 							Could already exist if rehandshake case here */
+@@ -2301,6 +2556,8 @@ SKIP_HSHEADER_PARSE:
+ 							memset(ssl->sid, 0x0, sizeof(sslSessionId_t));
+ 						}
+ 						if (extLen > 0) { /* received a ticket */
++							psTraceInfo("Session ticket received\n");
++
+ 							ssl->sessionIdAndTicket = SESSION_ID_TICKET;
+ 
+ 							if (matrixUnlockSessionTicket(ssl, c, extLen)
+@@ -2315,6 +2572,14 @@ SKIP_HSHEADER_PARSE:
  								matrixsslUpdateStat(ssl, RESUMPTIONS_STAT, 1);
  #endif
  							} else {
@@ -369,7 +392,21 @@
  								/* If client sent a sessionId in the hello,
  									we can ignore that here now */
  								if (ssl->sessionIdLen > 0) {
-@@ -2436,66 +2692,36 @@ SKIP_HSHEADER_PARSE:
+@@ -2335,11 +2600,13 @@ SKIP_HSHEADER_PARSE:
+ #endif
+ 							}
+ 						} else {
++							psTraceInfo("Session ticket request received\n");
+ 							/* Request for session ticket.  Can we honor? */
+ 							if (ssl->keys->sessTickets) {
+ 								ssl->sid->sessionTicketFlag =
+ 									SESS_TICKET_FLAG_RECVD_EXT;
+ 							} else {
++								psTraceInfo("We CAN'T honor it\n");
+ 								ssl->sid->sessionTicketFlag = 0;
+ 							}
+ 						}
+@@ -2436,66 +2703,36 @@ SKIP_HSHEADER_PARSE:
  						}
  						c++; extLen--;
  					}
@@ -458,7 +495,7 @@
  					c += extLen;
  				}
  			}
-@@ -2652,18 +2878,30 @@ SKIP_HSHEADER_PARSE:
+@@ -2652,18 +2889,30 @@ SKIP_HSHEADER_PARSE:
  			need to worry about matching resumed cipher suite.
  */
  			p = c + suiteLen;
@@ -493,7 +530,7 @@
  				ssl->err = SSL_ALERT_HANDSHAKE_FAILURE;
  				psTraceInfo("No matching cipher for SSL handshake\n");
  				return MATRIXSSL_ERROR;
-@@ -3471,7 +3709,7 @@ PROTOCOL_DETERMINED:
+@@ -3471,7 +3720,7 @@ PROTOCOL_DETERMINED:
  				if (memcmp(ssl->sessionId, c, sessionIdLen) == 0) {
  					ssl->flags |= SSL_FLAGS_RESUMED;
  				} else {
@@ -502,7 +539,7 @@
  #ifndef USE_PKCS11_TLS_ALGS
  					memset(ssl->sec.masterSecret, 0x0, SSL_HS_MASTER_SIZE);
  #endif
-@@ -3489,7 +3727,7 @@ PROTOCOL_DETERMINED:
+@@ -3489,7 +3738,7 @@ PROTOCOL_DETERMINED:
  			c += sessionIdLen;
  		} else {
  			if (ssl->sessionIdLen > 0) {
@@ -511,7 +548,7 @@
  #ifndef USE_PKCS11_TLS_ALGS
  				memset(ssl->sec.masterSecret, 0x0, SSL_HS_MASTER_SIZE);
  #endif
-@@ -3524,7 +3762,7 @@ PROTOCOL_DETERMINED:
+@@ -3524,7 +3773,7 @@ PROTOCOL_DETERMINED:
  				return MATRIXSSL_ERROR;
  			}
  		} else {
@@ -520,7 +557,7 @@
  				ssl->err = SSL_ALERT_HANDSHAKE_FAILURE;
  				psTraceIntInfo("Can't support requested cipher: %d\n", cipher);
  				return MATRIXSSL_ERROR;
-@@ -5258,7 +5496,7 @@ static int32 dealWithAlpnExt(ssl_t *ssl,
+@@ -5258,7 +5507,7 @@ static int32 dealWithAlpnExt(ssl_t *ssl,
  	userChoice = MAX_PROTO_EXT;
  
  	/* Already tested if callback exists */
@@ -529,7 +566,7 @@
  
  	if (userChoice == MAX_PROTO_EXT) {
  		/* User chose to completely ignore. No reply extension will be sent */
-@@ -5292,6 +5530,10 @@ static int32 dealWithAlpnExt(ssl_t *ssl,
+@@ -5292,6 +5541,10 @@ static int32 dealWithAlpnExt(ssl_t *ssl,
  	ssl->alpn = proto[userChoice];
  	ssl->alpnLen = protoLen[userChoice];
  
@@ -540,7 +577,7 @@
  	while (i > 0) {
  		if (i - 1 != userChoice) {
  			psFree(proto[i - 1], ssl->sPool);
-@@ -5299,6 +5541,23 @@ static int32 dealWithAlpnExt(ssl_t *ssl,
+@@ -5299,6 +5552,23 @@ static int32 dealWithAlpnExt(ssl_t *ssl,
  		i--;
  	}
  

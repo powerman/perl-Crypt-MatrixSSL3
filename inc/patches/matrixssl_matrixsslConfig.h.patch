@@ -1,5 +1,5 @@
 --- matrixssl-3-7-2b-open-original/matrixssl/matrixsslConfig.h	2015-03-18 20:57:06.000000000 +0000
-+++ matrixssl-3-7-2b-open/matrixssl/matrixsslConfig.h	2016-02-24 21:04:19.000000000 +0000
++++ matrixssl-3-7-2b-open/matrixssl/matrixsslConfig.h	2016-03-30 16:42:19.000000000 +0000
 @@ -61,9 +61,9 @@ extern "C" {
  	the handshake will determine which is best for the connection.
  */
@@ -12,6 +12,24 @@
  #define USE_TLS_RSA_WITH_AES_256_CBC_SHA256 /* TLS 1.2 */
  /* #define USE_TLS_RSA_WITH_AES_128_GCM_SHA256 */ /* TLS 1.2 */
  /* #define USE_TLS_RSA_WITH_AES_256_GCM_SHA384 */ /* TLS 1.2 */
+@@ -224,14 +224,14 @@ extern "C" {
+ 	SSL_SESSION_ENTRY_LIFE is in milliseconds, minimum 0
+ 
+ */
+-#define SSL_SESSION_TABLE_SIZE	32
+-#define SSL_SESSION_ENTRY_LIFE	86400 * 1000 /* one day */
++/* #define SSL_SESSION_TABLE_SIZE	32 */
++/* #define SSL_SESSION_ENTRY_LIFE 	86400 * 1000 */ /* one day */
+ 
+ /*	Use RFC 5077 session resumption mechanism. The SSL_SESSION_ENTRY_LIFE
+ 	define applies to this method as well as the standard method.  The
+ 	SSL_SESSION_TICKET_LIST_LEN is the max size of the server key list. */
+ #define USE_STATELESS_SESSION_TICKETS
+-#define SSL_SESSION_TICKET_LIST_LEN	32
++/* #define SSL_SESSION_TICKET_LIST_LEN	32 */
+ 
+ /******************************************************************************/
+ /*
 @@ -380,6 +380,30 @@ extern "C" {
  */
  /* #define USE_ZLIB_COMPRESSION */	/* @security INSECURE */
@@ -22,7 +40,7 @@
 +	https://tools.ietf.org/html/draft-ietf-tls-downgrade-scsv-00
 +*/
 +
-+#define ENABLE_TLS_FALLBACK_SCSV
++/* #define ENABLE_TLS_FALLBACK_SCSV */
 +
 +/******************************************************************************/
 +/*

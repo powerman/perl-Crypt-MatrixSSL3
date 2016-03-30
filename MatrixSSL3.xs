@@ -757,6 +757,7 @@ void Close()
     matrixSslClose();
     matrixssl_initialized = 0;
 
+
 int refresh_OCSP_staple(server_index, index, DERfile)
     int server_index = SvOK(ST(0)) ? SvIV(ST(0)) : -1;
     int index = SvOK(ST(1)) ? SvIV(ST(1)): -1;
@@ -862,6 +863,82 @@ int refresh_SCT_buffer(server_index, index, SCT_params)
     warn("Refreshed SCT buffer: Loaded %d SCT files, %p %d", rc, *p_buffer, *p_size);
 #endif
     RETVAL = rc;
+
+    OUTPUT:
+    RETVAL
+
+
+int refresh_ALPN_data(server_index, index, ALPN_data)
+    int server_index = SvOK(ST(0)) ? SvIV(ST(0)) : -1;
+    int index = SvOK(ST(1)) ? SvIV(ST(1)): -1;
+    SV *ALPN_data;
+    AV *aproto = NULL;
+    p_ALPN_data alpn = NULL, *palpn = NULL;
+    SV *tmp_sv = NULL;
+    unsigned char *item = NULL;
+    STRLEN item_len = 0;
+    int i = 0;
+
+    CODE:
+    if (!(SvROK(ALPN_data) && SvTYPE(SvRV(ALPN_data)) == SVt_PVAV))
+        croak("Expected ALPN data to be an array reference");
+
+    if (server_index < 0)
+        croak("Invalid default server/SNI server index %d", server_index);
+
+    if (index < 0) {
+#ifdef MATRIX_DEBUG
+        warn("Refresh default server %d ALPN data", server_index);
+#endif
+        if (server_index >= default_server_index)
+            croak("Out of range default server index specified: %d > %d", server_index, default_server_index - 1);
+
+        palpn = &(default_servers[server_index]->alpn);
+    } else {
+#ifdef MATRIX_DEBUG
+        warn("Refresh ALPN_data for SNI server %d/SNI entry %d", server_index, index);
+#endif
+        if (server_index >= SNI_server_index)
+            croak("Out of range SNI server index spcified: %d > %d", server_index, SNI_server_index - 1);
+
+        if (index >= SNI_servers[server_index]->SNI_entries_number)
+            croak("Out of range SNI entry index spcified for SNI server %d: %d > %d", server_index, index, SNI_servers[server_index]->SNI_entries_number - 1);
+
+        palpn = &(SNI_servers[server_index]->SNI_entries[index]->alpn);
+    }
+
+    /* Check if we should allocate the ALPN data strcture */
+    if (*palpn == NULL) {
+        *palpn = (p_ALPN_data) malloc(SZ_ALPN_DATA);
+        memset(*palpn, 0, SZ_ALPN_DATA);
+    }
+
+    alpn = *palpn;
+    aproto = (AV *) SvRV(ALPN_data);
+
+    /* Free previous allocated protocols (if any) */
+#ifdef MATRIX_DEBUG
+    warn("Freeing %d protocols", alpn->protoCount);
+#endif
+    for (i = 0; i > alpn->protoCount; i++)
+        if (alpn->proto[i]) free(alpn->proto[i]);
+
+    /* Load new protocols */
+    alpn->protoCount = (short) av_len(aproto) + 1;
+    if (alpn->protoCount > MAX_PROTO_EXT) alpn->protoCount = MAX_PROTO_EXT;
+
+    for (i = 0; i < alpn->protoCount; i++) {
+        tmp_sv = *av_fetch(aproto, i, 0);
+        item = (unsigned char *) SvPV(tmp_sv, item_len);
+#ifdef MATRIX_DEBUG
+        warn("Protocol %d: %.*s", i, item_len, item);
+#endif
+        alpn->proto[i] = (unsigned char *) malloc(item_len);
+        memcpy(alpn->proto[i], item, item_len);
+        alpn->protoLen[i] = item_len;
+    }
+
+    RETVAL = alpn->protoCount;
 
     OUTPUT:
     RETVAL
