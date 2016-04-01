@@ -1054,6 +1054,20 @@ int keys_load_rsa_mem(keys, cert, priv, trustedCA)
     RETVAL
 
 
+int keys_load_ecc(keys, certFile, privFile, privPass, trustedCAcertFiles)
+    Crypt_MatrixSSL3_Keys *keys;
+    char *certFile = SvOK(ST(1)) ? SvPV_nolen(ST(1)) : NULL;
+    char *privFile = SvOK(ST(2)) ? SvPV_nolen(ST(2)) : NULL;
+    char *privPass = SvOK(ST(3)) ? SvPV_nolen(ST(3)) : NULL;
+    char *trustedCAcertFiles = SvOK(ST(4)) ? SvPV_nolen(ST(4)) : NULL;
+
+    CODE:
+    RETVAL = (int) matrixSslLoadEcKeys((sslKeys_t *)keys, certFile, privFile, privPass, trustedCAcertFiles);
+
+    OUTPUT:
+    RETVAL
+
+
 int keys_load_pkcs12(keys, p12File, importPass, macPass, flags)
     Crypt_MatrixSSL3_Keys *keys;
     char *p12File = SvOK(ST(1)) ? SvPV_nolen(ST(1)) : NULL;
@@ -1421,8 +1435,30 @@ int sess_init_SNI(ssl, index, ssl_id, sni_data = NULL)
                     croak("SNI matrixSslLoadRsaKeys failed %d; %s; %s", rc, cert, key);
             } else
                 croak("Bad cert/key specified in SNI entry %d", i);
+        } else if (hv_exists(sd, "ecc_cert", strlen("ecc_cert")) && hv_exists(sd, "ecc_key", strlen("ecc_key"))) {
+            cert_sv = *hv_fetch(sd, "ecc_cert", strlen("ecc_cert"), 0);
+            key_sv = *hv_fetch(sd, "ecc_key", strlen("ecc_key"), 0);
+
+            if (SvOK(cert_sv) && SvOK(key_sv)) {
+                cert = (unsigned char *) SvPV_nolen(cert_sv);
+                key = (unsigned char *) SvPV_nolen(key_sv);
+#ifdef MATRIX_DEBUG
+                warn("  SNI entry %d ecc_cert %s; ecc_key %s", i, cert, key);
+#endif
+                add_obj();
+                rc = matrixSslNewKeys(&(ss->SNI_entries[i]->keys), NULL);
+                if (rc != PS_SUCCESS) {
+                    del_obj();
+                    croak("SNI matrixSslNewKeys failed %d", rc);
+                }
+
+                rc = matrixSslLoadEcKeys(ss->SNI_entries[i]->keys, cert, key, NULL, NULL);
+                if (rc != PS_SUCCESS)
+                    croak("SNI matrixSslLoadEcKeys failed %d; %s; %s", rc, cert, key);
+            } else
+                croak("Bad ECC cert/key specified in SNI entry %d", i);
         } else
-            croak("Missing cert/key specified in SNI entry %d", i);
+            croak("Missing [ECC] cert/key specified in SNI entry %d", i);
 
         if (hv_exists(sd, "DH_param", strlen("DH_param"))) {
             item_sv = *hv_fetch(sd, "DH_param", strlen("DH_param"), 0);
