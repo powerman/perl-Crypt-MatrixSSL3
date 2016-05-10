@@ -1068,6 +1068,31 @@ int keys_load_ecc(keys, certFile, privFile, privPass, trustedCAcertFiles)
     RETVAL
 
 
+int keys_load_ecc_mem(keys, cert, priv, trustedCA)
+    Crypt_MatrixSSL3_Keys *keys;
+    SV *cert;
+    SV *priv;
+    SV *trustedCA;
+    unsigned char *certBuf = NULL;
+    unsigned char *privBuf = NULL;
+    unsigned char *trustedCABuf = NULL;
+    STRLEN certLen = 0;
+    STRLEN privLen = 0;
+    STRLEN trustedCALen = 0;
+
+    CODE:
+    /* All bufs can contain \0, so SvPV must be used instead of strlen() */
+    certBuf = SvOK(cert) ? (unsigned char *) SvPV(cert, certLen) : NULL;
+    privBuf = SvOK(priv) ? (unsigned char *) SvPV(priv, privLen) : NULL;
+    trustedCABuf= SvOK(trustedCA) ? (unsigned char *) SvPV(trustedCA, trustedCALen) : NULL;
+
+    RETVAL = matrixSslLoadEcKeysMem((sslKeys_t *)keys, certBuf, certLen, privBuf, privLen,
+                                      trustedCABuf, trustedCALen);
+
+    OUTPUT:
+    RETVAL
+
+
 int keys_load_pkcs12(keys, p12File, importPass, macPass, flags)
     Crypt_MatrixSSL3_Keys *keys;
     char *p12File = SvOK(ST(1)) ? SvPV_nolen(ST(1)) : NULL;

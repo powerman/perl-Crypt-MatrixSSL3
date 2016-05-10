@@ -37,7 +37,7 @@ my @cOptions = (
     # - enable USE_DH in the options below (enabled by default)
     # - load DH params for the session keys by using $keys->load_DH_params( $DH_params_file )
     #
-    # If you plan to support HTTP/2 you are require by specification to suuport the following cipher
+    # If you plan to support HTTP/2 you are required by specification to support the following cipher
     #   TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
 
     #******************************************************************************
@@ -360,6 +360,9 @@ if (-d 'inc/patches') {
         for my $file (glob 'inc/patches/*.patch') {
             # replacing \n with \n will change \n to \r\n on Win, without this patch.exe will crash
             system "cd \Q$mxbase\E && perl -pe \"s/\\n/\\n/\" ../../\Q$file\E | patch -p1 -N";
+
+            # some Windows systems don't like the path escape ...
+            # system "cd $mxbase && perl -pe \"s/\\n/\\n/\" ../../$file | patch -p1 -N";
         }
     }
     else {
@@ -486,9 +489,9 @@ sub c_o {
     my $inherited = shift->SUPER::c_o(@_);
 
     if ($^O =~ /Win32/ms && $Config{cc} eq 'cl') {  # Microsoft deprecated -o in favor of /Fo
-        $inherited =~ s{\$\*\.c\n}{/Fo\$\*.obj \$\*.c\n}msg;
+        $inherited =~ s{\$\*\.c[\s\t]*$}{/Fo\$\*.obj \$\*.c\n}msg;
     } else {
-        $inherited =~ s{\$\*\.c\n}{\$\*.c -o \$\*.o\n}msg;
+        $inherited =~ s{\$\*\.c[\s\t]*$}{\$\*.c -o \$\*.o\n}msg;
     }
 
     return $inherited;

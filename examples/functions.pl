@@ -45,12 +45,15 @@ sub ssl_io {
     # After that we should try to send outgoing data (if any).
     my $err = q{};
 
+    # SSL data buffer
+    my $buf;
+
 RECV:
     # Fill MatrixSSL's read buffer with received data. Repeat until all
     # received data will be moved from our buffer to MatrixSSL.
     while (length $in) {
         # Process (part of) received data:
-        my $rc = $ssl->received_data($in, my $buf);
+        my $rc = $ssl->received_data($in, $buf);
 RC:
         # - "Success. This return code will be returned if $n is 0 and
         #   there is no remaining internal data to process. This could
@@ -188,6 +191,41 @@ SEND:
         #   this return code, a resumed handshake has just completed."
         elsif ($rc == MATRIXSSL_HANDSHAKE_COMPLETE) {
             $handshakeIsComplete = 1;
+
+            # Sometimes clients use the "false start" technique - they send
+            # the first application data packet immediately after sending the
+            # handshake "Finished" message without waiting for the server's own
+            # handshake "Finished" message. This saves a rountrip and speeds the
+            # data transfer in some cases by 33%
+
+            my $rc2 = $ssl->false_start_received_data($buf);
+
+            # all the codes are already explained in this function
+            while (1) {
+                if ($rc2 == MATRIXSSL_APP_DATA) {
+                    $appIn .= $buf if (defined($buf));
+                }
+                elsif ($rc2 == MATRIXSSL_RECEIVED_ALERT) {
+                    my ($level, $descr) = get_ssl_alert($buf);
+                    if ($level == SSL_ALERT_LEVEL_FATAL) {
+                        $ssl->processed_data($buf);
+                        $err = alert($level, $descr);
+                        last;
+                    } else {
+                        warn alert($level, $descr);
+                    }
+                }
+                elsif (($rc2 == MATRIXSSL_SUCCESS) || ($rc2 == MATRIXSSL_REQUEST_SEND) || ($rc2 == MATRIXSSL_REQUEST_RECV)) {
+                    last;
+                }
+                else {
+                    $err = error($rc);
+                    last;
+                }
+
+                $rc2 = $ssl->processed_data($buf);
+            }
+
             next;
         }
         # - "Success. This indicates the message that was sent to the peer
