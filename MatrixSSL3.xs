@@ -757,6 +757,7 @@ void Close()
     matrixSslClose();
     matrixssl_initialized = 0;
 
+
 int refresh_OCSP_staple(server_index, index, DERfile)
     int server_index = SvOK(ST(0)) ? SvIV(ST(0)) : -1;
     int index = SvOK(ST(1)) ? SvIV(ST(1)): -1;
@@ -867,6 +868,82 @@ int refresh_SCT_buffer(server_index, index, SCT_params)
     RETVAL
 
 
+int refresh_ALPN_data(server_index, index, ALPN_data)
+    int server_index = SvOK(ST(0)) ? SvIV(ST(0)) : -1;
+    int index = SvOK(ST(1)) ? SvIV(ST(1)): -1;
+    SV *ALPN_data;
+    AV *aproto = NULL;
+    p_ALPN_data alpn = NULL, *palpn = NULL;
+    SV *tmp_sv = NULL;
+    unsigned char *item = NULL;
+    STRLEN item_len = 0;
+    int i = 0;
+
+    CODE:
+    if (!(SvROK(ALPN_data) && SvTYPE(SvRV(ALPN_data)) == SVt_PVAV))
+        croak("Expected ALPN data to be an array reference");
+
+    if (server_index < 0)
+        croak("Invalid default server/SNI server index %d", server_index);
+
+    if (index < 0) {
+#ifdef MATRIX_DEBUG
+        warn("Refresh default server %d ALPN data", server_index);
+#endif
+        if (server_index >= default_server_index)
+            croak("Out of range default server index specified: %d > %d", server_index, default_server_index - 1);
+
+        palpn = &(default_servers[server_index]->alpn);
+    } else {
+#ifdef MATRIX_DEBUG
+        warn("Refresh ALPN_data for SNI server %d/SNI entry %d", server_index, index);
+#endif
+        if (server_index >= SNI_server_index)
+            croak("Out of range SNI server index spcified: %d > %d", server_index, SNI_server_index - 1);
+
+        if (index >= SNI_servers[server_index]->SNI_entries_number)
+            croak("Out of range SNI entry index spcified for SNI server %d: %d > %d", server_index, index, SNI_servers[server_index]->SNI_entries_number - 1);
+
+        palpn = &(SNI_servers[server_index]->SNI_entries[index]->alpn);
+    }
+
+    /* Check if we should allocate the ALPN data strcture */
+    if (*palpn == NULL) {
+        *palpn = (p_ALPN_data) malloc(SZ_ALPN_DATA);
+        memset(*palpn, 0, SZ_ALPN_DATA);
+    }
+
+    alpn = *palpn;
+    aproto = (AV *) SvRV(ALPN_data);
+
+    /* Free previous allocated protocols (if any) */
+#ifdef MATRIX_DEBUG
+    warn("Freeing %d protocols", alpn->protoCount);
+#endif
+    for (i = 0; i > alpn->protoCount; i++)
+        if (alpn->proto[i]) free(alpn->proto[i]);
+
+    /* Load new protocols */
+    alpn->protoCount = (short) av_len(aproto) + 1;
+    if (alpn->protoCount > MAX_PROTO_EXT) alpn->protoCount = MAX_PROTO_EXT;
+
+    for (i = 0; i < alpn->protoCount; i++) {
+        tmp_sv = *av_fetch(aproto, i, 0);
+        item = (unsigned char *) SvPV(tmp_sv, item_len);
+#ifdef MATRIX_DEBUG
+        warn("Protocol %d: %.*s", i, item_len, item);
+#endif
+        alpn->proto[i] = (unsigned char *) malloc(item_len);
+        memcpy(alpn->proto[i], item, item_len);
+        alpn->protoLen[i] = item_len;
+    }
+
+    RETVAL = alpn->protoCount;
+
+    OUTPUT:
+    RETVAL
+
+
 void set_VHIndex_callback(vh_index_cb)
     SV *vh_index_cb;
 
@@ -971,6 +1048,45 @@ int keys_load_rsa_mem(keys, cert, priv, trustedCA)
     trustedCABuf= SvOK(trustedCA) ? (unsigned char *) SvPV(trustedCA, trustedCALen) : NULL;
 
     RETVAL = matrixSslLoadRsaKeysMem((sslKeys_t *)keys, certBuf, certLen, privBuf, privLen,
+                                      trustedCABuf, trustedCALen);
+
+    OUTPUT:
+    RETVAL
+
+
+int keys_load_ecc(keys, certFile, privFile, privPass, trustedCAcertFiles)
+    Crypt_MatrixSSL3_Keys *keys;
+    char *certFile = SvOK(ST(1)) ? SvPV_nolen(ST(1)) : NULL;
+    char *privFile = SvOK(ST(2)) ? SvPV_nolen(ST(2)) : NULL;
+    char *privPass = SvOK(ST(3)) ? SvPV_nolen(ST(3)) : NULL;
+    char *trustedCAcertFiles = SvOK(ST(4)) ? SvPV_nolen(ST(4)) : NULL;
+
+    CODE:
+    RETVAL = (int) matrixSslLoadEcKeys((sslKeys_t *)keys, certFile, privFile, privPass, trustedCAcertFiles);
+
+    OUTPUT:
+    RETVAL
+
+
+int keys_load_ecc_mem(keys, cert, priv, trustedCA)
+    Crypt_MatrixSSL3_Keys *keys;
+    SV *cert;
+    SV *priv;
+    SV *trustedCA;
+    unsigned char *certBuf = NULL;
+    unsigned char *privBuf = NULL;
+    unsigned char *trustedCABuf = NULL;
+    STRLEN certLen = 0;
+    STRLEN privLen = 0;
+    STRLEN trustedCALen = 0;
+
+    CODE:
+    /* All bufs can contain \0, so SvPV must be used instead of strlen() */
+    certBuf = SvOK(cert) ? (unsigned char *) SvPV(cert, certLen) : NULL;
+    privBuf = SvOK(priv) ? (unsigned char *) SvPV(priv, privLen) : NULL;
+    trustedCABuf= SvOK(trustedCA) ? (unsigned char *) SvPV(trustedCA, trustedCALen) : NULL;
+
+    RETVAL = matrixSslLoadEcKeysMem((sslKeys_t *)keys, certBuf, certLen, privBuf, privLen,
                                       trustedCABuf, trustedCALen);
 
     OUTPUT:
@@ -1189,6 +1305,14 @@ Crypt_MatrixSSL3_Sess *sess_new_server(keys, certValidator)
     OUTPUT:
     RETVAL
 
+SV *get_master_secret(ssl)
+    Crypt_MatrixSSL3_Sess *ssl;
+
+    CODE:
+    RETVAL = newSVpv(matrixSslGetMasterSecret(ssl), SSL_HS_MASTER_SIZE);
+
+    OUTPUT:
+    RETVAL
 
 int sess_init_SNI(ssl, index, ssl_id, sni_data = NULL)
     Crypt_MatrixSSL3_Sess *ssl;
@@ -1336,8 +1460,30 @@ int sess_init_SNI(ssl, index, ssl_id, sni_data = NULL)
                     croak("SNI matrixSslLoadRsaKeys failed %d; %s; %s", rc, cert, key);
             } else
                 croak("Bad cert/key specified in SNI entry %d", i);
+        } else if (hv_exists(sd, "ecc_cert", strlen("ecc_cert")) && hv_exists(sd, "ecc_key", strlen("ecc_key"))) {
+            cert_sv = *hv_fetch(sd, "ecc_cert", strlen("ecc_cert"), 0);
+            key_sv = *hv_fetch(sd, "ecc_key", strlen("ecc_key"), 0);
+
+            if (SvOK(cert_sv) && SvOK(key_sv)) {
+                cert = (unsigned char *) SvPV_nolen(cert_sv);
+                key = (unsigned char *) SvPV_nolen(key_sv);
+#ifdef MATRIX_DEBUG
+                warn("  SNI entry %d ecc_cert %s; ecc_key %s", i, cert, key);
+#endif
+                add_obj();
+                rc = matrixSslNewKeys(&(ss->SNI_entries[i]->keys), NULL);
+                if (rc != PS_SUCCESS) {
+                    del_obj();
+                    croak("SNI matrixSslNewKeys failed %d", rc);
+                }
+
+                rc = matrixSslLoadEcKeys(ss->SNI_entries[i]->keys, cert, key, NULL, NULL);
+                if (rc != PS_SUCCESS)
+                    croak("SNI matrixSslLoadEcKeys failed %d; %s; %s", rc, cert, key);
+            } else
+                croak("Bad ECC cert/key specified in SNI entry %d", i);
         } else
-            croak("Missing cert/key specified in SNI entry %d", i);
+            croak("Missing [ECC] cert/key specified in SNI entry %d", i);
 
         if (hv_exists(sd, "DH_param", strlen("DH_param"))) {
             item_sv = *hv_fetch(sd, "DH_param", strlen("DH_param"), 0);

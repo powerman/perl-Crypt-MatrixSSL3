@@ -788,6 +788,34 @@ function will use to create the extension data.
 
 =back
 
+Returns the number of files loaded (if this is 0 there was an error loading one of the files).
+
+=head2 refresh_ALPN_data
+
+    $num_protocols = refresh_ALPN_data( $server_index, $index, $protocols );
+
+Used to refresh the application protocols for a default server or for a virtual host.
+
+Parameters:
+
+=over
+
+=item $server_index and $index
+
+Are the same as refresh_OCSP_staple above.
+
+=item $protocols
+
+=over
+
+=item *
+
+Perl array reference containing the new protocols.
+
+=back
+
+Returns the number of protocols you supplied (if this is 0 there was an error loading one of the files).
+
 =back
 
 Returns the number of files loaded in order to build extension data.
@@ -845,6 +873,21 @@ When this object will be destroyed will call:
     matrixSslLoadRsaKeysMem( $keys, $cert, length $cert,
         $priv, length $priv, $trustedCA, length $trustedCA )
 
+=head3 load_ecc
+
+    $rc = $keys->load_ecc( $certFile,
+        $privFile, $privPass, $trustedCAcertFiles );
+
+    matrixSslLoadEcKeys( $keys, $certFile,
+        $privFile, $privPass, $trustedCAcertFiles )
+
+=head3 load_rsa_mem
+
+    $rc = $keys->load_ecc_mem( $cert, $priv, $trustedCA );
+
+    matrixSslLoadEcKeysMem( $keys, $cert, length $cert,
+        $priv, length $priv, $trustedCA, length $trustedCA )
+
 =head3 load_pkcs12
 
     $rc = $keys->load_pkcs12( $p12File, $importPass, $macPass, $flags );
@@ -877,8 +920,8 @@ B<Server side.>
 Return new object $sessID representing (sslSessionId_t*) type.
 Throw exception if failed to allocate memory.
 When this object will be destroyed will free memory, so you should
-keep this object while there are exist Client/Server session
-which uses this $sessID.
+keep this object while there are still Client/Server session
+which use this $sessID.
 
 =head3 clear
 
@@ -1071,7 +1114,7 @@ It has the advantage that the session will contain the latest OCSP data if
 the OCSP DER file is refreshed in the meantime.
 
 Don't be lazy and use $ssl->set_server_params({'OCSP_staple' => '...'}) and
-$ssl->refresh_OCSP_staple() instead.
+$ssl->refresh_OCSP_staple(...) instead.
 
 
 =head2 Crypt::MatrixSSL3::Client and Crypt::MatrixSSL3::Server

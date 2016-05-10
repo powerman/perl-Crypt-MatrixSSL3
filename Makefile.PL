@@ -37,7 +37,7 @@ my @cOptions = (
     # - enable USE_DH in the options below (enabled by default)
     # - load DH params for the session keys by using $keys->load_DH_params( $DH_params_file )
     #
-    # If you plan to support HTTP/2 you are require by specification to suuport the following cipher
+    # If you plan to support HTTP/2 you are required by specification to support the following cipher
     #   TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
 
     #******************************************************************************
@@ -195,18 +195,21 @@ my @cOptions = (
     # matrixsslConfig.h - Applicable to servers only. The size of the
     # session resumption table for caching session identifiers. Old entries
     # will be overwritten when size is reached
-    #'SSL_SESSION_TABLE_SIZE=32',
+    'SSL_SESSION_TABLE_SIZE=32',
 
     # matrixsslConfig.h - Applicable to servers only. The time in seconds
     # that a session identifier will be valid in the session table. A value of 0
-    # will disable SSL resumption
-    #'SSL_SESSION_ENTRY_LIFE=86400000',
+    # will disable SSL resumption (in milliseconds)
+    'SSL_SESSION_ENTRY_LIFE=86400000',
 
     # matrixsslConfig.h - Enable the stateless ticket resumption mechanism
     # defined by RFC 5077. Clients must then set the
     # ticketResumption member of the session options to 1 to
     # activate for a given session.
     'USE_STATELESS_SESSION_TICKETS',
+
+    # matrixsslConfig.h - the max size of the server key list
+    'SSL_SESSION_TICKET_LIST_LEN=32',
 
     # matrixsslConfig.h - Enable secure rehandshaking as defined in RFC 5746
     'ENABLE_SECURE_REHANDSHAKES',
@@ -357,6 +360,9 @@ if (-d 'inc/patches') {
         for my $file (glob 'inc/patches/*.patch') {
             # replacing \n with \n will change \n to \r\n on Win, without this patch.exe will crash
             system "cd \Q$mxbase\E && perl -pe \"s/\\n/\\n/\" ../../\Q$file\E | patch -p1 -N";
+
+            # some Windows systems don't like the path escape ...
+            # system "cd $mxbase && perl -pe \"s/\\n/\\n/\" ../../$file | patch -p1 -N";
         }
     }
     else {
@@ -483,9 +489,9 @@ sub c_o {
     my $inherited = shift->SUPER::c_o(@_);
 
     if ($^O =~ /Win32/ms && $Config{cc} eq 'cl') {  # Microsoft deprecated -o in favor of /Fo
-        $inherited =~ s{\$\*\.c\n}{/Fo\$\*.obj \$\*.c\n}msg;
+        $inherited =~ s{\$\*\.c\s*$}{/Fo\$\*.obj \$\*.c\n}msg;
     } else {
-        $inherited =~ s{\$\*\.c\n}{\$\*.c -o \$\*.o\n}msg;
+        $inherited =~ s{\$\*\.c\s*$}{\$\*.c -o \$\*.o\n}msg;
     }
 
     return $inherited;

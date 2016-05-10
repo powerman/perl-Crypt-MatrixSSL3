@@ -10,7 +10,7 @@ Crypt::MatrixSSL3::Open();
 unless (Crypt::MatrixSSL3::capabilities() & OCSP_STAPLES_ENABLED) {
     plan skip_all => "OCSP staples not enabled - OCSP_STAPLES_ENABLED not defined";
 } else {
-    plan tests => 8;
+    plan tests => 9;
 }
 
 my $certFile            = 't/cert/server.crt';
@@ -44,6 +44,7 @@ cmp_ok $Server_SSL->set_server_params($server_index, 420), '==', $server_index, 
 cmp_ok Crypt::MatrixSSL3::refresh_OCSP_staple($server_index, undef, $OCSPtest), '==', PS_SUCCESS, 'Crypt::MatrixSSL3::refresh_OCSP_staple(server_index, undef, file)';
 cmp_ok Crypt::MatrixSSL3::refresh_SCT_buffer($server_index, undef, $CTbuffer), '==', 1, 'Crypt::MatrixSSL3::refresh_SCT_buffer(server_index, undef, file)';
 cmp_ok Crypt::MatrixSSL3::refresh_SCT_buffer($server_index, undef, $CTfiles), '==', 2, 'Crypt::MatrixSSL3::refresh_SCT_buffer(server_index, undef, [files])';
+cmp_ok Crypt::MatrixSSL3::refresh_ALPN_data($server_index, undef, ['proto3', 'proto4']), '==', 2, 'Crypt::MatrixSSL3::refresh_ALPN_data(server_index, undef, [protocols])';
 
 undef $Server_SSL;
 undef $Server_Keys;
