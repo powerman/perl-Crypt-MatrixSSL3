@@ -489,9 +489,9 @@ sub c_o {
     my $inherited = shift->SUPER::c_o(@_);
 
     if ($^O =~ /Win32/ms && $Config{cc} eq 'cl') {  # Microsoft deprecated -o in favor of /Fo
-        $inherited =~ s{\$\*\.c[\s\t]*$}{/Fo\$\*.obj \$\*.c\n}msg;
+        $inherited =~ s{\$\*\.c\s*$}{/Fo\$\*.obj \$\*.c\n}msg;
     } else {
-        $inherited =~ s{\$\*\.c[\s\t]*$}{\$\*.c -o \$\*.o\n}msg;
+        $inherited =~ s{\$\*\.c\s*$}{\$\*.c -o \$\*.o\n}msg;
     }
 
     return $inherited;

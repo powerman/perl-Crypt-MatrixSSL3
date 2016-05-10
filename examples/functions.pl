@@ -203,7 +203,7 @@ SEND:
             # all the codes are already explained in this function
             while (1) {
                 if ($rc2 == MATRIXSSL_APP_DATA) {
-                    $appIn .= $buf if (defined($buf));
+                    $appIn .= $buf;
                 }
                 elsif ($rc2 == MATRIXSSL_RECEIVED_ALERT) {
                     my ($level, $descr) = get_ssl_alert($buf);
