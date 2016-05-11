@@ -7,7 +7,7 @@ Crypt::MatrixSSL3 - Perl extension for SSL and TLS using MatrixSSL.org v3.7.2b
 
 # VERSION
 
-This document describes Crypt::MatrixSSL3 version v3.7.6
+This document describes Crypt::MatrixSSL3 version v3.7.7
 
 # SYNOPSIS
 
@@ -437,6 +437,26 @@ Parameters:
     - Perl array reference with file names of SCT binary structures that the
     function will use to create the extension data.
 
+Returns the number of files loaded (if this is 0 there was an error loading one of the files).
+
+## refresh\_ALPN\_data
+
+    $num_protocols = refresh_ALPN_data( $server_index, $index, $protocols );
+
+Used to refresh the application protocols for a default server or for a virtual host.
+
+Parameters:
+
+- $server\_index and $index
+
+    Are the same as refresh\_OCSP\_staple above.
+
+- $protocols
+
+    - Perl array reference containing the new protocols.
+
+    Returns the number of protocols you supplied (if this is 0 there was an error loading one of the files).
+
 Returns the number of files loaded in order to build extension data.
 
 ## set\_VHIndex\_callback
@@ -490,6 +510,21 @@ When this object will be destroyed will call:
     matrixSslLoadRsaKeysMem( $keys, $cert, length $cert,
         $priv, length $priv, $trustedCA, length $trustedCA )
 
+### load\_ecc
+
+    $rc = $keys->load_ecc( $certFile,
+        $privFile, $privPass, $trustedCAcertFiles );
+
+    matrixSslLoadEcKeys( $keys, $certFile,
+        $privFile, $privPass, $trustedCAcertFiles )
+
+### load\_rsa\_mem
+
+    $rc = $keys->load_ecc_mem( $cert, $priv, $trustedCA );
+
+    matrixSslLoadEcKeysMem( $keys, $cert, length $cert,
+        $priv, length $priv, $trustedCA, length $trustedCA )
+
 ### load\_pkcs12
 
     $rc = $keys->load_pkcs12( $p12File, $importPass, $macPass, $flags );
@@ -521,8 +556,8 @@ When this object will be destroyed will call:
 Return new object $sessID representing (sslSessionId\_t\*) type.
 Throw exception if failed to allocate memory.
 When this object will be destroyed will free memory, so you should
-keep this object while there are exist Client/Server session
-which uses this $sessID.
+keep this object while there are still Client/Server session
+which use this $sessID.
 
 ### clear
 
@@ -704,7 +739,7 @@ It has the advantage that the session will contain the latest OCSP data if
 the OCSP DER file is refreshed in the meantime.
 
 Don't be lazy and use $ssl->set\_server\_params({'OCSP\_staple' => '...'}) and
-$ssl->refresh\_OCSP\_staple() instead.
+$ssl->refresh\_OCSP\_staple(...) instead.
 
 ## Crypt::MatrixSSL3::Client and Crypt::MatrixSSL3::Server
 
@@ -1144,15 +1179,15 @@ Feel free to fork the repository and submit pull requests.
 
 # AUTHORS
 
-C. N. Drake &lt;christopher@pobox.com>
+C. N. Drake <christopher@pobox.com>
 
-Alex Efros &lt;powerman@cpan.org>
+Alex Efros <powerman@cpan.org>
 
 # COPYRIGHT AND LICENSE
 
-This software is Copyright (c) 2005- by C. N. Drake &lt;christopher@pobox.com>.
+This software is Copyright (c) 2005- by C. N. Drake <christopher@pobox.com>.
 
-This software is Copyright (c) 2012- by Alex Efros &lt;powerman@cpan.org>.
+This software is Copyright (c) 2012- by Alex Efros <powerman@cpan.org>.
 
 This is free software, licensed under:
 
