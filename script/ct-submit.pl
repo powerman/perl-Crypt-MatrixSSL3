@@ -35,6 +35,9 @@ my %logs = (
     'rocketeer' => 'https://ct.googleapis.com/rocketeer',
     #'digicert'  => 'https://ct1.digicert-ct.com/log',
     #'izenpe'    => 'https://ct.izenpe.com',
+    'symantec'  => 'https://ct.ws.symantec.com',
+    'venafi'    => 'https://ctlog.api.venafi.com',
+    'vega'      => 'https://vega.ws.symantec.com'
 );
 
 @pem = split /,/ms, join q{,}, @pem;
