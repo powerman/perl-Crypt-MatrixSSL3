@@ -37,7 +37,7 @@ my %logs = (
     #'izenpe'    => 'https://ct.izenpe.com',
     'symantec'  => 'https://ct.ws.symantec.com',
     'venafi'    => 'https://ctlog.api.venafi.com',
-    'vega'      => 'https://vega.ws.symantec.com'
+    'vega'      => 'https://vega.ws.symantec.com',
 );
 
 @pem = split /,/ms, join q{,}, @pem;
