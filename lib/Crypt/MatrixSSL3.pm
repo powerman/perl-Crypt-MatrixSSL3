@@ -788,6 +788,8 @@ function will use to create the extension data.
 
 =back
 
+=back
+
 Returns the number of files loaded (if this is 0 there was an error loading one of the files).
 
 =head2 refresh_ALPN_data
