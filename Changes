@@ -2,6 +2,16 @@ Revision history for Perl extension Crypt::MatrixSSL3.
 
 {{$NEXT}}
 
+v3.7.7  2016-05-11 20:40:21 EEST
+	- Added 'false start' handling in examples/functions.pl
+	- Added ALPN data refresh using Crypt::MatrixSSL3::refresh_ALPN_data()
+	- Added API support for getting the SSL session master secret
+	- Added support for ECC certificates
+	- Bugfix: Win32 psGetTime now returns seconds instead of milliseconds
+	- Fixed Makefile.PL compatibility with with newer ExtUtils::MakeMaker
+	- Improved Makefile.PL portability
+	- Updated documentation and tests
+
 v3.7.6  2016-03-28 11:29:21 EEST
 	- Added security requirements for HTTP/2 application protocols
 	- Better cipher handling for resumed sessions
