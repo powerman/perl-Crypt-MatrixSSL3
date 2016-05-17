@@ -124,7 +124,7 @@ typedef struct s_default_server {
 typedef t_default_server *p_default_server;
 
 t_default_server *default_servers[MAX_DEFAULT_SERVERS];
-int16 default_server_index;
+int16 default_server_index = 0;
 
 
 void add_obj() {
@@ -146,8 +146,10 @@ void add_obj() {
 
 #ifdef MATRIX_DEBUG
 void del_obj() {
-    warn("del_obj: objects number %d -> %d", objects, objects - 1);
-    objects--;
+    if (matrixssl_initialized) {
+        warn("del_obj: objects number %d -> %d", objects, objects - 1);
+        objects--;
+    }
 }
 #else
 #define del_obj()
@@ -493,6 +495,7 @@ void SNI_callback(void *ssl, char *hostname, int32 hostnameLen, sslKeys_t **newK
         PUSHMARK(SP);
         XPUSHs(sv_2mortal(newSViv(ssl_id)));
         XPUSHs(sv_2mortal(newSViv(i)));
+        XPUSHs(sv_2mortal(newSVpv(hostname, hostnameLen)));
         PUTBACK;
 
         res = call_sv(VHIndexCallback, G_EVAL|G_SCALAR);

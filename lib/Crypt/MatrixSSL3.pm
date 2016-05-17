@@ -830,7 +830,7 @@ More information about L</VHIndexCallback> in the L</CALLBACKS> section.
 
 =head2 set_ALPN_callback
 
-    set_VHIndex_callback( \&ALPNCallback );
+    set_ALPN_callback( \&ALPNCallback );
 
 More information about L</ALPNCallback> in the L</CALLBACKS> section.
 
@@ -1295,10 +1295,11 @@ Will be called whenever we have a successful match against the hostname
 specified by the client in its SNI extension. This will inform the Perl
 code which virtual host the current SSL session belongs to.
 
-Will be called with 2 parameters:
+Will be called with 3 parameters:
 
     $ssl_id - this is the $ssl_id used in the $ssl->init_SNI(...) function call
     $index - a 0-based int specifying which virtual host matchd the client requested hostname
+    $match - a scalar containing the hostname sent in the client's SNI TLS extension
 
 Doesn't return anything.
 
