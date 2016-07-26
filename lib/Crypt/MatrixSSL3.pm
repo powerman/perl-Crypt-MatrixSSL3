@@ -26,6 +26,7 @@ use constant CONST_VERSION_INT => qw(
     TLS_1_2_MIN_VER
     TLS_MAJ_VER
     TLS_MIN_VER
+    TLS_HIGHEST_MINOR
     MATRIXSSL_VERSION_MAJOR
     MATRIXSSL_VERSION_MINOR
     MATRIXSSL_VERSION_PATCH
@@ -41,21 +42,21 @@ use constant CONST_CIPHER => qw(
     SSL_RSA_WITH_NULL_SHA
     SSL_RSA_WITH_RC4_128_MD5
     SSL_RSA_WITH_RC4_128_SHA
-    SSL_RSA_WITH_3DES_EDE_CBC_SHA
-    TLS_RSA_WITH_AES_128_CBC_SHA
-    TLS_RSA_WITH_AES_256_CBC_SHA
     TLS_RSA_WITH_IDEA_CBC_SHA
+    SSL_RSA_WITH_3DES_EDE_CBC_SHA
     SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA
     SSL_DH_anon_WITH_RC4_128_MD5
     SSL_DH_anon_WITH_3DES_EDE_CBC_SHA
+    TLS_RSA_WITH_AES_128_CBC_SHA
     TLS_DHE_RSA_WITH_AES_128_CBC_SHA
-    TLS_DHE_RSA_WITH_AES_256_CBC_SHA
-    TLS_DHE_RSA_WITH_AES_128_CBC_SHA256
-    TLS_DHE_RSA_WITH_AES_256_CBC_SHA256
     TLS_DH_anon_WITH_AES_128_CBC_SHA
+    TLS_RSA_WITH_AES_256_CBC_SHA
+    TLS_DHE_RSA_WITH_AES_256_CBC_SHA
     TLS_DH_anon_WITH_AES_256_CBC_SHA
     TLS_RSA_WITH_AES_128_CBC_SHA256
     TLS_RSA_WITH_AES_256_CBC_SHA256
+    TLS_DHE_RSA_WITH_AES_128_CBC_SHA256
+    TLS_DHE_RSA_WITH_AES_256_CBC_SHA256
     TLS_RSA_WITH_SEED_CBC_SHA
     TLS_PSK_WITH_AES_128_CBC_SHA
     TLS_PSK_WITH_AES_128_CBC_SHA256
@@ -63,6 +64,8 @@ use constant CONST_CIPHER => qw(
     TLS_PSK_WITH_AES_256_CBC_SHA
     TLS_DHE_PSK_WITH_AES_128_CBC_SHA
     TLS_DHE_PSK_WITH_AES_256_CBC_SHA
+    TLS_RSA_WITH_AES_128_GCM_SHA256
+    TLS_RSA_WITH_AES_256_GCM_SHA384
     TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA
     TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA
     TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA
@@ -80,8 +83,6 @@ use constant CONST_CIPHER => qw(
     TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384
     TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256
     TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384
-    TLS_RSA_WITH_AES_128_GCM_SHA256
-    TLS_RSA_WITH_AES_256_GCM_SHA384
     TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
     TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
     TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256
@@ -90,6 +91,8 @@ use constant CONST_CIPHER => qw(
     TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
     TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256
     TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384
+    TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
+    TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256
 );
 
 use constant CONST_SESSION_OPTION => qw(
@@ -102,6 +105,7 @@ use constant CONST_ALERT_LEVEL => qw(
 );
 
 use constant CONST_ALERT_DESCR => qw(
+    SSL_ALERT_NONE
     SSL_ALERT_CLOSE_NOTIFY
     SSL_ALERT_UNEXPECTED_MESSAGE
     SSL_ALERT_BAD_RECORD_MAC
@@ -127,8 +131,9 @@ use constant CONST_ALERT_DESCR => qw(
     SSL_ALERT_NO_RENEGOTIATION
     SSL_ALERT_UNSUPPORTED_EXTENSION
     SSL_ALERT_UNRECOGNIZED_NAME
+    SSL_ALERT_BAD_CERTIFICATE_STATUS_RESPONSE
+    SSL_ALERT_UNKNOWN_PSK_IDENTITY
     SSL_ALERT_NO_APP_PROTOCOL
-    SSL_ALERT_NONE
 );
 
 # Order is important in CONST_ERROR and CONST_RC! Some constants have same
@@ -156,6 +161,8 @@ use constant CONST_ERROR => qw(
     PS_CERT_AUTH_FAIL_EXTENSION
     PS_CERT_AUTH_FAIL_PATH_LEN
     PS_CERT_AUTH_FAIL_AUTHKEY
+    PS_SIGNATURE_MISMATCH
+    PS_AUTH_FAIL
 );
 
 use constant CONST_RC => qw(
@@ -173,6 +180,8 @@ use constant CONST_RC => qw(
 use constant CONST_LIMIT => qw(
     SSL_MAX_DISABLED_CIPHERS
     SSL_MAX_PLAINTEXT_LEN
+    SSL_MAX_RECORD_LEN
+    SSL_MAX_BUF_SIZE
 );
 
 use constant CONST_VALIDATE => qw(
@@ -726,8 +735,7 @@ text error name in string context).
 
     $rc = refresh_OCSP_staple( $server_index, $index, $DERfile );
 
-Used to refresh an already loaded OCSP staple either for a default server
-or for a virtual host.
+Used to refresh an already loaded OCSP staple for a virtual host.
 
 Parameters:
 
@@ -738,14 +746,10 @@ Parameters:
 If you want to update the OCSP staple for a virtual host this parameter
 must have the returned value of the first $sll->init_SNI(...) call.
 
-If you want to update the OCSP staple for a default server this parameter
-must have the returned value of the first $ssl->set_server_params(...) call
-
 =item $index
 
-When updating a virtual host ($server_index > -1) this value specifies the
-0-based index of the virtual host for which the OCSP staple should be
-refreshed.
+This value specifies the 0-based index of the virtual host for which
+the OCSP staple should be refreshed.
 
 When updating a default server this value must be -1 or undef
 
@@ -762,8 +766,7 @@ Returns PS_SUCCESS if the update was successful.
 
     $sct_array_size = refresh_SCT_buffer( $server_index, $index, $SCT_params );
 
-Used to refresh an already loaded CT extension data buffer either for a
-default server or for a virtual host.
+Used to refresh an already loaded CT extension data buffer for a virtual host.
 
 Parameters:
 
@@ -907,8 +910,21 @@ When this object will be destroyed will call:
 
     $rc = $keys->load_session_ticket_keys( $name, $symkey, $hashkey );
 
-    matrixSslLoadSessionTicketKeys ($keys, $name, $symkey, length $symkey,
+    matrixSslLoadSessionTicketKeys ( $keys, $name, $symkey, length $symkey,
         $haskkey, length $hashkey )
+
+=head3 load_OCSP_response
+
+    $rc = $keys->load_OCSP_response( $OCSP_file );
+
+    matrixSslLoadOCSPResponse ( $keys, $OCSPResponse, $OCSPResponseLen )
+
+=head3 load_SCT_response
+
+    $rc = $keys->load_SCT_response( $SCT_params );
+
+    matrixSslLoadSCTResponse ( $keys, $SCTResponse, $SCTResponseLen )
+
 
 B<Server side.>
 
@@ -1063,10 +1079,8 @@ call.
 
     $sv_index = $ssl->set_server_params( $sv_index, $ssl_id, $sv_params );
 
-Used to set the OCSP staple to be returned if the client sends the
-"status_request" TLS extension, the extension data to be returned if the
-client sends the "signed_certificate_timestamp" TLS extension and the
-server supported protocols used when a client send a TLS ALPN extension.
+Used to set the server supported protocols used when a client send a TLS
+ALPN extension.
 
 Note that this function call only affects the B<default server>. Virtual
 hosts are managed by using the $ssl->init_SNI(...).
@@ -1086,8 +1100,6 @@ The same as $sni_index and $ssl_id for $ssl->init_SNI(...)
 This is a reference to a hash with the following structure (all keys are optional):
 
     $sv_params = {
-        'OCSP_staple' => '/path/to/OCSP_staple.der',
-        'SCT_params' => ['/path/to/SCT1.sct', '/path/to/SCT2.sct'] or '/path/to/CT_extension_data_buffer'
         'ALPN' => ['protocol1', 'protocol2']
     }
 
@@ -1099,22 +1111,6 @@ in the L</CALLBACKS> section.
 Returns the index of the internal default server structure used for
 registering the parameters. This MUST be saved after the first
 call.
-
-=head3 load_OCSP_staple
-
-    $rc = $ssl->load_OCSP_staple( $DERfile );
-
-Loads an OCSP staple to be returned if the client sends the
-"status_request" TLS extension.
-
-Note that this function is very inefficient because the loaded data is
-bound to the specified session and it will be freed when the session is
-destroyed.
-It has the advantage that the session will contain the latest OCSP data if
-the OCSP DER file is refreshed in the meantime.
-
-Don't be lazy and use $ssl->set_server_params({'OCSP_staple' => '...'}) and
-$ssl->refresh_OCSP_staple(...) instead.
 
 
 =head2 Crypt::MatrixSSL3::Client and Crypt::MatrixSSL3::Server
@@ -1343,8 +1339,8 @@ The resulted file can be used in your script like:
         'SCT_params' => '/path/to/CT.sct'
     });
 
-    # refresh the CT response
-    Crypt::MatrixSSL3::refresh_SCT_buffer( $sv_index, undef, '/path/to/CT.sct' );
+    # refresh the CT response (default server - using already initialized keys)
+    $key->load_SCT_response( '/path/to/CT.sct' );
 
 =head3 Generate multiple SCT files containing binary representation of the responses received from the log servers
 
@@ -1376,8 +1372,8 @@ One or more files can be used in your script like:
         ]
     });
 
-    # refresh CT response
-    Crypt::MatrixSSL3::refresh_SCT_buffer( $sv_index, undef, [
+    # refresh CT response (for a virtual host)
+    Crypt::MatrixSSL3::refresh_SCT_buffer( $sv_index, $index, [
         '/path/to/sct/aviator.sct',
         '/path/to/sct/certly.sct',
     ]);
@@ -1437,9 +1433,9 @@ certificate.
         'OCSP_staple' => '/path/to/OCSP_staple.der'
     });
 
-=head3 Refreshing an already allocated OCSP staple buffer
+=head3 Refreshing an already allocated OCSP staple buffer for a virtual host
 
-    Crypt::MatrixSSL3::refresh_OCSP_staple( $sv_index, undef, '/path/to/OCSP_staple.der' );
+    Crypt::MatrixSSL3::refresh_OCSP_staple( $sv_index, $index, '/path/to/OCSP_staple.der' );
 
 
 =head1 HOWTO: Virtual hosts
@@ -1486,7 +1482,13 @@ Here is some Perl pseudo code on how these are used:
     my $sv_keys = Crypt::MatrixSSL3::Keys->new();
 
     # load key material (certificate, private key, etc)
-    $sv_keys->load_rsa(...)
+    $sv_keys->load_rsa(...);
+
+    # load OCSP response
+    $sv_keys->load_OCSP_response(...);
+
+    # load SCT response
+    $sv_keys->load_SCT_response(...);
 
     ...
 
@@ -1506,8 +1508,6 @@ Here is some Perl pseudo code on how these are used:
         # for the default server. These will be initialized only once and then reused
         # when $sv_index != -1
         $sv_index = $ssl->set_server_params($sv_index, $ssl_id, {
-            'OCSP_staple' => '...',
-            'SCT_params' => '...',
             'ALPN' => [...]
         });
 

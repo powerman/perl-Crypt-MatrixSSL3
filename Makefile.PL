@@ -181,6 +181,8 @@ my @cOptions = (
     # matrixsslConfig.h - Enables TLS 1.2 (SSL version 3.3) protocol support. USE_TLS_1_1 must be enabled
     'USE_TLS_1_2',
 
+    'USE_TLS_1_0_AND_ABOVE',
+
     # matrixsslConfig.h - Disables SSL version 3.0
     # TODO: disable the definition in matrixSSL so users will be able to support it if they comment the next line
     'DISABLE_SSLV3',
@@ -221,13 +223,16 @@ my @cOptions = (
     'REQUIRE_SECURE_REHANDSHAKES',
 
     # matrixsslConfig.h - Enable certificate status handling
-    'ENABLE_CERTIFICATE_STATUS_REQUEST',
+    'USE_OCSP',
 
     # matrixSslConfig.h - Enable certificate transparency handling
-    'ENABLE_SIGNED_CERTIFICATE_TIMESTAMP',
+    'USE_SCT',
 
     # matrixsslConfig.h - enable ALPN
     'USE_ALPN',
+
+    # matrixsslConfig.h - enable server preferrer ciphers
+    'USE_SERVER_PREFERRED_CIPHERS',
 
     # matrixsslConfig.h - Enable legacy renegotiations. NOT RECOMMENDED
     #'ENABLE_INSECURE_REHANDSHAKES',
@@ -340,16 +345,17 @@ foreach my $d (@cOptions) {
 my $os_src = ($^O =~ /Win32/ms) ? 'core/WIN32' : 'core/POSIX';
 my $o = $Config{obj_ext};
 my $c = '.c';
-my $mxbase = 'inc/matrixssl-3-7-2b-open';
+my $mxbase = 'inc/matrixssl-3-8-4-open';
 my $mxfiles = "$mxbase.files";
 my $mxmodfiles = 'modfiles';
 
 # Extract the MatrixSSL original source if it's not already extracted.
+
 use Archive::Tar;
 if (!-d $mxbase) {
     my $tar = Archive::Tar->new;
     $tar->setcwd('inc');
-    $tar->read("$mxbase.tgz");
+    $tar->read("$mxbase.tar.gz");
     $tar->extract();
 }
 

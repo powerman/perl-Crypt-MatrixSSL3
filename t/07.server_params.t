@@ -41,9 +41,9 @@ my $server_index = $Server_SSL->set_server_params(-1, 420, {
 
 cmp_ok $server_index, '>=', '0', '$Server_SSL->set_server_params(-1, 420, params) first call';
 cmp_ok $Server_SSL->set_server_params($server_index, 420), '==', $server_index, '$Server_SSL->set_server_params(index, 420) second call';
-cmp_ok Crypt::MatrixSSL3::refresh_OCSP_staple($server_index, undef, $OCSPtest), '==', PS_SUCCESS, 'Crypt::MatrixSSL3::refresh_OCSP_staple(server_index, undef, file)';
-cmp_ok Crypt::MatrixSSL3::refresh_SCT_buffer($server_index, undef, $CTbuffer), '==', 1, 'Crypt::MatrixSSL3::refresh_SCT_buffer(server_index, undef, file)';
-cmp_ok Crypt::MatrixSSL3::refresh_SCT_buffer($server_index, undef, $CTfiles), '==', 2, 'Crypt::MatrixSSL3::refresh_SCT_buffer(server_index, undef, [files])';
+cmp_ok $Server_Keys->load_OCSP_response($OCSPtest), '==', PS_SUCCESS, 'Crypt::MatrixSSL3::refresh_OCSP_staple(server_index, undef, file)';
+cmp_ok $Server_Keys->load_SCT_response($CTbuffer), '==', 1, 'Crypt::MatrixSSL3::refresh_SCT_buffer(server_index, undef, file)';
+cmp_ok $Server_Keys->load_SCT_response($CTfiles), '==', 2, 'Crypt::MatrixSSL3::refresh_SCT_buffer(server_index, undef, [files])';
 cmp_ok Crypt::MatrixSSL3::refresh_ALPN_data($server_index, undef, ['proto3', 'proto4']), '==', 2, 'Crypt::MatrixSSL3::refresh_ALPN_data(server_index, undef, [protocols])';
 
 undef $Server_SSL;
