@@ -417,7 +417,7 @@ s{core/POSIX|core/WIN32}{$os_src}ms for @files;
 my $mxobjs  = join q{ }, map { $_.$o } @files;
 
 # Some Linicies seem to require '-lpthread' - if you're having problems, try removing this:-
-my $libs = ($^O =~ /Win32/ms) ? q{} : '-lpthread';
+my $libs = ($^O =~ /Win32/ms) ? q{} : '-lpthread -lrt';
 
 # Additional compiler/linker flags
 my ($ccflags, $lddlflags) = (q{}, q{});
