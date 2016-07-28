@@ -372,7 +372,12 @@ void ALPNCallbackXS(void *ssl, short protoCount, char *proto[MAX_PROTO_EXT], int
     p_ALPN_data alpn = NULL;
     p_SSL_data ssl_data;
     p_SSL_server ss;
-
+#ifndef WIN32
+    int regex_res = 0;
+#if defined(MATRIX_DEBUG)
+    char regex_error[255];
+#endif
+#endif
 #ifdef MATRIX_DEBUG
     warn("alpncb: ssl = %p, userptr = %p, expectdName = %s", ssl, ((ssl_t *) ssl)->userPtr, ((ssl_t *) ssl)->expectedName);
 #endif
