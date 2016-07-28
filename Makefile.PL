@@ -324,9 +324,8 @@ my @cOptions = (
     ($^O !~ /Win32/ms ? 'POSIX' : ()),
     ($^O !~ /Win32|darwin/ms && $Config{myuname} =~ /x86_64|amd64|x64/ms ? 'PSTM_64BIT' : ()),
 
-    # this is needed because on Windows matrixSSL doesn't do certificate date validation
-    # and just sets PS_CERT_AUTH_FAIL_DATE_FLAG for every certificate which means they all fail auth
-    ($^O =~ /Win32/ms ? 'ALL_CERTS_PASS_DATE_VALIDATION' : ()),
+    # module compiles as a dynamic DLL
+    ($^O =~ /Win32/ms ? '_USRDLL' : ()),
 );
 
 # Compute the compiler definitions string

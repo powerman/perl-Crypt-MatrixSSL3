@@ -1,5 +1,1 @@
-1) Added support for Certificate Transparency through the
-   "signed_certificate_timestamp" TLS extension
-2) Implemented server preferred ciphers - selecting matrixSSL strongest
-   ciphers from the client supported list
-3) Bug fixes
+The patch contains comments to defines in order to make the selections in Makefile.PL relevant

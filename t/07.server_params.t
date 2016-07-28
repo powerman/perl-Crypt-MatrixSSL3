@@ -10,7 +10,7 @@ Crypt::MatrixSSL3::Open();
 unless (Crypt::MatrixSSL3::capabilities() & OCSP_STAPLES_ENABLED) {
     plan skip_all => "OCSP staples not enabled - OCSP_STAPLES_ENABLED not defined";
 } else {
-    plan tests => 9;
+    plan tests => 8;
 }
 
 my $certFile            = 't/cert/server.crt';
@@ -33,14 +33,13 @@ is PS_SUCCESS, $Server_Keys->load_rsa($certFile, $privFile, $privPass, undef),
 lives_ok { $Server_SSL = Crypt::MatrixSSL3::Server->new($Server_Keys, undef) }
     'Server->new';
 
-my $server_index = $Server_SSL->set_server_params(-1, 420, {
-    'OCSP_staple' => $OCSPtest,
-    'SCT_params' => $CTbuffer,
+my $server_index = Crypt::MatrixSSL3::create_SSL_server();
+
+$Server_SSL->set_server_params($server_index, {
     'ALPN' => ['proto1', 'proto2']
 });
 
-cmp_ok $server_index, '>=', '0', '$Server_SSL->set_server_params(-1, 420, params) first call';
-cmp_ok $Server_SSL->set_server_params($server_index, 420), '==', $server_index, '$Server_SSL->set_server_params(index, 420) second call';
+cmp_ok $server_index, '>=', '0', '$Server_SSL->set_server_params($server_index, params) first call';
 cmp_ok $Server_Keys->load_OCSP_response($OCSPtest), '==', PS_SUCCESS, 'Crypt::MatrixSSL3::refresh_OCSP_staple(server_index, undef, file)';
 cmp_ok $Server_Keys->load_SCT_response($CTbuffer), '==', 1, 'Crypt::MatrixSSL3::refresh_SCT_buffer(server_index, undef, file)';
 cmp_ok $Server_Keys->load_SCT_response($CTfiles), '==', 2, 'Crypt::MatrixSSL3::refresh_SCT_buffer(server_index, undef, [files])';

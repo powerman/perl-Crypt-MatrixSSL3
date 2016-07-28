@@ -1,333 +1,8 @@
-diff --git a/core/corelib.c b/core/corelib.c
-index 57c5675..db46e3a 100644
---- a/core/corelib.c
-+++ b/core/corelib.c
-@@ -309,4 +309,16 @@ void psBurnStack(uint32 len)
- }
- 
- /******************************************************************************/
-+/*
-+	Support for memory allocation in order to avoid applications that redefine
-+	malloc/free (see Perl)
-+*/
-+void *psMallocNative(size_t size)
-+{
-+	return malloc(size);
-+}
- 
-+void psFreeNative(void *ptr)
-+{
-+	free(ptr);
-+}
-diff --git a/core/osdep.h b/core/osdep.h
-index 8e89bb5..f80a9a4 100644
---- a/core/osdep.h
-+++ b/core/osdep.h
-@@ -148,9 +148,9 @@
-   #define PSPUBLIC extern
-  #else
-   #ifdef _USRDLL	/* DLL */
--   #define PSPUBLIC extern __declspec(dllexport)
-+   #define PSPUBLIC extern
-   #else
--   #define PSPUBLIC extern __declspec(dllimport)
-+   #define PSPUBLIC extern
-   #endif
-  #endif
- #else
-diff --git a/core/psmalloc.h b/core/psmalloc.h
-index 52552d2..f2e13c1 100644
---- a/core/psmalloc.h
-+++ b/core/psmalloc.h
-@@ -72,8 +72,9 @@
- 	Support for memory allocation in order to avoid applications that redefine
- 	malloc/free (see Perl)
- */
--__inline static void *psMallocNative(size_t size) { return malloc(size); }
--__inline static void psFreeNative(void *ptr) { free(ptr); }
-+
-+void *psMallocNative(size_t size);
-+void psFreeNative(void *ptr);
- 
- typedef int32_t psPool_t;
- 
-diff --git a/crypto/cryptoConfig.h b/crypto/cryptoConfig.h
-index 05dbc2e..3c50f33 100644
---- a/crypto/cryptoConfig.h
-+++ b/crypto/cryptoConfig.h
-@@ -169,6 +169,8 @@
- //#define USE_CRL /***< @pre USE_FULL_CERT_PARSE */
- //#define USE_OCSP /**< @pre USE_SHA1 */
- 
-+//#define USE_SCT
-+
- /******************************************************************************/
- /**
- 	Various PKCS standards support
-diff --git a/matrixssl/cipherSuite.c b/matrixssl/cipherSuite.c
-index d80b002..222858b 100644
---- a/matrixssl/cipherSuite.c
-+++ b/matrixssl/cipherSuite.c
-@@ -2175,10 +2175,44 @@ int32_t haveKeyMaterial(const ssl_t *ssl, int32 cipherType, short reallyTest)
- #endif /* VALIDATE_KEY_MATERIAL */
- 
- 
-+#ifdef USE_SERVER_SIDE_SSL
-+
-+#ifdef USE_SERVER_PREFERRED_CIPHERS
-+
-+/*	quick sort support for sorting descendingly the client's supported
-+	supported cipher list
-+*/
-+void quick_sort_desc(uint32 *v, int l, int r) {
-+	int i = l, j = r;
-+	int tmp;
-+	int p = v[(l + r) / 2];
-+
-+	while (i <= j) {
-+		while (v[i] > p)
-+			i++;
-+		while (v[j] < p)
-+			j--;
-+
-+		if (i <= j) {
-+			tmp = v[i];
-+			v[i] = v[j];
-+			v[j] = tmp;
-+			i++;
-+			j--;
-+		}
-+	};
-+
-+	if (l < j)
-+		quick_sort_desc(v, l, j);
-+	if (i < r)
-+		quick_sort_desc(v, i, r);
-+}
-+
-+#endif /* USE_SERVER_PREFERRED_CIPHERS */
-+
- /*	0 return is a key was found
- 	<0 is no luck
- */
--#ifdef USE_SERVER_SIDE_SSL
- int32 chooseCipherSuite(ssl_t *ssl, unsigned char *listStart, int32 listLen)
- {
- 	const sslCipherSpec_t	*spec;
-@@ -2189,6 +2223,39 @@ int32 chooseCipherSuite(ssl_t *ssl, unsigned char *listStart, int32 listLen)
- 	sslPubkeyId_t			wantKey;
- 	sslKeys_t				*givenKey = NULL;
- 
-+#ifdef USE_SERVER_PREFERRED_CIPHERS
-+
-+#define MAX_CIPHERS 256
-+
-+	unsigned char			*cc = listStart;
-+	unsigned char			*ec = listStart + listLen;
-+	uint32					ciphers[MAX_CIPHERS];
-+	int						ciphersLen = 0, cn = 0, i = 0;
-+
-+	while ((cc < ec) && (cn < MAX_CIPHERS)) {
-+		if (ssl->rec.majVer > SSL2_MAJ_VER) {
-+			ciphers[cn] = *cc << 8; cc++;
-+			ciphers[cn] += *cc; cc++;
-+		} else {
-+			/* Deal with an SSLv2 hello message.  Ciphers are 3 bytes long */
-+			ciphers[cn] = *cc << 16; cc++;
-+			ciphers[cn] += *cc << 8; cc++;
-+			ciphers[cn] += *cc; cc++;
-+		}
-+
-+		psTraceIntInfo("Cipher index %d ", cn);
-+		psTraceIntInfo("is %d\n", ciphers[cn]);
-+
-+		cn++;
-+	}
-+
-+	if (cn > 1) quick_sort_desc(ciphers, 0, cn - 1);
-+
-+	while (i < cn) {
-+		cipher = ciphers[i++];
-+
-+#else
-+
- 	end = c + listLen;
- 	while (c < end) {
- 		
-@@ -2202,14 +2269,22 @@ int32 chooseCipherSuite(ssl_t *ssl, unsigned char *listStart, int32 listLen)
- 			cipher += *c; c++;
- 		}
- 
-+#endif /*USE_SERVER_PREFERRED_CIPHERS*/
-+
-+		psTraceIntInfo("Testing cipher %d\n", cipher);
- 		/* Checks if this cipher suite compiled into the library.
- 			ALSO, in the cases of static server keys (ssl->keys not NULL)
- 			the haveKeyMaterial	function will be run */
- 		if ((spec = sslGetCipherSpec(ssl, cipher)) == NULL) {
-+			psTraceIntInfo("Cipher %d not compiled in the library\n", cipher);
- 			continue;
- 		}
-+
-+		psTraceIntInfo("Cipher %d found in the library. Testing keys...\n", cipher);
- 		
- 		if (ssl->keys == NULL) {
-+			psTraceInfo("NULL keys\n");
-+
- 			/* Populate the sslPubkeyId_t struct to pass to user callback */
- 			wantKey.keyType = getKeyTypeFromCipherType(spec->type,
- 				&wantKey.dhParamsRequired, &ecKeyExchange);
-@@ -2278,9 +2353,14 @@ int32 chooseCipherSuite(ssl_t *ssl, unsigned char *listStart, int32 listLen)
- 			ssl->keys = NULL;
- #endif
- 		} else {
--			if (ssl->expectedName) {
-+			/* The SNI callback is executed when the SNI extension is processed
-+				See reason in extDecode.c
-+			*/
-+
-+			/* if (ssl->expectedName) { */
- 				/* The SNI callback is no longer invoked in the middle of the
- 					parse.  Now is the time to call it for pre-loaded keys */
-+			/*
- 				if (matrixServerSetKeysSNI(ssl, ssl->expectedName,
- 						strlen(ssl->expectedName)) < 0) {
- 					psTraceInfo("Server didn't load SNI keys\n");
-@@ -2288,6 +2368,7 @@ int32 chooseCipherSuite(ssl_t *ssl, unsigned char *listStart, int32 listLen)
- 					return MATRIXSSL_ERROR;
- 				}
- 			}
-+			*/
- 			/* This is here becuase it still could be useful to support the
- 				old mechanism where the server just loads the single known
- 				ID key at new session and never looks back */
-diff --git a/matrixssl/extDecode.c b/matrixssl/extDecode.c
-index d0e7327..67a1cce 100644
---- a/matrixssl/extDecode.c
-+++ b/matrixssl/extDecode.c
-@@ -73,6 +73,7 @@ int32 parseClientHelloExtensions(ssl_t *ssl, unsigned char **cp, unsigned short
- 	ssl->extFlags.session_ticket = 0;
- 	ssl->extFlags.extended_master_secret = 0;
- 	ssl->extFlags.status_request = 0;
-+	ssl->extFlags.signed_certificate_timestamp = 0;
- 	
- 	/*	There could be extension data to parse here:
- 		Two byte length and extension info.
-@@ -311,6 +312,19 @@ static int ClientHelloExt(ssl_t *ssl, unsigned short extType, unsigned short ext
- 		}
- 		memcpy(ssl->expectedName, c, i);
- 		ssl->expectedName[i] = '\0';
-+
-+		/* Calling the SNI callback here in order to give the server
-+			a chance to set different protocols for different virtual hosts
-+			assuming that the ALPN extension will be processed later (and
-+			probably should make sure that this happens)
-+		*/
-+		if (matrixServerSetKeysSNI(ssl, ssl->expectedName,
-+				strlen(ssl->expectedName)) < 0) {
-+			psTraceInfo("Server didn't load SNI keys\n");
-+			ssl->err = SSL_ALERT_UNRECOGNIZED_NAME;
-+			return MATRIXSSL_ERROR;
-+		}
-+
- 		break;
- 
- #ifdef USE_ALPN
-@@ -587,6 +601,23 @@ static int ClientHelloExt(ssl_t *ssl, unsigned short extType, unsigned short ext
- 		break;
- #endif
- 
-+	/**************************************************************************/
-+#ifdef USE_SCT
-+	case EXT_SIGNED_CERTIFICATE_TIMESTAMP:
-+		/* TODO: add client extension parsing */
-+
-+		/* Currently, the SCTResponse must be loaded into the key material
-+			so we check if that exists to determine if we will reply with
-+			the extension */
-+		if (ssl->keys->SCTResponseBufLen > 0 &&
-+				ssl->keys->SCTResponseBuf != NULL) {
-+			ssl->extFlags.signed_certificate_timestamp = 1;
-+		} else {
-+			psTraceInfo("Client requesting SCT but we have no response\n");
-+		}
-+
-+		break;
-+#endif
- 
- 	/**************************************************************************/
- 
-@@ -692,7 +723,7 @@ static int dealWithAlpnExt(ssl_t *ssl, const unsigned char *c, unsigned short ex
- 		that here for checking later (in choosing cipher suite, etc).
- 		@see https://tools.ietf.org/html/rfc7540#section-9.2
- 	*/
--	if ((ssl->alpnLen == 2) && memcmp(ssl->alpn, "h2", 2) = 0) {
-+	if ((ssl->alpnLen == 2) && memcmp(ssl->alpn, "h2", 2) == 0) {
- 		ssl->flags |= SSL_FLAGS_HTTP2;
- 	}
- 
-diff --git a/matrixssl/matrixssl.c b/matrixssl/matrixssl.c
-index 3ce6a10..c247e65 100644
---- a/matrixssl/matrixssl.c
-+++ b/matrixssl/matrixssl.c
-@@ -849,6 +849,35 @@ int32_t matrixSslLoadOCSPResponse(sslKeys_t *keys,
- }
- #endif /* USE_OCSP && USE_SERVER_SIDE_SSL */
- 
-+
-+#if defined(USE_SCT) && defined(USE_SERVER_SIDE_SSL)
-+int32_t matrixSslLoadSCTResponse(sslKeys_t *keys,
-+			const unsigned char *SCTResponseBuf, uint16_t SCTResponseBufLen)
-+{
-+	psPool_t	*pool;
-+
-+	if (keys == NULL || SCTResponseBuf == NULL || SCTResponseBufLen == 0) {
-+		return PS_ARG_FAIL;
-+	}
-+	pool = keys->pool;
-+
-+	/* Overwrite/Update any response being set */
-+	if (keys->SCTResponseBuf != NULL) {
-+		psFree(keys->SCTResponseBuf, pool);
-+		keys->SCTResponseBufLen = 0;
-+	}
-+
-+	keys->SCTResponseBufLen = SCTResponseBufLen;
-+	if ((keys->SCTResponseBuf = psMalloc(pool, SCTResponseBufLen)) == NULL) {
-+		return PS_MEM_FAIL;
-+	}
-+
-+	memcpy(keys->SCTResponseBuf, SCTResponseBuf, SCTResponseBufLen);
-+	return PS_SUCCESS;
-+}
-+#endif /* USE_OCSP && USE_SERVER_SIDE_SSL */
-+
-+
- /******************************************************************************/
- /*
- 	This will free the struct and any key material that was loaded via:
-diff --git a/matrixssl/matrixsslApi.h b/matrixssl/matrixsslApi.h
-index ca856a9..868a315 100644
---- a/matrixssl/matrixsslApi.h
-+++ b/matrixssl/matrixsslApi.h
-@@ -112,6 +112,12 @@ PSPUBLIC int32_t matrixSslLoadOCSPResponse(sslKeys_t *keys,
- 						const unsigned char *OCSPResponseBuf,
- 						uint16_t OCSPResponseBufLen);
- #endif
-+#if defined(USE_SCT) && defined(USE_SERVER_SIDE_SSL)
-+PSPUBLIC int32_t matrixSslLoadSCTResponse(sslKeys_t *keys,
-+						const unsigned char *SCTResponseBuf,
-+						uint16_t SCTResponseBufLen);
-+#endif
-+
- 
- /******************************************************************************/
- /*
 diff --git a/matrixssl/matrixsslConfig.h b/matrixssl/matrixsslConfig.h
-index fd1df00..a2abd7d 100644
+index 45ce1ac..f7ab875 100644
 --- a/matrixssl/matrixsslConfig.h
 +++ b/matrixssl/matrixsslConfig.h
-@@ -73,13 +73,13 @@ extern "C" {
+@@ -73,23 +73,23 @@ extern "C" {
  */
  
  /** Ephemeral ECC DH keys, ECC DSA certificates */
@@ -347,103 +22,48 @@ index fd1df00..a2abd7d 100644
  //#define USE_TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256
  
  /** Ephemeral ECC DH keys, RSA certificates */
-@@ -296,6 +296,13 @@ extern "C" {
+-#define USE_TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA /**< @security NIST_SHOULD */
+-#define USE_TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA
++//#define USE_TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA /**< @security NIST_SHOULD */
++//#define USE_TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA
+ /* TLS 1.2 ciphers */
+-#define USE_TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256 /**< @security NIST_SHOULD */
+-#define USE_TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384 /**< @security NIST_MAY */
+-#define USE_TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256 /**< @security NIST_SHOULD */
+-#define USE_TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 /**< @security NIST_SHOULD */
++//#define USE_TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256 /**< @security NIST_SHOULD */
++//#define USE_TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384 /**< @security NIST_MAY */
++//#define USE_TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256 /**< @security NIST_SHOULD */
++//#define USE_TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 /**< @security NIST_SHOULD */
+ //#define USE_TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
+ 
+ /** Ephemeral Diffie-Hellman ciphersuites, with RSA certificates */
+@@ -100,13 +100,13 @@ extern "C" {
+ //#define USE_TLS_DHE_RSA_WITH_AES_256_CBC_SHA256
+ 
+ /** Non-Ephemeral RSA keys/certificates */
+-#define USE_TLS_RSA_WITH_AES_128_CBC_SHA /**< @security NIST_SHALL */
+-#define USE_TLS_RSA_WITH_AES_256_CBC_SHA /**< @security NIST_SHOULD */
++//#define USE_TLS_RSA_WITH_AES_128_CBC_SHA /**< @security NIST_SHALL */
++//#define USE_TLS_RSA_WITH_AES_256_CBC_SHA /**< @security NIST_SHOULD */
+ /* TLS 1.2 ciphers */
+-#define USE_TLS_RSA_WITH_AES_128_CBC_SHA256 /**< @security NIST_MAY */
+-#define USE_TLS_RSA_WITH_AES_256_CBC_SHA256 /**< @security NIST_MAY */
+-#define USE_TLS_RSA_WITH_AES_128_GCM_SHA256 /**< @security NIST_SHALL */
+-#define USE_TLS_RSA_WITH_AES_256_GCM_SHA384 /**< @security NIST_SHOULD */
++//#define USE_TLS_RSA_WITH_AES_128_CBC_SHA256 /**< @security NIST_MAY */
++//#define USE_TLS_RSA_WITH_AES_256_CBC_SHA256 /**< @security NIST_MAY */
++//#define USE_TLS_RSA_WITH_AES_128_GCM_SHA256 /**< @security NIST_SHALL */
++//#define USE_TLS_RSA_WITH_AES_256_GCM_SHA384 /**< @security NIST_SHOULD */
  
  /******************************************************************************/
  /**
-+	Only available server side. Allows matrixSSL to chose the strongest cipher
-+	from the client's supported list.
-+*/
-+//#define USE_SERVER_PREFERRED_CIPHERS
-+
-+/******************************************************************************/
-+/**
- 	The initial buffer sizes for send and receive buffers in each ssl_t session.
- 	Buffers are internally grown if more incoming or outgoing data storage is
- 	needed, up to a maximum of SSL_MAX_BUF_SIZE. Once the memory used by the
-diff --git a/matrixssl/matrixssllib.h b/matrixssl/matrixssllib.h
-index fa7475c..cd3eaf1 100644
---- a/matrixssl/matrixssllib.h
-+++ b/matrixssl/matrixssllib.h
-@@ -658,7 +658,7 @@ static __inline uint16_t HASH_SIG_MASK(uint8_t hash, uint8_t sig)
- #define EXT_ELLIPTIC_POINTS					11
- #define EXT_SIGNATURE_ALGORITHMS			13
- #define EXT_ALPN							16
--#define EXT_SIGNED_CERTIFICATE_TIMESTAMP	18
-+#define EXT_SIGNED_CERTIFICATE_TIMESTAMP	18  /* SCT */
- #define EXT_EXTENDED_MASTER_SECRET			23
- #define EXT_SESSION_TICKET					35
- #define EXT_RENEGOTIATION_INFO				0xFF01
-@@ -826,6 +826,10 @@ typedef struct {
- 	unsigned char	*OCSPResponseBuf;
- 	uint16_t		OCSPResponseBufLen;
- #endif
-+#if defined(USE_SCT) && defined(USE_SERVER_SIDE_SSL)
-+	unsigned char	*SCTResponseBuf;
-+	uint16_t		SCTResponseBufLen;
-+#endif
- 	void			*poolUserPtr; /* Data that will be given to psOpenPool
- 									for any operations involving these keys */
- #if defined(USE_ECC) || defined(REQUIRE_DH_PARAMS)
-@@ -1309,6 +1313,7 @@ struct ssl {
- 		uint32		session_ticket: 1;
- 		uint32		status_request: 1;	/* received EXT_STATUS_REQUEST */
- 		uint32		status_request_v2: 1;	/* received EXT_STATUS_REQUEST_V2 */
-+		uint32		signed_certificate_timestamp: 1; /* received EXT_SIGNED_CERTIFICATE_TIMESTAMP */
- 		uint32		require_extended_master_secret: 1; /* peer may require */
- 	} extFlags;	/**< Extension flags */
+@@ -185,7 +185,7 @@ extern "C" {
+ 		USE_TLS_1_0_AND_ABOVE
+ 	@note There is no option for enabling SSL3.0 at this level
+ */
+-#define USE_TLS_1_1_AND_ABOVE /**< @security default 1_1_AND_ABOVE */
++//#define USE_TLS_1_1_AND_ABOVE /**< @security default 1_1_AND_ABOVE */
  
-diff --git a/matrixssl/sslEncode.c b/matrixssl/sslEncode.c
-index 7f73d79..c0d4ffd 100644
---- a/matrixssl/sslEncode.c
-+++ b/matrixssl/sslEncode.c
-@@ -1466,6 +1466,13 @@ int32 sslEncodeResponse(ssl_t *ssl, psBuf_t *out, uint32 *requiredLen)
- 			messageSize += secureWriteAdditions(ssl, 1);
- 		}
- #endif
-+
-+#ifdef USE_SCT
-+		if (ssl->extFlags.signed_certificate_timestamp) {
-+			extSize = 2;
-+			messageSize += 2 + 2 + 2 + ssl->keys->SCTResponseBufLen; /* 2 type, 2 length, data */
-+		}
-+#endif
- 		
- #ifdef USE_STATELESS_SESSION_TICKETS
- 		if (ssl->sid &&
-@@ -3211,6 +3218,15 @@ static int32 writeServerHello(ssl_t *ssl, sslBuf_t *out)
- 	}
- #endif
- 
-+#ifdef USE_SCT
-+	if (ssl->extFlags.signed_certificate_timestamp) {
-+		if (extLen == 0) {
-+			extLen = 2;
-+		}
-+		extLen += 2 + 2 + 2 + ssl->keys->SCTResponseBufLen; /* 2 type, 2 len, data */
-+	}
-+#endif
-+
- #ifdef USE_ALPN
- 	if (ssl->alpnLen) {
- 		if (extLen == 0) {
-@@ -3379,6 +3395,19 @@ static int32 writeServerHello(ssl_t *ssl, sslBuf_t *out)
- 		}
- #endif
- 
-+#ifdef USE_SCT
-+		if (ssl->extFlags.signed_certificate_timestamp) {
-+			*c = (EXT_SIGNED_CERTIFICATE_TIMESTAMP & 0xFF00) >> 8; c++;
-+			*c = EXT_SIGNED_CERTIFICATE_TIMESTAMP & 0xFF; c++;
-+			*c = ((ssl->keys->SCTResponseBufLen + 2) & 0xFF00) >> 8; c++;
-+			*c = (ssl->keys->SCTResponseBufLen + 2) & 0xFF; c++;
-+			*c = (ssl->keys->SCTResponseBufLen & 0xFF00) >> 8; c++;
-+			*c = ssl->keys->SCTResponseBufLen & 0xFF; c++;
-+			memcpy(c, ssl->keys->SCTResponseBuf, ssl->keys->SCTResponseBufLen);
-+			c += ssl->keys->SCTResponseBufLen;
-+		}
-+#endif
-+
- #ifdef USE_ALPN
- 		if (ssl->alpnLen) {
- 			*c = (EXT_ALPN & 0xFF00) >> 8; c++;
+ /******************************************************************************/
+ /**

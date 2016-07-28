@@ -53,17 +53,18 @@ typedef t_ALPN_data *p_ALPN_data;
 
 
 /*****************************************************************************
-    SNI entries  a.k.a virtual hosts per server.
-
-    We can handle a maximum MAX_SNI_ENTRIES virtual hosts.
+    SNI entries  a.k.a virtual hosts
 
     For each host we can have:
-        certificate
-        key
-        session tickets keys
-        DH param
-        OCSP staple
-        Certificate Transparency files
+        Hostname regex
+        Certificate (not stored, used to initialize SSL keys)
+        Key (not stored, used to initialize SSL keys)
+        In the SSL keys:
+            - Session tickets keys
+            - DH params
+            - OCSP staple
+            - Certificate Transparency files
+        Protocols
 */
 
 #define MAX_SNI_ENTRIES     16
@@ -83,49 +84,30 @@ typedef struct s_SNI_entry {
 typedef t_SNI_entry *p_SNI_entry;
 
 /*****************************************************************************
-    SNI servers
+    SSL servers
 
-    We can handle a maximum MAX_SNI_SERVERS server - each with its own 
-    virtual hosts.
+    Each server can have maximum MAX_SNI_ENTRIES virtual hosts
+
+    We can handle maximum MAX_SNI_SERVERS servers
 
     For each server we can have:
-        a maximum of MAX_SNI_ENTRIES virtual hosts
+        Virtual hosts
+        Protocols
 */
 
-#define MAX_SNI_SERVERS     16
+#define MAX_SSL_SERVERS     16
 
-typedef struct s_SNI_server {
+typedef struct s_SSL_server {
     t_SNI_entry *SNI_entries[MAX_SNI_ENTRIES];
     int16 SNI_entries_number;
-} t_SNI_server;
-
-#define SZ_SNI_SERVER sizeof(t_SNI_server);
-typedef t_SNI_server *p_SNI_server;
-
-t_SNI_server *SNI_servers[MAX_SNI_SERVERS];
-int16 SNI_server_index = 0;
-
-
-/*****************************************************************************
-    Default servers data
-
-    We currently handle:
-        OCSP staples
-        Certificate Transparency data
-        ALPN setup
-*/
-
-#define MAX_DEFAULT_SERVERS 16
-
-typedef struct s_default_server {
     p_ALPN_data alpn;
-} t_default_server;
+} t_SSL_server;
 
-#define SZ_DEFAULT_SERVER sizeof(t_default_server)
-typedef t_default_server *p_default_server;
+#define SZ_SSL_SERVER sizeof(t_SSL_server)
+typedef t_SSL_server *p_SSL_server;
 
-t_default_server *default_servers[MAX_DEFAULT_SERVERS];
-int16 default_server_index = 0;
+p_SSL_server SSL_servers[MAX_SSL_SERVERS];
+int16 SSL_server_index = 0;
 
 
 /*****************************************************************************
@@ -139,13 +121,19 @@ int16 default_server_index = 0;
 
 typedef struct s_SSL_data {
     uint32_t ssl_id;
-    p_ALPN_data alpn;
-    p_SNI_server SNI_server;
+    int server_index;
+    int cbALPN_done;
+    int cbSNI_done;
+    sslKeys_t *keys;
 } t_SSL_data;
 
 #define SZ_SSL_DATA sizeof(t_SSL_data)
 typedef t_SSL_data *p_SSL_data;
 
+
+/*****************************************************************************
+    Support function
+*/
 
 void add_obj() {
     int rc;
@@ -359,6 +347,9 @@ int32 appExtensionCback(ssl_t *ssl, uint16_t type, uint8_t len, void *data) {
 /* Perl callback that will get called when a client protocol is selected */
 static SV* ALPNCallback = NULL;
 
+/* Perl callback that will get called when a hostname is successfully matched. */
+static SV* VHIndexCallback = NULL;
+
 /*
  * ALPN callback that gets called from matrixSSL whenever a client sends an ALPN extension.
  *
@@ -375,41 +366,117 @@ static SV* ALPNCallback = NULL;
  *                    doesn't support any of the client's protocols
  */
 void ALPNCallbackXS(void *ssl, short protoCount, char *proto[MAX_PROTO_EXT], int32 protoLen[MAX_PROTO_EXT], int32 *index) {
-    int32 res_cl = -1, res_sv = -1, i, j;
+    ssl_t *pssl;
+    int32 res_cl = -1, res_sv = -1, i, j, res;
     uint32_t ssl_id;
-    p_ALPN_data alpn;
+    p_ALPN_data alpn = NULL;
     p_SSL_data ssl_data;
+    p_SSL_server ss;
 
 #ifdef MATRIX_DEBUG
-    warn("alpncb: ssl = %p, userptr = %p, expectdname = %s", ssl, ((ssl_t *) ssl)->userPtr, ((ssl_t *) ssl)->expectedName);
+    warn("alpncb: ssl = %p, userptr = %p, expectdName = %s", ssl, ((ssl_t *) ssl)->userPtr, ((ssl_t *) ssl)->expectedName);
 #endif
-    ssl_data = (p_SSL_data) ((ssl_t *) ssl)->userPtr;
+    /* get SSL session and our custom SSL session data */
+    pssl = (ssl_t *) ssl;
+    ssl_data = (p_SSL_data) pssl->userPtr;
     ssl_id = ssl_data->ssl_id;
-    alpn = ssl_data->alpn;
-#ifdef MATRIX_DEBUG
-    warn("alpncb: userptr = %p, ssl_data = %p", ((ssl_t *) ssl)->userPtr, ssl_data);
+    ss = SSL_servers[ssl_data->server_index];
+
+    /* was there a SNI extension parsed? */
+    if (pssl->expectedName != NULL) {
+        for (i = 0; i < ss->SNI_entries_number; i++)
+#ifndef WIN32
+            if ((regex_res = regexec(&(ss->SNI_entries[i]->regex_hostname), (const char *) pssl->expectedName, 0, NULL, 0)) == 0) {
+#else
+            if (!stricmp(pssl->expectedName, ss->SNI_entries[i]->hostname)) {
 #endif
 #ifdef MATRIX_DEBUG
-    warn("ALPN callback XS: protoCount = %d, server protoCount = %d, ssl_data = %p, ssl_id = %d", protoCount, alpn->protoCount, ssl_data, ssl_id);
+                warn("SNI match for %s on %d", pssl->expectedName, i);
 #endif
-    for (i = 0; i < alpn->protoCount; i++) {
-        for (j = 0; j < protoCount; j++) {
-#ifdef MATRIX_DEBUG
-            warn("Client protocol: %.*s, Server protocol: %.*s", protoLen[j], proto[j], alpn->protoLen[i], alpn->proto[i]);
-#endif
-            if ((alpn->protoLen[i] == protoLen[j]) && !strncmp(alpn->proto[i], proto[j], protoLen[j])) {
-#ifdef MATRIX_DEBUG
-                warn("Match on cl = %d, sv = %d: %.*s", j, i, protoLen[j], proto[j]);
-#endif
-                res_sv = i;
-                res_cl = j;
+                /* found a matching hostname so save the keys in case the SNI callback is called */
+                ssl_data->keys = ss->SNI_entries[i]->keys;
+
                 break;
+#if defined(MATRIX_DEBUG) && !defined(WIN32)
+            } else {
+                regerror(regex_res, &(ss->SNI_entries[i]->regex_hostname), regex_error, 255);
+                warn("Error matching %d SNI entry: %s", i, regex_error);
+#endif
             }
+
+        /* test if a matching hostname was found */
+        if (i < ss->SNI_entries_number) {
+            /* get the protocols for the virtual host */
+            alpn = ss->SNI_entries[i]->alpn;
+
+            /* test Perl SNI callback present and not already called */
+            if ((VHIndexCallback != NULL) && !ssl_data->cbSNI_done) {
+                /* execute Perl SNI callback */
+                dSP;
+
+                ENTER;
+                SAVETMPS;
+
+                PUSHMARK(SP);
+                XPUSHs(sv_2mortal(newSViv(ssl_id)));
+                XPUSHs(sv_2mortal(newSViv(i)));
+                XPUSHs(sv_2mortal(newSVpv(pssl->expectedName, strlen(pssl->expectedName))));
+                PUTBACK;
+
+                res = call_sv(VHIndexCallback, G_EVAL|G_SCALAR);
+
+                SPAGAIN;
+
+                if (SvTRUE(ERRSV)) {
+                    warn("%s", SvPV_nolen(ERRSV));
+                    warn("die() in SNI_callback callback not allowed, continue...\n");
+                    POPs;
+                    res = -1;
+                }
+
+                PUTBACK;
+                FREETMPS;
+                LEAVE;
+
+                ssl_data->cbSNI_done;
+            }
+        } else {
+            /* even if we didn't find a matching virtual host and we know the SSL connection
+               will fail, we will choose a protocol and let the SNI callback return NULL keys
+               so the client will get the apropiate SSL alert
+            */
+            alpn = ss->alpn;
         }
+    } else {
+        /* no SNI extension was received from the client, use default server protocols */
+        alpn = ss->alpn;
+    }
 
-        if (res_cl != -1) break;
-    };
+    /* test if the server has protocol defines (it should) */
+    if (alpn != NULL) {
+#ifdef MATRIX_DEBUG
+        warn("ALPN callback XS: protoCount = %d, server protoCount = %d, ssl_data = %p, ssl_id = %d", protoCount, alpn->protoCount, ssl_data, ssl_id);
+#endif
+        for (i = 0; i < alpn->protoCount; i++) {
+            for (j = 0; j < protoCount; j++) {
+#ifdef MATRIX_DEBUG
+                warn("Client protocol: %.*s, Server protocol: %.*s", protoLen[j], proto[j], alpn->protoLen[i], alpn->proto[i]);
+#endif
+                if ((alpn->protoLen[i] == protoLen[j]) && !strncmp(alpn->proto[i], proto[j], protoLen[j])) {
+#ifdef MATRIX_DEBUG
+                    warn("Match on cl = %d, sv = %d: %.*s", j, i, protoLen[j], proto[j]);
+#endif
+                    res_sv = i;
+                    res_cl = j;
+                    break;
+                }
+            }
 
+            if (res_cl != -1) break;
+        }
+    }
+
+    /* execute Perl ALPN callback */
     if ((ALPNCallback != NULL) && (res_sv != -1)) {
         dSP;
         ENTER;
@@ -439,11 +506,12 @@ void ALPNCallbackXS(void *ssl, short protoCount, char *proto[MAX_PROTO_EXT], int
         warn("ALPN data present but no ALPN callback set or no protocol could be selected (res_sv = %d)", res_sv);
 #endif
 
+    /* remember that the ALPN callback was executed */
+    ssl_data->cbALPN_done = 1;
+
+    /* return selected protocol */
     *index = res_cl;
 }
-
-/* Perl callback that will get called when a hostname is successfully matched. */
-static SV* VHIndexCallback = NULL;
 
 /*
  * SNI callback that gets called from matrixSSL whenever a client send a SNI
@@ -468,7 +536,7 @@ void SNI_callback(void *ssl, char *hostname, int32 hostnameLen, sslKeys_t **newK
     int32 i = 0, res;
     uint32_t ssl_id;
     p_SSL_data ssl_data;
-    p_SNI_server ss;
+    p_SSL_server ss;
     unsigned char _hostname[255];
 #ifndef WIN32
     int regex_res = 0;
@@ -476,9 +544,20 @@ void SNI_callback(void *ssl, char *hostname, int32 hostnameLen, sslKeys_t **newK
     char regex_error[255];
 #endif
 #endif
+    /* get SSL session and our custom SSL session data */
     ssl_data = (p_SSL_data) ((ssl_t *) ssl)->userPtr;
     ssl_id = ssl_data->ssl_id;
-    ss = ssl_data->SNI_server;
+    ss = SSL_servers[ssl_data->server_index];
+
+    /* check if the keys are already set in our custom SSL data
+       by a previous call to the ALPN callback */
+    if (ssl_data->keys != NULL) {
+#ifdef MATRIX_DEBUG
+        warn("SNI_callback: Valid keys found, set by the ALPN callback. Returning");
+#endif
+        *newKeys = ssl_data->keys;
+        return;
+    }
 
     /* TODO: modify matrixSSL so it returns a null terminated hostname so this is no longer necessary */
     if (hostnameLen > 254) hostnameLen = 254;
@@ -502,11 +581,6 @@ void SNI_callback(void *ssl, char *hostname, int32 hostnameLen, sslKeys_t **newK
 #endif
             *newKeys = ss->SNI_entries[i]->keys;
 
-            if (ss->SNI_entries[i]->alpn) {
-                ssl_data->alpn = ss->SNI_entries[i]->alpn;
-                matrixSslRegisterALPNCallback(ssl, ALPNCallbackXS);
-            }
-
             break;
 #if defined(MATRIX_DEBUG) && !defined(WIN32)
         } else {
@@ -515,7 +589,8 @@ void SNI_callback(void *ssl, char *hostname, int32 hostnameLen, sslKeys_t **newK
 #endif
         }
 
-    if ((i < ss->SNI_entries_number) && (VHIndexCallback != NULL)) {
+    /* execute Perl SNI callback if necessary (might have been called already from the ALPN callback) */
+    if ((i < ss->SNI_entries_number) && (VHIndexCallback != NULL) && !ssl_data->cbSNI_done) {
         dSP;
 
         ENTER;
@@ -541,6 +616,8 @@ void SNI_callback(void *ssl, char *hostname, int32 hostnameLen, sslKeys_t **newK
         PUTBACK;
         FREETMPS;
         LEAVE;
+
+        ssl_data->cbSNI_done = 1;
     }
 }
 
@@ -649,11 +726,13 @@ int build_SCT_buffer(SV *ar, unsigned char **buffer, int32 *buffer_size) {
     return sct_array_size;
 }
 
+
 MODULE = Crypt::MatrixSSL3      PACKAGE = Crypt::MatrixSSL3     
 
 INCLUDE: inc/const-xs.inc
 
 PROTOTYPES: ENABLE
+
 
 int _getObjCount()
     CODE:
@@ -677,51 +756,41 @@ int set_cipher_suite_enabled_status(cipherId, status)
     OUTPUT:
     RETVAL
 
+
 void Open()
     CODE:
     add_obj();
 
+
 void Close()
     int i = 0, j = 0, k = 0;
-    p_default_server ds = NULL;
-    t_SNI_entry *se = NULL;
-    t_SNI_server *ss = NULL;
+    p_SNI_entry se = NULL;
+    p_SSL_server ss = NULL;
 
     CODE:
     del_obj();
 
-    /* release OCSP staples */
+    /* release SSL servers */
 #ifdef MATRIX_DEBUG
-    warn("----\nReleasing %d default servers", default_server_index);
+    warn("----\nReleasing %d SSL servers", SSL_server_index);
 #endif
-    for (i = 0; i < default_server_index; i++) {
-        ds = default_servers[i];
 
-        if (ds->alpn != NULL) {
+    for (j = 0; j < SSL_server_index; j++) {
+        ss = SSL_servers[j];
 #ifdef MATRIX_DEBUG
-            warn("  Releasing ALPN data: %d protocols", ds->alpn->protoCount);
+        warn("Releasing resources for SSL server %d", j);
 #endif
-            for (j = 0; j < ds->alpn->protoCount; j++)
-                if (ds->alpn->proto[j] != NULL) free(ds->alpn->proto[j]);
+        if (ss->alpn != NULL) {
+#ifdef MATRIX_DEBUG
+            warn("  Releasing ALPN data: %d protocols", ss->alpn->protoCount);
+#endif
+            for (j = 0; j < ss->alpn->protoCount; j++)
+                if (ss->alpn->proto[j] != NULL) free(ss->alpn->proto[j]);
 
-            free(ds->alpn);
+            free(ss->alpn);
         }
 #ifdef MATRIX_DEBUG
-        warn("Releasing default server %d", i);
-#endif
-        free(default_servers[i]);
-    }
-    default_server_index = 0;
-
-    /* release SNI servers */
-#ifdef MATRIX_DEBUG
-    warn("----\nReleasing %d SNI servers", SNI_server_index);
-#endif
-
-    for (j = 0; j < SNI_server_index; j++) {
-        ss = SNI_servers[j];
-#ifdef MATRIX_DEBUG
-        warn("  Releasing %d SNI entries for SNI server %d", ss->SNI_entries_number, j);
+        warn("  Releasing %d SNI entries", ss->SNI_entries_number);
 #endif
         for (i = 0; i < ss->SNI_entries_number; i++) {
             se = ss->SNI_entries[i];
@@ -752,16 +821,38 @@ void Close()
             free(se);
         }
 #ifdef MATRIX_DEBUG
-        warn("Releasing SNI server %d", j);
+        warn("Releasing SSL server %d", j);
 #endif
         free(ss);
     }
-    SNI_server_index = 0;
+    SSL_server_index = 0;
 #ifdef MATRIX_DEBUG
     warn("Calling matrixSslClose()");
 #endif
     matrixSslClose();
     matrixssl_initialized = 0;
+
+
+int create_SSL_server()
+    CODE:
+    /* new SSL server, check limits */
+    if (SSL_server_index == MAX_SSL_SERVERS) {
+        warn("We have already initiazlied the maximum number of %d SSL servers", MAX_SSL_SERVERS);
+        XSRETURN_IV(-1);
+    }
+#ifdef MATRIX_DEBUG
+    warn("create_SSL_server: allocating buffer for new SSL server at index %d", SSL_server_index);
+#endif
+    /* allocate a new SSL server */
+    SSL_servers[SSL_server_index] = (p_SSL_server) malloc(SZ_SSL_SERVER);
+    memset(SSL_servers[SSL_server_index], 0, SZ_SSL_SERVER);
+
+    RETVAL = SSL_server_index;
+
+    SSL_server_index++;
+
+    OUTPUT:
+    RETVAL
 
 
 int refresh_OCSP_staple(server_index, index, OCSP_file)
@@ -773,21 +864,21 @@ int refresh_OCSP_staple(server_index, index, OCSP_file)
 
     CODE:
     if (server_index < 0)
-        croak("Invalid default server/SNI server index %d", server_index);
+        croak("Invalid SSL server index %d", server_index);
+
+    if (index < 0)
+        croak("OCSP staple for SSL (default) servers is refreshed using the keys now!");
 
     if (OCSP_file == NULL)
         croak("You must specify a valid OCSP staple file");
-
-    if (index < 0)
-        croak("OCSP staple for default servers is refreshed using the keys now!");
 #ifdef MATRIX_DEBUG
-    warn("Refresh OCSP staple buffer for SNI server %d/SNI entry %d", server_index, index);
+    warn("Refresh OCSP staple buffer for SSL server %d/SNI entry %d", server_index, index);
 #endif
-    if (server_index >= SNI_server_index)
-        croak("Out of range SNI server index spcified: %d > %d", server_index, SNI_server_index - 1);
+    if (server_index >= SSL_server_index)
+        croak("Out of range SSL server index spcified: %d > %d", server_index, SSL_server_index - 1);
 
-    if (index >= SNI_servers[server_index]->SNI_entries_number)
-        croak("Out of range SNI entry index spcified for SNI server %d: %d > %d", server_index, index, SNI_servers[server_index]->SNI_entries_number - 1);
+    if (index >= SSL_servers[server_index]->SNI_entries_number)
+        croak("Out of range SNI entry index spcified for SSL server %d: %d > %d", server_index, index, SSL_servers[server_index]->SNI_entries_number - 1);
 
     rc = psGetFileBuf(NULL, OCSP_file, &buffer, &buffer_size);
 
@@ -796,12 +887,12 @@ int refresh_OCSP_staple(server_index, index, OCSP_file)
         XSRETURN_IV(rc);
     }
 
-    rc = matrixSslLoadOCSPResponse(SNI_servers[server_index]->SNI_entries[index]->keys, buffer, buffer_size);
+    rc = matrixSslLoadOCSPResponse(SSL_servers[server_index]->SNI_entries[index]->keys, buffer, buffer_size);
 
     if (buffer != NULL) psFreeNative(buffer);
 
     if (rc != PS_SUCCESS)
-        croak("matrixSslLoadOCSPResponse failed for SNI server %d, SNI entry %d: $d", server_index, index, rc);
+        croak("matrixSslLoadOCSPResponse failed for SSL server %d, SNI entry %d: $d", server_index, index, rc);
 
     RETVAL = rc;
 
@@ -818,18 +909,18 @@ int refresh_SCT_buffer(server_index, index, SCT_params)
 
     CODE:
     if (server_index < 0)
-        croak("Invalid default server/SNI server index %d", server_index);
+        croak("Invalid SSL server index %d", server_index);
 
     if (index < 0)
-        croak("SCT buffer for default servers is refreshed using the keys now!");
+        croak("SCT buffer for SSL (default) servers is refreshed using the keys now!");
 #ifdef MATRIX_DEBUG
-    warn("Refresh SCT buffer for SNI server %d/SNI entry %d", server_index, index);
+    warn("Refresh SCT buffer for SSL server %d/SNI entry %d", server_index, index);
 #endif
-    if (server_index >= SNI_server_index)
-        croak("Out of range SNI server index spcified: %d > %d", server_index, SNI_server_index - 1);
+    if (server_index >= SSL_server_index)
+        croak("Out of range SSL server index spcified: %d > %d", server_index, SSL_server_index - 1);
 
-    if (index >= SNI_servers[server_index]->SNI_entries_number)
-        croak("Out of range SNI entry index spcified for SNI server %d: %d > %d", server_index, index, SNI_servers[server_index]->SNI_entries_number - 1);
+    if (index >= SSL_servers[server_index]->SNI_entries_number)
+        croak("Out of range SNI entry index spcified for SSL server %d: %d > %d", server_index, index, SSL_servers[server_index]->SNI_entries_number - 1);
 
     res = build_SCT_buffer(SCT_params, &buffer, &buffer_size);
 #ifdef MATRIX_DEBUG
@@ -837,15 +928,15 @@ int refresh_SCT_buffer(server_index, index, SCT_params)
 #endif
     if (res < 1) {
         if (buffer != NULL) psFreeNative(buffer);
-        croak("Filed to build the SCT buffer for SNI server %d, SNI entry %d: %d", server_index, index, res);
+        croak("Filed to build the SCT buffer for SSL server %d, SNI entry %d: %d", server_index, index, res);
     }
 
-    rc = matrixSslLoadSCTResponse(SNI_servers[server_index]->SNI_entries[index]->keys, buffer, buffer_size);
+    rc = matrixSslLoadSCTResponse(SSL_servers[server_index]->SNI_entries[index]->keys, buffer, buffer_size);
 
     if (buffer != NULL) psFreeNative(buffer);
 
     if (rc != PS_SUCCESS) {
-        croak("matrixSslLoadSCTResponse failed for SNI server %d, SNI entry %d: $d", server_index, index, rc);
+        croak("matrixSslLoadSCTResponse failed for SSL server %d, SNI entry %d: $d", server_index, index, rc);
         XSRETURN_IV(0);
     }
 
@@ -871,27 +962,24 @@ int refresh_ALPN_data(server_index, index, ALPN_data)
         croak("Expected ALPN data to be an array reference");
 
     if (server_index < 0)
-        croak("Invalid default server/SNI server index %d", server_index);
+        croak("Invalid SSL server index %d", server_index);
+
+    if (server_index >= SSL_server_index)
+        croak("Out of range SSL server index spcified: %d > %d", server_index, SSL_server_index - 1);
 
     if (index < 0) {
 #ifdef MATRIX_DEBUG
-        warn("Refresh default server %d ALPN data", server_index);
+        warn("Refresh SSL (default) server %d ALPN data", server_index);
 #endif
-        if (server_index >= default_server_index)
-            croak("Out of range default server index specified: %d > %d", server_index, default_server_index - 1);
-
-        palpn = &(default_servers[server_index]->alpn);
+        palpn = &(SSL_servers[server_index]->alpn);
     } else {
 #ifdef MATRIX_DEBUG
-        warn("Refresh ALPN_data for SNI server %d/SNI entry %d", server_index, index);
+        warn("Refresh ALPN_data for SSL server %d/SNI entry %d", server_index, index);
 #endif
-        if (server_index >= SNI_server_index)
-            croak("Out of range SNI server index spcified: %d > %d", server_index, SNI_server_index - 1);
+        if (index >= SSL_servers[server_index]->SNI_entries_number)
+            croak("Out of range SNI entry index spcified for SSL server %d: %d > %d", server_index, index, SSL_servers[server_index]->SNI_entries_number - 1);
 
-        if (index >= SNI_servers[server_index]->SNI_entries_number)
-            croak("Out of range SNI entry index spcified for SNI server %d: %d > %d", server_index, index, SNI_servers[server_index]->SNI_entries_number - 1);
-
-        palpn = &(SNI_servers[server_index]->SNI_entries[index]->alpn);
+        palpn = &(SSL_servers[server_index]->SNI_entries[index]->alpn);
     }
 
     /* Check if we should allocate the ALPN data strcture */
@@ -1359,10 +1447,9 @@ SV *get_master_secret(ssl)
     OUTPUT:
     RETVAL
 
-int sess_init_SNI(ssl, index, ssl_id, sni_data = NULL)
+int sess_init_SNI(ssl, server_index, sni_data = NULL)
     Crypt_MatrixSSL3_Sess *ssl;
-    int index = SvOK(ST(1)) ? SvIV(ST(1)) : -1;
-    int ssl_id = SvOK(ST(2)) ? SvIV(ST(2)) : -1;
+    int server_index = SvOK(ST(1)) ? SvIV(ST(1)) : -1;
     SV *sni_data;
     AV *sni_array = NULL;
     SV *sd_sv = NULL;
@@ -1388,51 +1475,26 @@ int sess_init_SNI(ssl, index, ssl_id, sni_data = NULL)
     STRLEN stk_ek_len = 0;
     unsigned char stk_hk[32];
     STRLEN stk_hk_len = 0;
-    t_SNI_server *ss = NULL;
+    t_SSL_server *ss = NULL;
 #ifndef WIN32
     int regex_res = 0;
     char regex_error[255];
 #endif
     CODE:
 #ifdef MATRIX_DEBUG
-    warn("initSNI: index %d", index);
+    warn("init_SNI: Setting up virtual hosts for SSL server %d", server_index);
 #endif
-    /* check if we have to initialize the SNI server structure or should we just set the callback to an already initialized SNI server structure */
-    if (index == -1) {
-        /* new site, check limits */
-        if (SNI_server_index == MAX_SNI_SERVERS)
-            croak("We have already initiazlied the maximum number of %d SNI server", MAX_SNI_SERVERS);
-#ifdef MATRIX_DEBUG
-        warn("initSNI: allocating buffer for new SNI server at index %d", SNI_server_index);
-#endif
-        /* create new SNI site buffer */
-        SNI_servers[SNI_server_index] = (t_SNI_server *) malloc(sizeof(t_SNI_server));
-        memset(SNI_servers[SNI_server_index], 0, sizeof(t_SNI_server));
+    if (server_index < 0)
+        croak("Invalid SSL server index %d", server_index);
 
-        index = SNI_server_index;
-        SNI_server_index++;
-    } else {
-        /* already initialized SNI server */
-        /* check if index points to a valid SNI site structure */
-        if (index >= SNI_server_index)
-            croak("Requested SNI site index out of range %d > %d", index, SNI_server_index - 1);
+    if (server_index >= SSL_server_index)
+        croak("Out of range SSL server index spcified: %d > %d", server_index, SSL_server_index - 1);
 
-        /* just set the callback and we're done */
-#ifdef MATRIX_DEBUG
-        warn("Setting up SNI callback using SNI server %d, %p", index, SNI_servers[index]);
-#endif
+    /* set SSL server pointer */
+    ss = SSL_servers[server_index];
 
-        ssl_data = (p_SSL_data) ssl->userPtr;
-        ssl_data->ssl_id = ssl_id;
-        ssl_data->SNI_server = SNI_servers[index];
-
-        matrixSslRegisterSNICallback(ssl, SNI_callback);
-
-        XSRETURN_IV(index);
-    }
-
-    /* set up pointer to the newly SNI site */
-    ss = SNI_servers[index];
+    if (ss->SNI_entries_number > 0)
+        croak("SNI already setup for SSL server %d", server_index);
 
     /* initialize SNI server structure */
     if (!(SvROK(sni_data) && SvTYPE(SvRV(sni_data)) == SVt_PVAV))
@@ -1676,25 +1738,15 @@ int sess_init_SNI(ssl, index, ssl_id, sni_data = NULL)
         }
     }
 
-    RETVAL = index;
-#ifdef MATRIX_DEBUG
-    warn("Setting up SNI callback using SNI server %d, %p", index, ss);
-#endif
-
-    ssl_data = (p_SSL_data) ssl->userPtr;
-    ssl_data->ssl_id = ssl_id;
-    ssl_data->SNI_server = SNI_servers[index];
-
-    matrixSslRegisterSNICallback(ssl, SNI_callback);
+    RETVAL = server_index;
 
     OUTPUT:
     RETVAL
 
 
-int sess_set_server_params(ssl, index, ssl_id, params = NULL)
+int sess_set_server_params(ssl, server_index, params = NULL)
     Crypt_MatrixSSL3_Sess *ssl;
-    int index = SvOK(ST(1)) ? SvIV(ST(1)) : -1;
-    int ssl_id = SvOK(ST(2)) ? SvIV(ST(2)) : -1;
+    int server_index = SvOK(ST(1)) ? SvIV(ST(1)) : -1;
     SV *params;
     HV *hparams = NULL;
     HV *haux = NULL;
@@ -1706,52 +1758,21 @@ int sess_set_server_params(ssl, index, ssl_id, params = NULL)
     unsigned char *item = NULL;
     STRLEN item_len = 0;
     int i = 0, rc = PS_SUCCESS, ars = 0;
-    p_default_server ds = NULL;
+    p_SSL_server ss = NULL;
     p_SSL_data ssl_data = NULL;
 
     CODE:
 #ifdef MATRIX_DEBUG
-    warn("set_server_params: index %d", index);
+    warn("set_server_params: index %d", server_index);
 #endif
-    /* check if we have to initialize the default server structure or should we just use an already initialized one */
-    if (index == -1) {
-        /* new default server, check limits */
-        if (default_server_index == MAX_DEFAULT_SERVERS)
-            croak("We have already initiazlied the maximum number of %d default servers", MAX_DEFAULT_SERVERS);
-#ifdef MATRIX_DEBUG
-        warn("set_server_params: allocating buffer for new default server at index %d", default_server_index);
-#endif
-        index = default_server_index;
+    if (server_index < 0)
+        croak("Invalid SSL server index %d", server_index);
 
-        /* allocate a new default server */
-        default_servers[default_server_index] = (p_default_server) malloc(SZ_DEFAULT_SERVER);
-        memset(default_servers[default_server_index], 0, SZ_DEFAULT_SERVER);
+    if (server_index >= SSL_server_index)
+        croak("Out of range SSL server index spcified: %d > %d", server_index, SSL_server_index - 1);
 
-        default_server_index++;
-    } else {
-        /* an already initialized default server */
-        /* check if index points to a valid default server */
-        if (index >= default_server_index)
-            croak("Requested defaul server index out of range %d > %d", index, default_server_index - 1);
-
-        /* just set the OCSP staple, SCT params, and ALPN data and we're done */
-        ds = default_servers[index];
-
-        /* get our SSL session data */
-        ssl_data = (p_SSL_data) ssl->userPtr;
-
-        /* Setup for ALPN callback */
-        ssl_data->alpn = ds->alpn;
-        ssl_data->ssl_id = ssl_id;
-
-        if (ds->alpn)
-            matrixSslRegisterALPNCallback(ssl, ALPNCallbackXS);
-
-        XSRETURN_IV(index);
-    }
-
-    /* set up pointer to the newly dafault server */
-    ds = default_servers[index];
+    /* set SSL server pointer */
+    ss = SSL_servers[server_index];
 
     /* initialize default server structure */
     if (!(SvROK(params) && SvTYPE(SvRV(params)) == SVt_PVHV))
@@ -1765,40 +1786,64 @@ int sess_set_server_params(ssl, index, ssl_id, params = NULL)
         if (!(SvROK(item_sv) && SvTYPE(SvRV(item_sv)) == SVt_PVAV))
             croak("Expected default server ALPN param to be an array reference");
 
-        ds->alpn = (p_ALPN_data) malloc(SZ_ALPN_DATA);
-        memset(ds->alpn, 0, SZ_ALPN_DATA);
+        ss->alpn = (p_ALPN_data) malloc(SZ_ALPN_DATA);
+        memset(ss->alpn, 0, SZ_ALPN_DATA);
 
         aaux = (AV *) SvRV(item_sv);
 
-        ds->alpn->protoCount = (short) av_len(aaux) + 1;
-        if (ds->alpn->protoCount > MAX_PROTO_EXT) ds->alpn->protoCount = MAX_PROTO_EXT;
+        ss->alpn->protoCount = (short) av_len(aaux) + 1;
+        if (ss->alpn->protoCount > MAX_PROTO_EXT) ss->alpn->protoCount = MAX_PROTO_EXT;
 #ifdef MATRIX_DEBUG
-        warn("Loading %d protocols for default server %d", ds->alpn->protoCount, index);
+        warn("Loading %d protocols for SSL (default) server %d", ss->alpn->protoCount, server_index);
 #endif
-        for (i = 0; i < ds->alpn->protoCount; i++) {
+        for (i = 0; i < ss->alpn->protoCount; i++) {
             tmp_sv = *av_fetch(aaux, i, 0);
             item = (unsigned char *) SvPV(tmp_sv, item_len);
 #ifdef MATRIX_DEBUG
-        warn("Adding protocol for default server %d: %s", index, item);
+        warn("Adding protocol for SSL (default) server %d: %s", server_index, item);
 #endif
-            ds->alpn->proto[i] = (unsigned char *) malloc(item_len);
-            memcpy(ds->alpn->proto[i], item, item_len);
-            ds->alpn->protoLen[i] = item_len;
+            ss->alpn->proto[i] = (unsigned char *) malloc(item_len);
+            memcpy(ss->alpn->proto[i], item, item_len);
+            ss->alpn->protoLen[i] = item_len;
         }
-#ifdef MATRIX_DEBUG
-        warn("Setting ALPN callback for default server %d: userPtr = %p, ssl_id = %d", index, ds->alpn, ssl_id);
-#endif
-        ssl_data = (p_SSL_data) ssl->userPtr;
-
-        ssl_data->alpn = ds->alpn;
-        ssl_data->ssl_id = ssl_id;
-
-        matrixSslRegisterALPNCallback(ssl, ALPNCallbackXS);
     }
 #ifdef MATRIX_DEBUG
-        warn("Returning default server index: %d", index);
+        warn("Returning SSL (default) server index: %d", server_index);
 #endif
-    RETVAL = index;
+    RETVAL = server_index;
+
+    OUTPUT:
+    RETVAL
+
+
+int sess_set_callbacks(ssl, server_index, ssl_id)
+    Crypt_MatrixSSL3_Sess *ssl;
+    int server_index = SvOK(ST(1)) ? SvIV(ST(1)) : -1;
+    int ssl_id = SvOK(ST(2)) ? SvIV(ST(2)) : -1;
+    p_SSL_data ssl_data = NULL;
+
+    CODE:
+    /* check if server_index points to a valid SSL server structure */
+    if (server_index < 0)
+        croak("Invalid SSL server index %d", server_index);
+
+    if (server_index >= SSL_server_index)
+        croak("Requested SSL server index out of range %d > %d", server_index, SSL_server_index - 1);
+
+    /* just set the callback and we're done */
+#ifdef MATRIX_DEBUG
+    warn("Setting up SNI/ALPN callbacks for SSL server %d, ssl_id = %d, %p", server_index, ssl_id, SSL_servers[server_index]);
+#endif
+
+    ssl_data = (p_SSL_data) ssl->userPtr;
+
+    ssl_data->ssl_id = ssl_id;
+    ssl_data->server_index = server_index;
+
+    matrixSslRegisterSNICallback(ssl, SNI_callback);
+    matrixSslRegisterALPNCallback(ssl, ALPNCallbackXS);
+
+    RETVAL = server_index;
 
     OUTPUT:
     RETVAL

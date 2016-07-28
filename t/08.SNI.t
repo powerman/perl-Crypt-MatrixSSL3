@@ -10,7 +10,7 @@ Crypt::MatrixSSL3::Open();
 unless (Crypt::MatrixSSL3::capabilities() & SNI_ENABLED) {
     plan skip_all => "Server Name Identification not enabled - SNI_ENABLED not defined";
 } else {
-    plan tests => 8;
+    plan tests => 7;
 }
 
 my $certFile            = 't/cert/server.crt';
@@ -33,8 +33,10 @@ is PS_SUCCESS, $Server_Keys->load_rsa($certFile, $privFile, $privPass, undef),
 lives_ok { $Server_SSL = Crypt::MatrixSSL3::Server->new($Server_Keys, undef) }
     'Server->new';
 
+my $server_index = Crypt::MatrixSSL3::create_SSL_server();
+
 my $ssl_id = 420;
-my $server_index = $Server_SSL->init_SNI(-1, $ssl_id, [
+$Server_SSL->init_SNI($server_index, [
     {                                                               # virtual host 0
         'hostname' => '.*',                                         # hostname regex
         'cert' => $certFile,                                        # certificate
@@ -50,8 +52,7 @@ my $server_index = $Server_SSL->init_SNI(-1, $ssl_id, [
     }
 ]);
 
-cmp_ok $server_index, '>=', '0', '$Server_SSL->init_SNI(-1, ssl_id, arrayref) first call';
-cmp_ok $Server_SSL->init_SNI($server_index, $ssl_id), '==', $server_index, '$Server_SSL->init_SNI(server_index, ssl_id) second call';
+cmp_ok $server_index, '>=', '0', '$Server_SSL->init_SNI($server_index, arrayref) first call';
 cmp_ok Crypt::MatrixSSL3::refresh_OCSP_staple($server_index, 0, $OCSPtest), '==', PS_SUCCESS, 'Crypt::MatrixSSL3::refresh_OCSP_staple(server, vh_index, scalar)';
 cmp_ok Crypt::MatrixSSL3::refresh_SCT_buffer($server_index, 0, $CTbuffer), '==', 1, 'Crypt::MatrixSSL3::refresh_SCT_buffer(server_index, vh_index, scalar)';
 cmp_ok Crypt::MatrixSSL3::refresh_SCT_buffer($server_index, 0, $CTfiles), '==', 2, 'Crypt::MatrixSSL3::refresh_SCT_buffer(server_index, vh_index, arrayref)';
