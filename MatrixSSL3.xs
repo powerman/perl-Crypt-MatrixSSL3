@@ -1826,6 +1826,7 @@ int sess_set_callbacks(ssl, server_index, ssl_id)
     int server_index = SvOK(ST(1)) ? SvIV(ST(1)) : -1;
     int ssl_id = SvOK(ST(2)) ? SvIV(ST(2)) : -1;
     p_SSL_data ssl_data = NULL;
+    p_SSL_server ss = NULL;
 
     CODE:
     /* check if server_index points to a valid SSL server structure */
@@ -1840,13 +1841,25 @@ int sess_set_callbacks(ssl, server_index, ssl_id)
     warn("Setting up SNI/ALPN callbacks for SSL server %d, ssl_id = %d, %p", server_index, ssl_id, SSL_servers[server_index]);
 #endif
 
+    /* set out SSL session custom data */
     ssl_data = (p_SSL_data) ssl->userPtr;
 
     ssl_data->ssl_id = ssl_id;
     ssl_data->server_index = server_index;
 
-    matrixSslRegisterSNICallback(ssl, SNI_callback);
-    matrixSslRegisterALPNCallback(ssl, ALPNCallbackXS);
+    /* get the SSL server strcuture */
+    ss = SSL_servers[server_index];
+
+    /* test if any visrtual hosts are present */
+    if (ss->SNI_entries_number > 0) {
+      /* setup SNI callback */
+      matrixSslRegisterSNICallback(ssl, SNI_callback);
+      /* setup ALPN callback */
+      matrixSslRegisterALPNCallback(ssl, ALPNCallbackXS);
+    } else {
+      /* no virtual hosts, setup ALPN callback only if server has defined protocols */
+      if (ss->alpn != NULL) matrixSslRegisterALPNCallback(ssl, ALPNCallbackXS);
+    }
 
     RETVAL = server_index;
 
