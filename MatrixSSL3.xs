@@ -1443,11 +1443,38 @@ Crypt_MatrixSSL3_Sess *sess_new_server(keys, certValidator)
     OUTPUT:
     RETVAL
 
-SV *get_master_secret(ssl)
+SV *get_SSL_secrets(ssl)
     Crypt_MatrixSSL3_Sess *ssl;
+    HV *rh = NULL;
+    sslSec_t *sec = NULL;
+    const sslCipherSpec_t *cipher = NULL;
 
     CODE:
-    RETVAL = NULL; //newSVpv(matrixSslGetMasterSecret(ssl), SSL_HS_MASTER_SIZE);
+    rh = (HV *)sv_2mortal((SV *)newHV());
+    sec = &(ssl->sec);
+    cipher = ssl->cipher;
+
+    my_hv_store(rh, "cipher_ident", newSViv(cipher->ident), 0);
+    my_hv_store(rh, "cipher_type", newSViv(cipher->type), 0);
+    my_hv_store(rh, "cipher_flags", newSViv(cipher->flags), 0);
+    my_hv_store(rh, "cipher_macSize", newSViv(cipher->macSize), 0);
+    my_hv_store(rh, "cipher_keySize", newSViv(cipher->keySize), 0);
+    my_hv_store(rh, "cipher_ivSize", newSViv(cipher->ivSize), 0);
+    my_hv_store(rh, "cipher_blockSize", newSViv(cipher->blockSize), 0);
+
+    my_hv_store(rh, "clientRandom", newSVpvn(sec->clientRandom, SSL_HS_RANDOM_SIZE), 0);
+    my_hv_store(rh, "serverRandom", newSVpvn(sec->serverRandom, SSL_HS_RANDOM_SIZE), 0);
+    my_hv_store(rh, "masterSecret", newSVpvn(sec->masterSecret, SSL_HS_MASTER_SIZE), 0);
+    my_hv_store(rh, "premaster", newSVpvn(sec->premaster, sec->premasterSize), 0);
+
+    my_hv_store(rh, "writeMAC", newSVpvn(sec->writeMAC, cipher->macSize), 0);
+    my_hv_store(rh, "readMAC", newSVpvn(sec->readMAC, cipher->macSize), 0);
+    my_hv_store(rh, "writeKey", newSVpvn(sec->writeKey, cipher->keySize), 0);
+    my_hv_store(rh, "readKey", newSVpvn(sec->readMAC, cipher->keySize), 0);
+    my_hv_store(rh, "writeIV", newSVpvn(sec->writeIV, cipher->ivSize), 0);
+    my_hv_store(rh, "readIV", newSVpvn(sec->readIV, cipher->ivSize), 0);
+
+    RETVAL = newRV((SV *) rh);
 
     OUTPUT:
     RETVAL
