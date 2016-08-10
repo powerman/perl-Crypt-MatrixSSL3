@@ -100,6 +100,7 @@ typedef t_SNI_entry *p_SNI_entry;
 typedef struct s_SSL_server {
     t_SNI_entry *SNI_entries[MAX_SNI_ENTRIES];
     int16 SNI_entries_number;
+    sslKeys_t *keys;
     p_ALPN_data alpn;
 } t_SSL_server;
 
@@ -593,6 +594,15 @@ void SNI_callback(void *ssl, char *hostname, int32 hostnameLen, sslKeys_t **newK
             warn("Error matching %d SNI entry: %s", i, regex_error);
 #endif
         }
+
+    /* if the requested virtual host was not found we try to return the default server keys (if they are set) */
+    if (*newKeys == NULL) {
+        if (ss->keys != NULL) {
+            *newKeys = ss->keys;
+            /* set the index to -1 to singal that the default server keys are used */
+            i = -1;
+        }
+    }
 
     /* execute Perl SNI callback if necessary (might have been called already from the ALPN callback) */
     if ((i < ss->SNI_entries_number) && (VHIndexCallback != NULL) && !ssl_data->cbSNI_done) {
@@ -1792,6 +1802,7 @@ int sess_set_server_params(ssl, server_index, params = NULL)
     int i = 0, rc = PS_SUCCESS, ars = 0;
     p_SSL_server ss = NULL;
     p_SSL_data ssl_data = NULL;
+    IV tmp = 0;
 
     CODE:
 #ifdef MATRIX_DEBUG
@@ -1811,6 +1822,12 @@ int sess_set_server_params(ssl, server_index, params = NULL)
         croak("Expected default server params to be a hash reference");
 
     hparams = (HV *) SvRV(params);
+
+    if (hv_exists(hparams, "keys", strlen("keys"))) {
+        item_sv = *hv_fetch(hparams, "keys", strlen("keys"), 0);
+        tmp = SvIV((SV*)SvRV(item_sv));
+        ss->keys = INT2PTR(Crypt_MatrixSSL3_Keys *, tmp);
+    }
 
     if (hv_exists(hparams, "ALPN", strlen("ALPN"))) {
         item_sv = *hv_fetch(hparams, "ALPN", strlen("ALPN"), 0);
