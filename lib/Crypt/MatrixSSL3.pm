@@ -843,7 +843,7 @@ More information about L</ALPNCallback> in the L</CALLBACKS> section.
 
 Tells the XS module to allocate a new server structure. The returned index
 must be saved and then used one time to initialize the server structure and then
-each time a nw client connection is accepted in order to set SNI/ALPN callbacks.
+each time a new client connection is accepted in order to set SNI/ALPN callbacks.
 
 =head1 CLASSES
 
@@ -1002,7 +1002,7 @@ More information about callback L</certValidator> in the L</CALLBACKS> section.
 
     $ssl->init_SNI( $sserver_index, $sni_params );
 
-This function shoule be called only once when the server is initialzied.
+This function should be called only once when the server is initialized.
 
 Parameters:
 
