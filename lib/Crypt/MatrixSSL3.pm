@@ -1083,15 +1083,9 @@ in the L</CALLBACKS> section.
 
 =back
 
-=head2 set_callbacks
+=head3 set_callbacks
 
-<<<<<<< HEAD
     $ssl->set_callbacks( $server_index, $ssl_id );
-=======
-=back
-
-=head3 load_OCSP_staple
->>>>>>> upstream/master
 
 Parameters:
 
