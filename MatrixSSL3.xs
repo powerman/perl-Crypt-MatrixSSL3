@@ -1507,6 +1507,8 @@ int sess_init_SNI(ssl, server_index, sni_data = NULL)
     unsigned char *cert = NULL;
     SV *key_sv = NULL;
     unsigned char *key = NULL;
+    SV *trustedCA_sv = NULL;
+    unsigned char *trustedCA = NULL;
     STRLEN item_len = 0;
     int32 rc = PS_SUCCESS, i = 0, j = 0, res = 0;
     p_SSL_data ssl_data = NULL;
@@ -1599,6 +1601,15 @@ int sess_init_SNI(ssl, server_index, sni_data = NULL)
             cert_sv = *hv_fetch(sd, "cert", strlen("cert"), 0);
             key_sv = *hv_fetch(sd, "key", strlen("key"), 0);
 
+            /* setup trusted CA certificate files if present */
+            if (hv_exists(sd, "trustCA", strlen("trustCA"))) {
+                trustedCA_sv = *hv_fetch(sd, "trustCA", strlen("trustCA"), 0);
+
+                if (SvOK(trustedCA_sv)) {
+                    trustedCA = (unsigned char *) SvPV_nolen(trustedCA_sv);
+                }
+            }
+
             if (SvOK(cert_sv) && SvOK(key_sv)) {
                 cert = (unsigned char *) SvPV_nolen(cert_sv);
                 key = (unsigned char *) SvPV_nolen(key_sv);
@@ -1612,7 +1623,7 @@ int sess_init_SNI(ssl, server_index, sni_data = NULL)
                     croak("SNI matrixSslNewKeys failed %d", rc);
                 }
 
-                rc = matrixSslLoadRsaKeys(ss->SNI_entries[i]->keys, cert, key, NULL, NULL);
+                rc = matrixSslLoadRsaKeys(ss->SNI_entries[i]->keys, cert, key, NULL, trustedCA);
                 if (rc != PS_SUCCESS)
                     croak("SNI matrixSslLoadRsaKeys failed %d; %s; %s", rc, cert, key);
             } else
