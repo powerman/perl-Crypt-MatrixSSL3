@@ -2,7 +2,7 @@
 use warnings;
 use strict;
 
-use version 0.77 (); our $VERSION = 'v3.7.4';
+use version 0.77 (); our $VERSION = 'v3.7.7';
 
 use Getopt::Long;
 use Pod::Usage;
@@ -37,7 +37,7 @@ my %logs = (
     #'izenpe'    => 'https://ct.izenpe.com',
     'symantec'  => 'https://ct.ws.symantec.com',
     'venafi'    => 'https://ctlog.api.venafi.com',
-    'vega'      => 'https://vega.ws.symantec.com'
+    'vega'      => 'https://vega.ws.symantec.com',
 );
 
 @pem = split /,/ms, join q{,}, @pem;

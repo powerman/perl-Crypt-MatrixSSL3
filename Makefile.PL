@@ -362,13 +362,20 @@ if (!-d $mxbase) {
 use File::Which;
 if (-d 'inc/patches') {
     if (which('patch')) {
-        for my $file (glob 'inc/patches/*.patch') {
-            # replacing \n with \n will change \n to \r\n on Win, without this patch.exe will crash
-            system "cd \Q$mxbase\E && perl -pe \"s/\\n/\\n/\" ../../\Q$file\E | patch -p1 -N";
-
-            # some Windows systems don't like the path escape ...
-            # system "cd $mxbase && perl -pe \"s/\\n/\\n/\" ../../$file | patch -p1 -N";
+        use Cwd;
+        my $wd = getcwd();
+        chdir $mxbase or die "chdir($mxbase): $!";
+        local $/;
+        for my $file (glob '../../inc/patches/*.patch') {
+            open my $f, '<', $file or die "open($file): $!";
+            my $patch = <$f>;
+            close $f or die "close($file): $!";
+            open $f, '| patch -p1 -N' or die "run patch: $!";
+            # print will change \n to \r\n on Win, without this patch.exe will crash
+            print {$f} $patch;
+            close $f;
         }
+        chdir $wd or die "chdir($wd): $!";
     }
     else {
         my $pp = prompt "It looks like the patch tool is not installed on your system!\n" .

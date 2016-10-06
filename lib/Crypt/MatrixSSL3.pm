@@ -8,7 +8,7 @@ use Scalar::Util qw( dualvar );
 use XSLoader;
 
 BEGIN {
-    use version 0.77 (); our $VERSION = 'v3.7.4';
+    use version 0.77 (); our $VERSION = 'v3.7.7';
     XSLoader::load(__PACKAGE__,$VERSION);
 }
 
@@ -318,7 +318,7 @@ __END__
 
 =encoding utf8
 
-=for stopwords authStatus SessID HelloExt dualvar SCT ALPN SCTs certValidator extensionCback ALPNcb VHIndexCallback
+=for stopwords authStatus SessID HelloExt dualvar SCT ALPN SCTs certValidator extensionCback ALPNcb VHIndexCallback ALPNCallback
 
 =head1 NAME
 
@@ -327,7 +327,7 @@ Crypt::MatrixSSL3 - Perl extension for SSL and TLS using MatrixSSL.org v3.7.2b
 
 =head1 VERSION
 
-This document describes Crypt::MatrixSSL3 version v3.7.4
+This document describes Crypt::MatrixSSL3 version v3.7.7
 
 
 =head1 SYNOPSIS
@@ -1085,7 +1085,13 @@ in the L</CALLBACKS> section.
 
 =head2 set_callbacks
 
+<<<<<<< HEAD
     $ssl->set_callbacks( $server_index, $ssl_id );
+=======
+=back
+
+=head3 load_OCSP_staple
+>>>>>>> upstream/master
 
 Parameters:
 
@@ -1267,8 +1273,8 @@ and execution will continue assuming callback returned -1.
 =head2 ALPNCallback
 
 Will be called when a client sends an ALPN extension and a successful
-application protocol has been negociated. If the server doesn't implement
-any of the client's protocols the XS module will send an appropiate
+application protocol has been negotiated. If the server doesn't implement
+any of the client's protocols the XS module will send an appropriate
 response and the client will receive a SSL_ALERT_NO_APP_PROTOCOL alert.
 
 Will be called with 2 parameters:
