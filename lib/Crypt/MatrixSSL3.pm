@@ -26,6 +26,7 @@ use constant CONST_VERSION_INT => qw(
     TLS_1_2_MIN_VER
     TLS_MAJ_VER
     TLS_MIN_VER
+    TLS_HIGHEST_MINOR
     MATRIXSSL_VERSION_MAJOR
     MATRIXSSL_VERSION_MINOR
     MATRIXSSL_VERSION_PATCH
@@ -41,21 +42,21 @@ use constant CONST_CIPHER => qw(
     SSL_RSA_WITH_NULL_SHA
     SSL_RSA_WITH_RC4_128_MD5
     SSL_RSA_WITH_RC4_128_SHA
-    SSL_RSA_WITH_3DES_EDE_CBC_SHA
-    TLS_RSA_WITH_AES_128_CBC_SHA
-    TLS_RSA_WITH_AES_256_CBC_SHA
     TLS_RSA_WITH_IDEA_CBC_SHA
+    SSL_RSA_WITH_3DES_EDE_CBC_SHA
     SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA
     SSL_DH_anon_WITH_RC4_128_MD5
     SSL_DH_anon_WITH_3DES_EDE_CBC_SHA
+    TLS_RSA_WITH_AES_128_CBC_SHA
     TLS_DHE_RSA_WITH_AES_128_CBC_SHA
-    TLS_DHE_RSA_WITH_AES_256_CBC_SHA
-    TLS_DHE_RSA_WITH_AES_128_CBC_SHA256
-    TLS_DHE_RSA_WITH_AES_256_CBC_SHA256
     TLS_DH_anon_WITH_AES_128_CBC_SHA
+    TLS_RSA_WITH_AES_256_CBC_SHA
+    TLS_DHE_RSA_WITH_AES_256_CBC_SHA
     TLS_DH_anon_WITH_AES_256_CBC_SHA
     TLS_RSA_WITH_AES_128_CBC_SHA256
     TLS_RSA_WITH_AES_256_CBC_SHA256
+    TLS_DHE_RSA_WITH_AES_128_CBC_SHA256
+    TLS_DHE_RSA_WITH_AES_256_CBC_SHA256
     TLS_RSA_WITH_SEED_CBC_SHA
     TLS_PSK_WITH_AES_128_CBC_SHA
     TLS_PSK_WITH_AES_128_CBC_SHA256
@@ -63,6 +64,8 @@ use constant CONST_CIPHER => qw(
     TLS_PSK_WITH_AES_256_CBC_SHA
     TLS_DHE_PSK_WITH_AES_128_CBC_SHA
     TLS_DHE_PSK_WITH_AES_256_CBC_SHA
+    TLS_RSA_WITH_AES_128_GCM_SHA256
+    TLS_RSA_WITH_AES_256_GCM_SHA384
     TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA
     TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA
     TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA
@@ -80,8 +83,6 @@ use constant CONST_CIPHER => qw(
     TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384
     TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256
     TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384
-    TLS_RSA_WITH_AES_128_GCM_SHA256
-    TLS_RSA_WITH_AES_256_GCM_SHA384
     TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
     TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
     TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256
@@ -90,6 +91,8 @@ use constant CONST_CIPHER => qw(
     TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
     TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256
     TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384
+    TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
+    TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256
 );
 
 use constant CONST_SESSION_OPTION => qw(
@@ -102,6 +105,7 @@ use constant CONST_ALERT_LEVEL => qw(
 );
 
 use constant CONST_ALERT_DESCR => qw(
+    SSL_ALERT_NONE
     SSL_ALERT_CLOSE_NOTIFY
     SSL_ALERT_UNEXPECTED_MESSAGE
     SSL_ALERT_BAD_RECORD_MAC
@@ -127,8 +131,9 @@ use constant CONST_ALERT_DESCR => qw(
     SSL_ALERT_NO_RENEGOTIATION
     SSL_ALERT_UNSUPPORTED_EXTENSION
     SSL_ALERT_UNRECOGNIZED_NAME
+    SSL_ALERT_BAD_CERTIFICATE_STATUS_RESPONSE
+    SSL_ALERT_UNKNOWN_PSK_IDENTITY
     SSL_ALERT_NO_APP_PROTOCOL
-    SSL_ALERT_NONE
 );
 
 # Order is important in CONST_ERROR and CONST_RC! Some constants have same
@@ -156,6 +161,8 @@ use constant CONST_ERROR => qw(
     PS_CERT_AUTH_FAIL_EXTENSION
     PS_CERT_AUTH_FAIL_PATH_LEN
     PS_CERT_AUTH_FAIL_AUTHKEY
+    PS_SIGNATURE_MISMATCH
+    PS_AUTH_FAIL
 );
 
 use constant CONST_RC => qw(
@@ -173,6 +180,8 @@ use constant CONST_RC => qw(
 use constant CONST_LIMIT => qw(
     SSL_MAX_DISABLED_CIPHERS
     SSL_MAX_PLAINTEXT_LEN
+    SSL_MAX_RECORD_LEN
+    SSL_MAX_BUF_SIZE
 );
 
 use constant CONST_VALIDATE => qw(
@@ -726,8 +735,7 @@ text error name in string context).
 
     $rc = refresh_OCSP_staple( $server_index, $index, $DERfile );
 
-Used to refresh an already loaded OCSP staple either for a default server
-or for a virtual host.
+Used to refresh an already loaded OCSP staple for a virtual host.
 
 Parameters:
 
@@ -738,14 +746,10 @@ Parameters:
 If you want to update the OCSP staple for a virtual host this parameter
 must have the returned value of the first $sll->init_SNI(...) call.
 
-If you want to update the OCSP staple for a default server this parameter
-must have the returned value of the first $ssl->set_server_params(...) call
-
 =item $index
 
-When updating a virtual host ($server_index > -1) this value specifies the
-0-based index of the virtual host for which the OCSP staple should be
-refreshed.
+This value specifies the 0-based index of the virtual host for which
+the OCSP staple should be refreshed.
 
 When updating a default server this value must be -1 or undef
 
@@ -762,8 +766,7 @@ Returns PS_SUCCESS if the update was successful.
 
     $sct_array_size = refresh_SCT_buffer( $server_index, $index, $SCT_params );
 
-Used to refresh an already loaded CT extension data buffer either for a
-default server or for a virtual host.
+Used to refresh an already loaded CT extension data buffer for a virtual host.
 
 Parameters:
 
@@ -830,10 +833,17 @@ More information about L</VHIndexCallback> in the L</CALLBACKS> section.
 
 =head2 set_ALPN_callback
 
-    set_VHIndex_callback( \&ALPNCallback );
+    set_ALPN_callback( \&ALPNCallback );
 
 More information about L</ALPNCallback> in the L</CALLBACKS> section.
 
+=head2 create_SSL_server
+
+    $server_index = create_SSL_server();
+
+Tells the XS module to allocate a new server structure. The returned index
+must be saved and then used one time to initialize the server structure and then
+each time a new client connection is accepted in order to set SNI/ALPN callbacks.
 
 =head1 CLASSES
 
@@ -907,8 +917,21 @@ When this object will be destroyed will call:
 
     $rc = $keys->load_session_ticket_keys( $name, $symkey, $hashkey );
 
-    matrixSslLoadSessionTicketKeys ($keys, $name, $symkey, length $symkey,
+    matrixSslLoadSessionTicketKeys ( $keys, $name, $symkey, length $symkey,
         $haskkey, length $hashkey )
+
+=head3 load_OCSP_response
+
+    $rc = $keys->load_OCSP_response( $OCSP_file );
+
+    matrixSslLoadOCSPResponse ( $keys, $OCSPResponse, $OCSPResponseLen )
+
+=head3 load_SCT_response
+
+    $rc = $keys->load_SCT_response( $SCT_params );
+
+    matrixSslLoadSCTResponse ( $keys, $SCTResponse, $SCTResponseLen )
+
 
 B<Server side.>
 
@@ -977,46 +1000,17 @@ More information about callback L</certValidator> in the L</CALLBACKS> section.
 
 =head3 init_SNI
 
-    $sni_index = $ssl->init_SNI( $sni_index, $ssl_id, $sni_params );
+    $ssl->init_SNI( $sserver_index, $sni_params );
 
-Used to initialize the virtual host configuration for a server (socket).
-This function can be called in two ways:
-
-    # 1) one time, after the first client was accepted and the server SSL
-    #    session created
-    $sni_index = $ssl->init_SNI( -1, $ssl_id, $sni_params );
-
-When $sni_index is -1 or undef the XS module will allocate and initialize
-a SNI server structure using the parameters present in $sni_params. After
-that, it will register the MatrixSSL SNI callback to an internal XS
-function using the newly created SNI server structure as parameter.
-This MUST be called only once per server socket and the result $sni_index
-value must be cached for subsequent calls.
-
-    # 2) many times, after clients are accepted and server SSL sessions
-    #    created
-    $ssl->init_SNI( $sni_index, $ssl_id );
-
-This will skip the SNI server initialization part and just register the
-MatrixSSL SNI callback to an internal XS function using the SNI server
-structure specified by $sni_index as parameter.
+This function should be called only once when the server is initialized.
 
 Parameters:
 
 =over
 
-=item $sni_index int >= 0 or -1|undef
+=item $server_index
 
-For the first call this parameter MUST be -1. Subsequent calls MUST use
-the returned value of the first call.
-
-=item $ssl_id
-
-A 32 bit integer that uniquely identifies this session. This parameter
-will be sent back when MatrixSSL calls the SNI callback defined in the XS
-module when a client sends a SNI extension.
-If the XS module is able to match the requested client hostname it will
-call the Perl callback set with set_VHIndex_callback.
+Server structure index returned by C<create_SSL_server()>
 
 =item $sni_params [{...},...] or undef
 
@@ -1055,18 +1049,12 @@ This is a reference to an array that contains one or more array references:
 
 =back
 
-Returns the index of the internal SNI server structure used for
-registering the MatrixSSL SNI callback. This MUST be saved after the first
-call.
-
 =head3 set_server_params
 
-    $sv_index = $ssl->set_server_params( $sv_index, $ssl_id, $sv_params );
+    $ssl->set_server_params( $server_index, $sv_params );
 
-Used to set the OCSP staple to be returned if the client sends the
-"status_request" TLS extension, the extension data to be returned if the
-client sends the "signed_certificate_timestamp" TLS extension and the
-server supported protocols used when a client send a TLS ALPN extension.
+Used to set the server supported protocols used when a client send a TLS
+ALPN extension.
 
 Note that this function call only affects the B<default server>. Virtual
 hosts are managed by using the $ssl->init_SNI(...).
@@ -1077,17 +1065,15 @@ Parameters:
 
 =over
 
-=item $sv_index and $ssl_id
+=item $server_index
 
-The same as $sni_index and $ssl_id for $ssl->init_SNI(...)
+Server structure index returned by C<create_SSL_server()>
 
 =item $sv_params {...} or undef
 
 This is a reference to a hash with the following structure (all keys are optional):
 
     $sv_params = {
-        'OCSP_staple' => '/path/to/OCSP_staple.der',
-        'SCT_params' => ['/path/to/SCT1.sct', '/path/to/SCT2.sct'] or '/path/to/CT_extension_data_buffer'
         'ALPN' => ['protocol1', 'protocol2']
     }
 
@@ -1095,29 +1081,29 @@ If you specify the 'ALPN' parameter, you should also provide
 an ALPN callback. More information about callback L</ALPNCallback>
 in the L</CALLBACKS> section.
 
-
-Returns the index of the internal default server structure used for
-registering the parameters. This MUST be saved after the first
-call.
-
 =back
 
-=head3 load_OCSP_staple
+=head3 set_callbacks
 
-    $rc = $ssl->load_OCSP_staple( $DERfile );
+    $ssl->set_callbacks( $server_index, $ssl_id );
 
-Loads an OCSP staple to be returned if the client sends the
-"status_request" TLS extension.
+Parameters:
 
-Note that this function is very inefficient because the loaded data is
-bound to the specified session and it will be freed when the session is
-destroyed.
-It has the advantage that the session will contain the latest OCSP data if
-the OCSP DER file is refreshed in the meantime.
+=over
 
-Don't be lazy and use $ssl->set_server_params({'OCSP_staple' => '...'}) and
-$ssl->refresh_OCSP_staple(...) instead.
+=item $server_index
 
+Server structure index returned by C<create_SSL_server()>
+
+=item $ssl_id
+
+A 32 bit integer that uniquely identifies this session. This parameter
+will be sent back when MatrixSSL calls the SNI callback defined in the XS
+module when a client sends a SNI extension.
+If the XS module is able to match the requested client hostname it will
+call the Perl callback set with set_VHIndex_callback.
+
+=back
 
 =head2 Crypt::MatrixSSL3::Client and Crypt::MatrixSSL3::Server
 
@@ -1287,8 +1273,7 @@ response and the client will receive a SSL_ALERT_NO_APP_PROTOCOL alert.
 
 Will be called with 2 parameters:
 
-    $ssl_id - this is the $ssl_id used in the $ssl->init_SNI(...) or
-              $ssl->set_server_params(...) function call
+    $ssl_id - this is the $ssl_id used in the $ssl->set_callbacks(...) call
     $app_proto - scalar with the negociated protocol name
 
 =head2 VHIndexCallback
@@ -1297,10 +1282,11 @@ Will be called whenever we have a successful match against the hostname
 specified by the client in its SNI extension. This will inform the Perl
 code which virtual host the current SSL session belongs to.
 
-Will be called with 2 parameters:
+Will be called with 3 parameters:
 
-    $ssl_id - this is the $ssl_id used in the $ssl->init_SNI(...) function call
+    $ssl_id - this is the $ssl_id used in the $ssl->set_callbacks(...) call
     $index - a 0-based int specifying which virtual host matchd the client requested hostname
+    $match - a scalar containing the hostname sent in the client's SNI TLS extension
 
 Doesn't return anything.
 
@@ -1339,13 +1325,9 @@ intermediate certificate and optionally ends with the root certificate.
 
 The resulted file can be used in your script like:
 
-    # set CT response for a SSL session (default server)
-    $sv_index = $ssl->set_server_params( $sv_index, $ssl_id, {
-        'SCT_params' => '/path/to/CT.sct'
-    });
+    # set or refresh CT response for a SSL session (default server)
+    $sv_keys->load_SCT_response('/path/to/CT.sct');
 
-    # refresh the CT response
-    Crypt::MatrixSSL3::refresh_SCT_buffer( $sv_index, undef, '/path/to/CT.sct' );
 
 =head3 Generate multiple SCT files containing binary representation of the responses received from the log servers
 
@@ -1366,21 +1348,13 @@ This will create in the /path/to/stc/ folder the following files
 
 One or more files can be used in your script like:
 
-    # set CT response for a SSL session (default server)
+    # set or refresh CT response for a SSL session (default server)
     # note that even if you're using a single file (which will be wrong
     # according to the RFC because at least 2 SCTs from different server logs
     # must be sent), you still need to provide an array reference with one element
-    $sv_index = $ssl->set_server_params( $sct_index, $ssl_id, {
-        'SCT_params' => [
+    $sv_keys->load_SCT_response([
             '/path/to/sct/aviator.sct',
             '/path/to/sct/certly.sct'
-        ]
-    });
-
-    # refresh CT response
-    Crypt::MatrixSSL3::refresh_SCT_buffer( $sv_index, undef, [
-        '/path/to/sct/aviator.sct',
-        '/path/to/sct/certly.sct',
     ]);
 
 
@@ -1432,15 +1406,13 @@ certificate.
 
 =head2 USAGE
 
-=head3 Set an OCSP staple to be used within a SSL session (default server)
+=head3 Set or refresh an OCSP staple to be used within a SSL session (default server)
 
-    $sv_index = $ssl->set_server_params( $sv_index, $ssl_id, {
-        'OCSP_staple' => '/path/to/OCSP_staple.der'
-    });
+    $sv_keys->load_OCSP_response('/path/to/OCSP_staple.der');
 
-=head3 Refreshing an already allocated OCSP staple buffer
+=head3 Refreshing an already allocated OCSP staple buffer for a virtual host
 
-    Crypt::MatrixSSL3::refresh_OCSP_staple( $sv_index, undef, '/path/to/OCSP_staple.der' );
+    Crypt::MatrixSSL3::refresh_OCSP_staple( $erver_index, $index, '/path/to/OCSP_staple.der' );
 
 
 =head1 HOWTO: Virtual hosts
@@ -1477,8 +1449,7 @@ Here is some Perl pseudo code on how these are used:
         print("Application protocol $app_proto was negociated for SSL session $ssl_id");
     });
 
-    my $sni_index = -1;
-    my $sv_index = -1;
+    my $server_index = -1;
 
     # define a listening socket
     $server_sock = ...
@@ -1487,7 +1458,13 @@ Here is some Perl pseudo code on how these are used:
     my $sv_keys = Crypt::MatrixSSL3::Keys->new();
 
     # load key material (certificate, private key, etc)
-    $sv_keys->load_rsa(...)
+    $sv_keys->load_rsa(...);
+
+    # load OCSP response
+    $sv_keys->load_OCSP_response(...);
+
+    # load SCT response
+    $sv_keys->load_SCT_response(...);
 
     ...
 
@@ -1503,34 +1480,39 @@ Here is some Perl pseudo code on how these are used:
         # for example this can be the fileno of the client socket
         my $ssl_id = fileno($client_sock);
 
-        # set OCSP staple, Certificate Transparecy data (SCT) and supported protocols
-        # for the default server. These will be initialized only once and then reused
-        # when $sv_index != -1
-        $sv_index = $ssl->set_server_params($sv_index, $ssl_id, {
-            'OCSP_staple' => '...',
-            'SCT_params' => '...',
-            'ALPN' => [...]
-        });
+        # check if the server parameters are initialized
+        if ($server_index == -1) {
+            # tell the XS module to allocate a new SSL server structure
+            $server_index = Crypt::MatrixSSL3::create_SSL_server();
 
-        # initialize virtual hosts
-        # when first called init_SNI will take as first parameter $sni_index which is -1
-        # behind the scene the XS module does this (pretty much like what we're doing above)
-        #   - allocates a SNI_server structure that will hold one or more SNI_entries (virtual hosts)
-        #   - allocates a SNI_entry structure for each virtual host and:
-        #     - creates new server keys
-        #     - sets up OCSP staple buffer (if needed)
-        #     - sets up SCT buffer (if needed)
-        #     - stores server implemented protocols if provided
-        #   - sets up the matrixSSL SNI callback that will get called if the client sends a SNI TLS extension
-        #     in its CLIENT_HELLO message. When the CS SNI callback is called if any of the hostnames define
-        #     for each virtual host matches againt the client requested hostname, the &VHIndexCallback setup
-        #     above will be called with the $ssl_id of the session and the 0-based index of the virtual host
-        #     the client sent its request to
-        # returns the index of the newly created SNI_server structure for future use
-        # this will be initialized only once and then reused when $sni_index != -1
-        $sni_index = $ssl->init_SNI($sni_index, [
-            # see MatrixSSL.pm - init_SNI function
-        ], $ssl_id);
+            # set supported protocols for the default server.
+            $ssl->set_server_params($server_index, {
+                'ALPN' => [...]
+            });
+
+            # initialize virtual hosts:
+            #   - allocates a SNI_entry structure for each virtual host and:
+            #     - creates new server keys
+            #     - sets up OCSP staple buffer (server keys - if needed)
+            #     - sets up SCT buffer (server keys - if needed)
+            #     - stores server implemented protocols if provided
+            $ssl->init_SNI($server_index, [
+                # see MatrixSSL.pm - init_SNI function
+            ]);
+        }
+
+        # setup SNI/ALPN callback
+
+        # sets up the matrixSSL SNI callback that will get called if the client sends a SNI TLS extension
+        # in its CLIENT_HELLO message. When the XS SNI callback is called if any of the hostnames defined
+        # for each virtual host matches againt the client requested hostname, the &VHIndexCallback setup
+        # above will be called with the $ssl_id of the session and the 0-based index of the virtual host
+        # the client sent its request
+
+        # sets up the matrixSSL ALPN callback that will get called when the client sends an ALPN extension
+        # the &ALPNCallback is called with the provided $ssl_id and the selected protocol
+
+        $cssl->set_callbacks($server_index, $sll_id);
 
         # further initialization stuff after accepting the client
         ...
