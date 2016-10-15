@@ -1,6 +1,7 @@
 Revision history for Perl extension Crypt::MatrixSSL3.
 
 {{$NEXT}}
+	- Update to MatrixSSL 3.8.6
 
 v3.8.0  2016-10-07 16:48:36 EEST
 	- Update to MatrixSSL 3.8.4
