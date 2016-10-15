@@ -172,15 +172,7 @@ my @cOptions = (
     # matrixsslConfig.h - Enables server side SSL support
     'USE_SERVER_SIDE_SSL',
 
-    # matrixsslConfig.h - Enables TLS 1.0 protocol support (SSL version 3.1)
-    'USE_TLS',
-
-    # matrixsslConfig.h - Enables TLS 1.1 (SSL version 3.2) protocol support. USE_TLS must be enabled
-    'USE_TLS_1_1',
-
-    # matrixsslConfig.h - Enables TLS 1.2 (SSL version 3.3) protocol support. USE_TLS_1_1 must be enabled
-    'USE_TLS_1_2',
-
+    # matrixsslConfig.h - Enables TLS 1.0 protocol support and above (SSL version 3.1)
     'USE_TLS_1_0_AND_ABOVE',
 
     # matrixsslConfig.h - Disables SSL version 3.0
@@ -230,6 +222,8 @@ my @cOptions = (
 
     # matrixsslConfig.h - enable ALPN
     'USE_ALPN',
+
+    'USE_DTLS',
 
     # matrixsslConfig.h - enable server preferrer ciphers
     'USE_SERVER_PREFERRED_CIPHERS',
@@ -344,7 +338,7 @@ foreach my $d (@cOptions) {
 my $os_src = ($^O =~ /Win32/ms) ? 'core/WIN32' : 'core/POSIX';
 my $o = $Config{obj_ext};
 my $c = '.c';
-my $mxbase = 'inc/matrixssl-3-8-4-open';
+my $mxbase = 'inc/matrixssl-3-8-6-open';
 my $mxfiles = "$mxbase.files";
 my $mxmodfiles = 'modfiles';
 
