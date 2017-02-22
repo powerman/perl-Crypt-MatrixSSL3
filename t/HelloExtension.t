@@ -18,6 +18,7 @@ my $host1               = 'alice.sni.velox.ch';
 my $host2               = 'bob.sni.velox.ch';
 
 
+plan skip_all => '*.sni.velox.ch is not available anymore';
 plan skip_all => 'connection to *.sni.velox.ch is unreliable'
     if $ENV{AUTOMATED_TESTING} || $ENV{PERL_CPAN_REPORTER_CONFIG};
 plan tests => 45;
