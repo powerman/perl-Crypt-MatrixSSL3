@@ -320,6 +320,9 @@ my @cOptions = (
 
     # module compiles as a dynamic DLL
     ($^O =~ /Win32/ms ? '_USRDLL' : ()),
+
+    # not used anywhere - fails to compile because missing includes
+    'NO_ASN_FORMAT_OID',
 );
 
 # Compute the compiler definitions string
@@ -338,7 +341,7 @@ foreach my $d (@cOptions) {
 my $os_src = ($^O =~ /Win32/ms) ? 'core/WIN32' : 'core/POSIX';
 my $o = $Config{obj_ext};
 my $c = '.c';
-my $mxbase = 'inc/matrixssl-3-8-6-open';
+my $mxbase = 'inc/matrixssl-3-9-1-open';
 my $mxfiles = "$mxbase.files";
 my $mxmodfiles = 'modfiles';
 
@@ -423,7 +426,7 @@ my $libs = ($^O =~ /Win32/ms) ? q{} : '-lpthread -lrt';
 my ($ccflags, $lddlflags) = (q{}, q{});
 if ($^O =~ /Win32/ms) {
     if ($Config{cc} eq 'cl') {  # Microsoft Windows compiler
-        $ccflags =  ' /wd4005 /wd4996';  # disable warnings for macro redefinition and unsafe function usage
+        $ccflags =  ' -Dinline=__inline /wd4005 /wd4996';  # disable warnings for macro redefinition and unsafe function usage
     }  else {                   # Other Windows compiler (assuming gcc)
         $ccflags = ' -Os -Wp,-w -m32 -fomit-frame-pointer -fPIC -I./ -I../';
         $lddlflags = ' -m32';

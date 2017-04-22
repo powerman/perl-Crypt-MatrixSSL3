@@ -799,8 +799,8 @@ void Close()
 #ifdef MATRIX_DEBUG
             warn("  Releasing ALPN data: %d protocols", ss->alpn->protoCount);
 #endif
-            for (j = 0; j < ss->alpn->protoCount; j++)
-                if (ss->alpn->proto[j] != NULL) free(ss->alpn->proto[j]);
+            for (k = 0; k < ss->alpn->protoCount; k++)
+                if (ss->alpn->proto[k] != NULL) free(ss->alpn->proto[k]);
 
             free(ss->alpn);
         }

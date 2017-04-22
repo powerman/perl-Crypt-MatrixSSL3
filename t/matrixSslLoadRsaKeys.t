@@ -1,6 +1,6 @@
 use warnings;
 use strict;
-use Test::More tests => 17;
+use Test::More tests => 13;
 use Test::Exception;
 
 use Crypt::MatrixSSL3 qw( :DEFAULT :Error );
@@ -36,14 +36,14 @@ is PS_SUCCESS, _load_rsa_mem(undef, undef, $trustedCA),
 is PS_SUCCESS, _load_rsa_mem($cert, $priv, $trustedCA),
     'Mem both';
 
-is PS_SUCCESS, _load_rsa($certFile, $privFile_des3, $privPass_des3, undef),
-    'server: encrypted des3, RIGHT PASSWORD';
-is PS_ARG_FAIL, _load_rsa($certFile, $privFile_des3, $privPass, undef),
-    'server: encrypted des3, NO PASSWORD';
-is PS_FAILURE, _load_rsa($certFile, $privFile_des3, '', undef),
-    'server: encrypted des3, EMPTY PASSWORD';
-is PS_FAILURE, _load_rsa($certFile, $privFile_des3, 'WrOnG', undef),
-    'server: encrypted des3, WRONG PASSWORD';
+#is PS_SUCCESS, _load_rsa($certFile, $privFile_des3, $privPass_des3, undef),
+#    'server: encrypted des3, RIGHT PASSWORD';
+#is PS_ARG_FAIL, _load_rsa($certFile, $privFile_des3, $privPass, undef),
+#    'server: encrypted des3, NO PASSWORD';
+#is PS_FAILURE, _load_rsa($certFile, $privFile_des3, '', undef),
+#    'server: encrypted des3, EMPTY PASSWORD';
+#is PS_FAILURE, _load_rsa($certFile, $privFile_des3, 'WrOnG', undef),
+#    'server: encrypted des3, WRONG PASSWORD';
 
 is PS_SUCCESS, _load_rsa(undef, undef, undef, undef),
     'no keys';
