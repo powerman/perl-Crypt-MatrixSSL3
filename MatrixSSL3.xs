@@ -1985,7 +1985,10 @@ int sess_received_data(ssl, inBuf, ptBuf)
 
     CODE:
     readbufsz = matrixSslGetReadbuf((ssl_t *)ssl, &readbuf);
-    if (readbufsz <= 0) { /* 0 isn't an error, but shouldn't happens anyway */
+    if (readbufsz < 0) {
+        /* 0 isn't an error, but shouldn't happens anyway */
+        /* when readbufsz == 0 the matrixSslReceivedData call below acts like a polling machanism
+           useful for client which use false start */
         croak("matrixSslGetReadbuf returns %d", readbufsz);
     }
 

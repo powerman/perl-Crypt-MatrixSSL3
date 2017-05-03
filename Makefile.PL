@@ -253,6 +253,9 @@ my @cOptions = (
     # matrixsslConfig.h - Enable the TLS compression extension negotiation
     #'USE_ZLIB_COMPRESSION',
 
+    # enable key file password
+    'USE_PBKDF1',
+
     # cryptoConfig.h - Enables the parsing of password protected private keys
     'USE_PKCS5',
 
