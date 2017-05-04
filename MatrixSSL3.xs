@@ -799,8 +799,8 @@ void Close()
 #ifdef MATRIX_DEBUG
             warn("  Releasing ALPN data: %d protocols", ss->alpn->protoCount);
 #endif
-            for (j = 0; j < ss->alpn->protoCount; j++)
-                if (ss->alpn->proto[j] != NULL) free(ss->alpn->proto[j]);
+            for (k = 0; k < ss->alpn->protoCount; k++)
+                if (ss->alpn->proto[k] != NULL) free(ss->alpn->proto[k]);
 
             free(ss->alpn);
         }
@@ -1985,7 +1985,10 @@ int sess_received_data(ssl, inBuf, ptBuf)
 
     CODE:
     readbufsz = matrixSslGetReadbuf((ssl_t *)ssl, &readbuf);
-    if (readbufsz <= 0) { /* 0 isn't an error, but shouldn't happens anyway */
+    if (readbufsz < 0) {
+        /* 0 isn't an error, but shouldn't happens anyway */
+        /* when readbufsz == 0 the matrixSslReceivedData call below acts like a polling machanism
+           useful for client which use false start */
         croak("matrixSslGetReadbuf returns %d", readbufsz);
     }
 
